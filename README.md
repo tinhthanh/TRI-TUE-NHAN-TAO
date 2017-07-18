@@ -82,3 +82,13 @@ Nguyên lý của dầu khi loang trên môi trường lỏng là loang đều r
 
 ![mg10](https://user-images.githubusercontent.com/28096471/28322827-4fbf7e8a-6c01-11e7-9e90-81b62df76e7f.png)
 
+
+  
+ FB  :  https://www.facebook.com/100005036221206
+ 
+ EMAIL : k40cntt@gmail.com
+  ``````
+  #ĐẠI HỌC NÔNG LÂP .TPHCM
+  
+  #kĩ niệm học kì 1 năm 3 thời Sinh Viên 
+

@@ -389,6 +389,8 @@
     constructor(x, y, isAlly, imgKey, spriteCols, spriteRows) {
       this.x = x;
       this.y = y;
+      this.renderX = x; // smooth visual position
+      this.renderY = y;
       this.isAlly = isAlly; // true = sheep (phe ta), false = wolf (phe dich)
       this.active = false;
       this.sprite = new Sprite(imgKey, spriteCols, spriteRows);
@@ -535,6 +537,7 @@
     // Init player at position (1,1)
     player = {
       x: 1, y: 1,
+      renderX: 1, renderY: 1, // smooth visual position
       sprite: new Sprite('player', 5, 4)
     };
 
@@ -763,23 +766,39 @@
       explosionEffect.draw(ctx);
     }
 
+    // Smooth movement interpolation (lerp)
+    const lerpSpeed = 0.18;
+    player.renderX += (player.x - player.renderX) * lerpSpeed;
+    player.renderY += (player.y - player.renderY) * lerpSpeed;
+    // Snap if very close to avoid sub-pixel jitter
+    if (Math.abs(player.x - player.renderX) < 0.01) player.renderX = player.x;
+    if (Math.abs(player.y - player.renderY) < 0.01) player.renderY = player.y;
+
+    agents.forEach(a => {
+      if (!a.active) return;
+      a.renderX += (a.x - a.renderX) * lerpSpeed;
+      a.renderY += (a.y - a.renderY) * lerpSpeed;
+      if (Math.abs(a.x - a.renderX) < 0.01) a.renderX = a.x;
+      if (Math.abs(a.y - a.renderY) < 0.01) a.renderY = a.y;
+    });
+
     // Draw agent shadows first (behind sprites)
     agents.forEach(a => {
       if (!a.active) return;
-      drawCharacterShadow(a.x * CELL_SIZE, a.y * CELL_SIZE);
+      drawCharacterShadow(a.renderX * CELL_SIZE, a.renderY * CELL_SIZE);
     });
-    drawCharacterShadow(player.x * CELL_SIZE, player.y * CELL_SIZE);
+    drawCharacterShadow(player.renderX * CELL_SIZE, player.renderY * CELL_SIZE);
 
     // Draw agents
     agents.forEach(a => {
       if (!a.active) return;
       a.sprite.updateAnim(now);
-      a.sprite.draw(ctx, a.x * CELL_SIZE, a.y * CELL_SIZE, CELL_SIZE);
+      a.sprite.draw(ctx, a.renderX * CELL_SIZE, a.renderY * CELL_SIZE, CELL_SIZE);
     });
 
     // Draw player on top
     player.sprite.updateAnim(now);
-    player.sprite.draw(ctx, player.x * CELL_SIZE, player.y * CELL_SIZE, CELL_SIZE);
+    player.sprite.draw(ctx, player.renderX * CELL_SIZE, player.renderY * CELL_SIZE, CELL_SIZE);
 
     // Draw A* path visualization (subtle)
     if (hasTarget) {

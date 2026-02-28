@@ -778,6 +778,59 @@
     if (hasTarget) {
       drawPathVisualization();
     }
+
+    // Draw sidebar character avatars
+    drawSidebarAvatars(now);
+  }
+
+  // ============================================
+  // SIDEBAR AVATAR RENDERING
+  // ============================================
+  let avatarAnimFrame = 0;
+  let avatarLastAnim = 0;
+
+  function drawSidebarAvatars(now) {
+    // Animate avatar frames
+    if (now - avatarLastAnim >= SPRITE_ANIM_MS) {
+      avatarAnimFrame++;
+      avatarLastAnim = now;
+    }
+
+    // Player large avatar (64x64)
+    drawAvatarCanvas('player-avatar', images.player, 5, 4, avatarAnimFrame, 64);
+
+    // Enemy large avatar (64x64)
+    const firstEnemy = agents.find(a => !a.isAlly && a.active);
+    const enemyImgKey = firstEnemy ? firstEnemy.sprite.imgKey : 'enemy1';
+    drawAvatarCanvas('enemy-avatar', images[enemyImgKey], 3, 4, avatarAnimFrame, 64);
+
+    // Score row small sprites (32x32)
+    drawAvatarCanvas('score-player-sprite', images.player, 5, 4, avatarAnimFrame, 32);
+    drawAvatarCanvas('score-enemy-sprite', images[enemyImgKey], 3, 4, avatarAnimFrame, 32);
+  }
+
+  function drawAvatarCanvas(canvasId, img, cols, rows, frame, size) {
+    const cvs = document.getElementById(canvasId);
+    if (!cvs || !img) return;
+    const actx = cvs.getContext('2d');
+
+    // Ensure canvas size matches
+    if (cvs.width !== size || cvs.height !== size) {
+      cvs.width = size;
+      cvs.height = size;
+    }
+
+    actx.clearRect(0, 0, size, size);
+
+    const fw = img.width / cols;
+    const fh = img.height / rows;
+    const col = (frame % cols);
+    const row = 0; // face down (front-facing)
+
+    // Draw sprite centered and scaled to fill canvas
+    const padding = Math.floor(size * 0.05);
+    const drawSize = size - padding * 2;
+    actx.drawImage(img, col * fw, row * fh, fw, fh, padding, padding, drawSize, drawSize);
   }
 
   function drawMap() {

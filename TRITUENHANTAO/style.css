@@ -265,6 +265,68 @@ body {
     text-align: center;
 }
 
+/* Character Previews */
+.character-previews {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.char-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.char-preview canvas {
+    border-radius: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid var(--glass-border);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.player-preview canvas {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.enemy-preview canvas {
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+}
+
+.char-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vs-badge {
+    font-family: 'Baloo 2', cursive;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent-yellow);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+/* Score row sprite */
+.score-sprite {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    flex-shrink: 0;
+}
+
 .score-board-bg h3 {
     font-family: 'Baloo 2', cursive;
     font-size: 22px;

@@ -53,13 +53,26 @@
                 </div>
                 <div class="sidebar-section score-section" id="score-panel">
                     <div class="score-board-bg">
+                        <div class="character-previews">
+                            <div class="char-preview player-preview">
+                                <canvas id="player-avatar" width="64" height="64"></canvas>
+                                <span class="char-name">Người chơi</span>
+                            </div>
+                            <div class="vs-badge">VS</div>
+                            <div class="char-preview enemy-preview">
+                                <canvas id="enemy-avatar" width="64" height="64"></canvas>
+                                <span class="char-name">Bầy sói</span>
+                            </div>
+                        </div>
                         <h3>Bảng Điểm</h3>
                         <div class="score-row player-score">
-                            <span class="score-label">🐑 Điểm Ta:</span>
+                            <canvas id="score-player-sprite" class="score-sprite" width="32" height="32"></canvas>
+                            <span class="score-label">Điểm Ta:</span>
                             <span class="score-value" id="score-ta">0</span>
                         </div>
                         <div class="score-row enemy-score">
-                            <span class="score-label">👻 Điểm Máy:</span>
+                            <canvas id="score-enemy-sprite" class="score-sprite" width="32" height="32"></canvas>
+                            <span class="score-label">Điểm Máy:</span>
                             <span class="score-value" id="score-dich">0</span>
                         </div>
                         <div class="score-bar-container">

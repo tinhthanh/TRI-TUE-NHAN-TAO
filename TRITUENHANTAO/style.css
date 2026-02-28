@@ -224,12 +224,44 @@ body {
     align-items: flex-start;
 }
 
+/* 3D Perspective Container */
+.canvas-3d-wrapper {
+    perspective: 1200px;
+    perspective-origin: 50% 30%;
+}
+
 #game-canvas {
     border-radius: var(--radius);
-    box-shadow: var(--shadow-lg), 0 0 60px rgba(16, 185, 129, 0.1);
+    box-shadow: 
+        var(--shadow-lg), 
+        0 0 60px rgba(16, 185, 129, 0.1),
+        0 30px 80px rgba(0, 0, 0, 0.4);
     border: 2px solid var(--glass-border);
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    transform: rotateX(18deg) scale(0.95);
+    transform-origin: center top;
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+#game-canvas:hover {
+    transform: rotateX(12deg) scale(0.97);
+}
+
+/* Ground reflection effect */
+.canvas-3d-wrapper::after {
+    content: '';
+    display: block;
+    height: 40px;
+    background: linear-gradient(
+        to bottom,
+        rgba(16, 185, 129, 0.06),
+        transparent
+    );
+    border-radius: 50%;
+    margin-top: -12px;
+    filter: blur(12px);
+    transform: scaleY(0.3);
 }
 
 /* ============================================

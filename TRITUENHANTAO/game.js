@@ -763,6 +763,13 @@
       explosionEffect.draw(ctx);
     }
 
+    // Draw agent shadows first (behind sprites)
+    agents.forEach(a => {
+      if (!a.active) return;
+      drawCharacterShadow(a.x * CELL_SIZE, a.y * CELL_SIZE);
+    });
+    drawCharacterShadow(player.x * CELL_SIZE, player.y * CELL_SIZE);
+
     // Draw agents
     agents.forEach(a => {
       if (!a.active) return;
@@ -832,8 +839,13 @@
     const drawSize = size - padding * 2;
     actx.drawImage(img, col * fw, row * fh, fw, fh, padding, padding, drawSize, drawSize);
   }
+  // ============================================
+  // 2.5D MAP RENDERING
+  // ============================================
+  const WALL_DEPTH = 10; // pixel height for wall side face
 
   function drawMap() {
+    // Pass 1: Draw ground tiles
     for (let row = 0; row < mapSize; row++) {
       for (let col = 0; col < mapSize; col++) {
         const x = col * CELL_SIZE;
@@ -847,17 +859,113 @@
           ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
 
-        // Draw wall
-        if (mapData[row][col] === 1) {
-          if (images.wall) {
-            ctx.drawImage(images.wall, x, y, CELL_SIZE, CELL_SIZE);
-          } else {
-            ctx.fillStyle = '#5c3a21';
-            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-          }
+        // Subtle grid lines for depth
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+      }
+    }
+
+    // Pass 2: Draw ambient occlusion (wall shadows on ground)
+    ctx.save();
+    for (let row = 0; row < mapSize; row++) {
+      for (let col = 0; col < mapSize; col++) {
+        if (mapData[row][col] !== 1) continue;
+        const x = col * CELL_SIZE;
+        const y = row * CELL_SIZE;
+
+        // Cast shadow below and to the right of walls
+        const shadowOffset = 4;
+        const belowIsGround = row + 1 < mapSize && mapData[row + 1][col] === 0;
+        const rightIsGround = col + 1 < mapSize && mapData[row][col + 1] === 0;
+
+        if (belowIsGround) {
+          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+          ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, shadowOffset + 2);
+        }
+        if (rightIsGround) {
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.fillRect(x + CELL_SIZE, y, shadowOffset, CELL_SIZE);
         }
       }
     }
+    ctx.restore();
+
+    // Pass 3: Draw wall side faces (2.5D depth) — bottom row to top for proper overlap
+    for (let row = mapSize - 1; row >= 0; row--) {
+      for (let col = 0; col < mapSize; col++) {
+        if (mapData[row][col] !== 1) continue;
+        const x = col * CELL_SIZE;
+        const y = row * CELL_SIZE;
+
+        // Check if the cell below is NOT a wall (i.e., the bottom face would be visible)
+        const showBottomFace = (row + 1 >= mapSize || mapData[row + 1][col] === 0);
+
+        if (showBottomFace) {
+          // Draw the side face (darker shade) below the wall top
+          ctx.fillStyle = '#3a2210';
+          ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
+
+          // Add gradient for 3D bevel  
+          const sideGrad = ctx.createLinearGradient(x, y + CELL_SIZE, x, y + CELL_SIZE + WALL_DEPTH);
+          sideGrad.addColorStop(0, 'rgba(80, 50, 20, 0.9)');
+          sideGrad.addColorStop(1, 'rgba(20, 10, 5, 0.95)');
+          ctx.fillStyle = sideGrad;
+          ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
+
+          // Side edge highlight
+          ctx.fillStyle = 'rgba(255, 200, 100, 0.08)';
+          ctx.fillRect(x, y + CELL_SIZE, 1, WALL_DEPTH);
+        }
+      }
+    }
+
+    // Pass 4: Draw wall top faces  
+    for (let row = 0; row < mapSize; row++) {
+      for (let col = 0; col < mapSize; col++) {
+        if (mapData[row][col] !== 1) continue;
+        const x = col * CELL_SIZE;
+        const y = row * CELL_SIZE;
+
+        // Wall top face (the main wall tile)
+        if (images.wall) {
+          ctx.drawImage(images.wall, x, y, CELL_SIZE, CELL_SIZE);
+        } else {
+          ctx.fillStyle = '#5c3a21';
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+        }
+
+        // Top highlight for 3D bevel feel
+        ctx.fillStyle = 'rgba(255, 230, 160, 0.06)';
+        ctx.fillRect(x, y, CELL_SIZE, 2);
+        ctx.fillStyle = 'rgba(255, 230, 160, 0.04)';
+        ctx.fillRect(x, y, 2, CELL_SIZE);
+
+        // Inner shadow for depth
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.fillRect(x + CELL_SIZE - 2, y, 2, CELL_SIZE);
+        ctx.fillRect(x, y + CELL_SIZE - 2, CELL_SIZE, 2);
+      }
+    }
+  }
+
+  // ============================================
+  // CHARACTER SHADOWS
+  // ============================================
+  function drawCharacterShadow(x, y) {
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(
+      x + CELL_SIZE / 2,
+      y + CELL_SIZE - 2,
+      CELL_SIZE * 0.35,
+      CELL_SIZE * 0.12,
+      0, 0, Math.PI * 2
+    );
+    ctx.fill();
+    ctx.restore();
   }
 
   function drawTarget(now) {

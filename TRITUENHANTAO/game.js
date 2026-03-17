@@ -142,7 +142,8 @@
   const CELL_SIZE = 36;
   const WIN_SCORE = 12;
   const AGENT_COUNT = 12;
-  const AI_TICK_MS = 500;
+  const AI_TICK_MS = 350;
+  const PLAYER_TWEEN_MS = 130;
   const TARGET_RESPAWN_TICKS = 12; // number of AI ticks before target respawns
   const SPRITE_ANIM_MS = 250;
 
@@ -383,6 +384,13 @@
   }
 
   // ============================================
+  // EASING
+  // ============================================
+  function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  }
+
+  // ============================================
   // AGENT (AI character)
   // ============================================
   class Agent {
@@ -398,6 +406,12 @@
       this.randomDir = 0; // 1=right,2=down,3=left,4=up
       this.randomSteps = 3 + Math.floor(Math.random() * 5);
       this.levelGhost = 1;
+      // Tween state for smooth movement
+      this.tweenStartX = x;
+      this.tweenStartY = y;
+      this.tweenEndX = x;
+      this.tweenEndY = y;
+      this.tweenStartTime = -Infinity;
     }
 
     recalcPath() {
@@ -405,18 +419,24 @@
       this.path = astarFind(this.x, this.y, targetX, targetY, mapData, mapSize);
     }
 
-    moveTowardsTarget() {
+    moveTowardsTarget(now) {
       if (this.path.length > 0) {
         const next = this.path.shift();
         const prevX = this.x;
         const prevY = this.y;
+        // Start tween from current render position
+        this.tweenStartX = this.renderX;
+        this.tweenStartY = this.renderY;
         this.x = next.x;
         this.y = next.y;
+        this.tweenEndX = this.x;
+        this.tweenEndY = this.y;
+        this.tweenStartTime = now;
         this.sprite.setDirection(prevX, prevY, this.x, this.y, false);
       }
     }
 
-    moveRandom() {
+    moveRandom(now) {
       this.randomSteps--;
       if (this.randomSteps <= 0) {
         this.randomDir = findValidDirection(this.x, this.y);
@@ -436,6 +456,12 @@
         this.y--;
       }
 
+      // Start tween from current render position
+      this.tweenStartX = this.renderX;
+      this.tweenStartY = this.renderY;
+      this.tweenEndX = this.x;
+      this.tweenEndY = this.y;
+      this.tweenStartTime = now;
       this.sprite.setDirection(prevX, prevY, this.x, this.y, false);
     }
 
@@ -538,7 +564,11 @@
     player = {
       x: 1, y: 1,
       renderX: 1, renderY: 1, // smooth visual position
-      sprite: new Sprite('player', 5, 4)
+      sprite: new Sprite('player', 5, 4),
+      // Tween state
+      tweenStartX: 1, tweenStartY: 1,
+      tweenEndX: 1, tweenEndY: 1,
+      tweenStartTime: -Infinity
     };
 
     // Generate random positions for agents
@@ -620,8 +650,14 @@
 
     e.preventDefault();
     player.sprite.setDirection(prevX, prevY, newX, newY, true);
+    // Start tween from current render position
+    player.tweenStartX = player.renderX;
+    player.tweenStartY = player.renderY;
     player.x = newX;
     player.y = newY;
+    player.tweenEndX = newX;
+    player.tweenEndY = newY;
+    player.tweenStartTime = performance.now();
 
     // Check if player collected target
     checkPlayerCollect();
@@ -658,14 +694,14 @@
     }
   }
 
-  function aiTick() {
+  function aiTick(now) {
     if (!gameRunning) return;
 
     if (hasTarget) {
       // Move active agents towards target
       agents.forEach(a => {
         if (!a.active) return;
-        a.moveTowardsTarget();
+        a.moveTowardsTarget(now);
       });
 
       // Check if any agent reached target
@@ -696,7 +732,7 @@
       // No target - move randomly
       agents.forEach(a => {
         if (!a.active) return;
-        a.moveRandom();
+        a.moveRandom(now);
       });
 
       // Target respawn cooldown
@@ -745,7 +781,7 @@
     // AI tick accumulator
     aiAccumulator += dt;
     while (aiAccumulator >= AI_TICK_MS) {
-      aiTick();
+      aiTick(now);
       aiAccumulator -= AI_TICK_MS;
       if (!gameRunning) return;
     }
@@ -766,20 +802,20 @@
       explosionEffect.draw(ctx);
     }
 
-    // Smooth movement interpolation (lerp)
-    const lerpSpeed = 0.18;
-    player.renderX += (player.x - player.renderX) * lerpSpeed;
-    player.renderY += (player.y - player.renderY) * lerpSpeed;
-    // Snap if very close to avoid sub-pixel jitter
-    if (Math.abs(player.x - player.renderX) < 0.01) player.renderX = player.x;
-    if (Math.abs(player.y - player.renderY) < 0.01) player.renderY = player.y;
+    // Time-based tween interpolation (frame-rate independent)
+    // Player tween (fast: PLAYER_TWEEN_MS)
+    const pt = Math.min((now - player.tweenStartTime) / PLAYER_TWEEN_MS, 1);
+    const pet = easeInOutQuad(pt);
+    player.renderX = player.tweenStartX + (player.tweenEndX - player.tweenStartX) * pet;
+    player.renderY = player.tweenStartY + (player.tweenEndY - player.tweenStartY) * pet;
 
+    // Agent tweens (synced to AI_TICK_MS so animation always finishes exactly when next tick fires)
     agents.forEach(a => {
       if (!a.active) return;
-      a.renderX += (a.x - a.renderX) * lerpSpeed;
-      a.renderY += (a.y - a.renderY) * lerpSpeed;
-      if (Math.abs(a.x - a.renderX) < 0.01) a.renderX = a.x;
-      if (Math.abs(a.y - a.renderY) < 0.01) a.renderY = a.y;
+      const t = Math.min((now - a.tweenStartTime) / AI_TICK_MS, 1);
+      const et = easeInOutQuad(t);
+      a.renderX = a.tweenStartX + (a.tweenEndX - a.tweenStartX) * et;
+      a.renderY = a.tweenStartY + (a.tweenEndY - a.tweenStartY) * et;
     });
 
     // Draw agent shadows first (behind sprites)

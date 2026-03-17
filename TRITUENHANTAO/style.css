@@ -222,6 +222,36 @@ body {
     color: #fbbf24;
 }
 
+/* Vet Clinic button — teal theme */
+.map-btn.vet-map-btn {
+    background: rgba(13, 148, 136, 0.12);
+    border-color: rgba(13, 148, 136, 0.4);
+    color: #0d9488;
+    grid-column: 1 / -1;
+}
+.map-btn.vet-map-btn:hover,
+.map-btn.vet-map-btn.selected {
+    background: rgba(13, 148, 136, 0.22);
+    border-color: rgba(13, 148, 136, 0.75);
+    box-shadow: 0 0 18px rgba(13, 148, 136, 0.3);
+    color: #14b8a6;
+}
+
+/* Villa button — purple theme */
+.map-btn.villa-map-btn {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #a855f7;
+    grid-column: 1 / -1;
+}
+.map-btn.villa-map-btn:hover,
+.map-btn.villa-map-btn.selected {
+    background: rgba(168, 85, 247, 0.22);
+    border-color: rgba(168, 85, 247, 0.75);
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.3);
+    color: #c084fc;
+}
+
 /* Floor tab buttons (for future map editor multi-floor) */
 .floor-tab-btn {
     padding: 4px 10px;

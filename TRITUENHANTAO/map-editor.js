@@ -808,6 +808,47 @@
   // ── BACK ──────────────────────────────────────────────────
   window.goBack = function () { window.location.href = 'index.html'; };
 
+  // ── LOAD SAMPLE MAP ───────────────────────────────────────
+  window.loadSampleMap = async function(filename) {
+    if (!confirm('Tải map mẫu sẽ xóa dữ liệu hiện tại đang vẽ. Bạn có chắc chắn?')) return;
+    try {
+      const resp = await fetch(filename);
+      if (!resp.ok) throw new Error('Không tìm thấy ' + filename);
+      const data = await resp.json();
+      
+      mapWidth = data.width || 22;
+      mapHeight = data.height || 13;
+      document.getElementById('grid-w-slider').value = mapWidth;
+      document.getElementById('grid-h-slider').value = mapHeight;
+      document.getElementById('grid-width-value').textContent = mapWidth;
+      document.getElementById('grid-height-value').textContent = mapHeight;
+
+      if (data.floors && Array.isArray(data.floors)) {
+        floors = data.floors.map(f => ({
+          name: f.name || 'Tầng ' + f.id,
+          grid: f.grid,
+          roomMap: f.roomMap || Array(mapHeight).fill(null).map(() => Array(mapWidth).fill(null)),
+          rooms: f.rooms || [],
+          props: f.props || []
+        }));
+      } else if (data.data) {
+        // Fallback for single floor maps
+        floors = [{
+          name: 'Tầng 1',
+          grid: data.data,
+          roomMap: Array(mapHeight).fill(null).map(() => Array(mapWidth).fill(null)),
+          rooms: [], props: []
+        }];
+      }
+
+      updateFloorTabs();
+      switchToFloor(0);
+      showToast('Đã tải ' + (data.name || filename));
+    } catch (e) {
+      alert('Lỗi tải map: ' + e.message);
+    }
+  };
+
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer;
   function showToast(msg) {

@@ -842,7 +842,7 @@
   // GAME INITIALIZATION
   // ============================================
   function initGame() {
-    if (currentMapKey === 'house') {
+    if (['house', 'vet', 'villa', 'custom'].includes(currentMapKey)) {
       if (!houseData) { console.error('houseData not loaded'); return; }
       currentFloor = 0;
       applyFloor(0);
@@ -1729,7 +1729,7 @@
     document.getElementById('modal-overlay').classList.add('hidden');
 
     // Load house map JSON if needed
-    if (currentMapKey === 'house') {
+    if (['house', 'vet', 'villa', 'custom'].includes(currentMapKey)) {
       await loadHouseMap();
     }
 

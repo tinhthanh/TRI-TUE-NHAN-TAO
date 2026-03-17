@@ -181,6 +181,8 @@
   let floorFadeCallback = null;
   const FLOOR_FADE_SPEED = 4;   // alpha units per 16ms frame
   let stairsPulse = 0;
+  let activeProps = [];         // props/furniture for the current floor
+  let activeDoors = [];         // animated doors for the current floor
 
   // Scores
   let scoreTa = 0;
@@ -230,6 +232,13 @@
     { key: 'stairsUp',  src: 'stairs_up.png'  },   // stairs sprite
     { key: 'door',      src: 'door.png'        },   // door sprite
     { key: 'balcony',   src: 'balcony.png'     },   // balcony tile
+    { key: 'floorWood', src: 'floor_wood.png'  },
+    { key: 'floorRetro',src: 'floor_retro.png' },
+    { key: 'propBed',   src: 'prop_bed.png'    },
+    { key: 'propSofa',  src: 'prop_sofa.png'   },
+    { key: 'propPlant', src: 'prop_plant.png'  },
+    { key: 'propTable', src: 'prop_table.png'  },
+    { key: 'doorOpen',  src: 'door_open.png'   },
     { key: 'player', src: 'man2.png' },
     { key: 'enemy1', src: 'efect/conma1.png' },
     { key: 'enemy2', src: 'efect/conma2.png' },
@@ -520,7 +529,9 @@
     if (row < 0 || row >= mapHeight || col < 0 || col >= mapWidth) return true;
     if (!mapData[row]) return true; // safety: should never happen, but prevents crash
     const t = mapData[row][col];
-    return t === TILE.WALL;
+    if (t === TILE.WALL) return true;
+    if (activeProps && activeProps.some(p => p.c === col && p.r === row)) return true;
+    return false;
   }
 
   function getTileType(row, col) {
@@ -566,9 +577,21 @@
     const f = houseData.floors[floorIdx];
     currentFloor = floorIdx;
     mapData = f.grid;
+    activeProps = f.props || [];
     mapWidth  = houseData.width;
     mapHeight = houseData.height;
     mapSize   = mapWidth; // for any legacy references
+    
+    // Init animated doors
+    activeDoors = [];
+    for (let r = 0; r < mapHeight; r++) {
+      for (let c = 0; c < mapWidth; c++) {
+        if (mapData[r][c] === TILE.DOOR) {
+          activeDoors.push({ r, c, openState: 0 });
+        }
+      }
+    }
+    
     updateFloorUI();
   }
 
@@ -1157,6 +1180,21 @@
       }
     }
 
+    // Door animations
+    if (activeDoors && activeDoors.length > 0) {
+      activeDoors.forEach(d => {
+        let isNear = false;
+        if (Math.abs(d.r - playerRow) <= 1 && Math.abs(d.c - playerCol) <= 1) isNear = true;
+        for (const a of agents) {
+          if (a.active && Math.abs(d.r - a.row) <= 1 && Math.abs(d.c - a.col) <= 1) {
+            isNear = true; break;
+          }
+        }
+        if (isNear) d.openState = Math.min(1, d.openState + dt * 0.005);
+        else d.openState = Math.max(0, d.openState - dt * 0.003);
+      });
+    }
+
     // AI tick accumulator
     aiAccumulator += dt;
     while (aiAccumulator >= AI_TICK_MS) {
@@ -1336,6 +1374,17 @@
   const WALL_DEPTH_SIDE = 7; // pixel width for wall right-side shadow face
 
   function drawIndoorGroundTile(x, y, tileType, roomId, floorRooms) {
+    // Helper to get specialized floor based on room ID
+    function getFloorImg(fallback) {
+      if (!roomId) return fallback;
+      const s = String(roomId).toLowerCase();
+      if (s.startsWith('bed') || s.startsWith('work') || s.startsWith('dress') || s.startsWith('altar')) return images.floorWood || fallback;
+      if (s.startsWith('living') || s.startsWith('guest') || s.startsWith('kitchen') || s.startsWith('dining')) return images.floorRetro || fallback;
+      return fallback;
+    }
+
+    const baseFloorImg = getFloorImg(images.floorTile);
+
     // Select ground texture based on tile type
     switch (tileType) {
       case TILE.WALL:  return; // walls drawn in later passes
@@ -1348,15 +1397,13 @@
         else { ctx.fillStyle = '#b0bec5'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
         return;
       case TILE.DOOR:
-        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
-        else { ctx.fillStyle = '#d4a96a'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
-        if (images.door) {
-          ctx.drawImage(images.door, x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-        }
+        if (baseFloorImg) ctx.drawImage(baseFloorImg, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        // Door animation state will be drawn in Pass 1.5 dynamically
         return;
       case TILE.STAIRS_UP:
       case TILE.STAIRS_DOWN: {
-        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
+        if (baseFloorImg) ctx.drawImage(baseFloorImg, x, y, CELL_SIZE, CELL_SIZE);
         else { ctx.fillStyle = '#c8b89a'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
         // Stair sprite
         if (images.stairsUp) ctx.drawImage(images.stairsUp, x, y, CELL_SIZE, CELL_SIZE);
@@ -1370,7 +1417,7 @@
       }
       default: {
         // Generic indoor floor (with room color overlay)
-        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
+        if (baseFloorImg) ctx.drawImage(baseFloorImg, x, y, CELL_SIZE, CELL_SIZE);
         else { ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
         // Room color overlay
         if (roomId && floorRooms) {
@@ -1407,6 +1454,36 @@
         ctx.strokeStyle = isIndoor ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.08)';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+      }
+    }
+
+    // ── Pass 1.5: Draw Props & Doors ─────────────
+    if (isIndoor) {
+      if (activeProps) {
+        for (const p of activeProps) {
+          const x = p.c * CELL_SIZE;
+          const y = p.r * CELL_SIZE;
+          let img = null;
+          if (p.type === 'bed') img = images.propBed;
+          else if (p.type === 'sofa') img = images.propSofa;
+          else if (p.type === 'plant') img = images.propPlant;
+          else if (p.type === 'table') img = images.propTable;
+          
+          if (img) ctx.drawImage(img, x, y, CELL_SIZE, CELL_SIZE);
+        }
+      }
+      if (activeDoors) {
+        for (const d of activeDoors) {
+          const x = d.c * CELL_SIZE;
+          const y = d.r * CELL_SIZE;
+          if (images.door) {
+            ctx.save();
+            ctx.translate(x, y + CELL_SIZE); // Swing from bottom-left corner of tile
+            ctx.rotate((-Math.PI / 2) * d.openState);
+            ctx.drawImage(images.door, 2, -CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            ctx.restore();
+          }
+        }
       }
     }
 

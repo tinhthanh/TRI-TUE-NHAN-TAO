@@ -17,6 +17,12 @@
     { id: 7, name: 'WC',              emoji: '🚽', color: '#0d9488', paint: 7 },
     { id: 8, name: 'Bếp/Giặt/Phòng', emoji: '🏠', color: '#f97316', paint: 8 },
     { id: 9, name: 'Phòng ngủ',       emoji: '🛏',  color: '#a855f7', paint: 9 },
+    // Props
+    { id: 10, name: 'Giường',        emoji: '🛌', color: 'rgba(0,0,0,0)', paint: 10, propType: 'bed' },
+    { id: 11, name: 'Ghế Sofa',      emoji: '🛋', color: 'rgba(0,0,0,0)', paint: 11, propType: 'sofa' },
+    { id: 12, name: 'Chậu cây',      emoji: '🪴', color: 'rgba(0,0,0,0)', paint: 12, propType: 'plant' },
+    { id: 13, name: 'Bàn ăn',        emoji: '🪑', color: 'rgba(0,0,0,0)', paint: 13, propType: 'table' },
+    { id: 14, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 14, propType: 'clear' }
   ];
 
   // Walkable tile IDs (anything except WALL=1)
@@ -38,6 +44,7 @@
   let grid    = [];
   let roomMap = [];
   let rooms   = [];
+  let props   = [];
 
   // Rooms: user defines name+color per room tile they paint
   // roomMap[row][col] = roomId (string) or null
@@ -118,7 +125,7 @@
       g.push(new Array(mapWidth).fill(0));
       rm.push(new Array(mapWidth).fill(null));
     }
-    return { name, grid: g, roomMap: rm, rooms: [] };
+    return { name, grid: g, roomMap: rm, rooms: [], props: [] };
   }
 
   function createInitialFloors() {
@@ -134,6 +141,8 @@
     grid    = floors[idx].grid;
     roomMap = floors[idx].roomMap;
     rooms   = floors[idx].rooms;
+    props   = floors[idx].props || [];
+    if (!floors[idx].props) floors[idx].props = props;
     updateFloorTabs();
     updateStats();
     validate();
@@ -382,12 +391,26 @@
       for (let dc = -half; dc < brushSize - half; dc++) {
         const r = row + dr, c = col + dc;
         if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
-        if (grid[r][c] !== value) { grid[r][c] = value; changed = true; }
-        // Room assignment
-        if (value === 0) {
-          roomMap[r][c] = null; // erase clears room too
-        } else if ([5, 7, 8, 9].includes(value) && currentRoomId) {
-          roomMap[r][c] = currentRoomId;
+
+        if (value >= 10 && value <= 14) {
+          // Props layer
+          const td = TILE_DEFS[value];
+          const floorProps = floors[currentFloorIdx].props;
+          const exIdx = floorProps.findIndex(p => p.r === r && p.c === c);
+          if (exIdx >= 0) floorProps.splice(exIdx, 1);
+          if (td.propType !== 'clear') {
+            floorProps.push({ r, c, type: td.propType });
+          }
+          changed = true;
+        } else {
+          // Ground tile layer
+          if (grid[r][c] !== value) { grid[r][c] = value; changed = true; }
+          // Room assignment
+          if (value === 0) {
+            roomMap[r][c] = null; // erase clears room too
+          } else if ([5, 7, 8, 9].includes(value) && currentRoomId) {
+            roomMap[r][c] = currentRoomId;
+          }
         }
       }
     }
@@ -431,6 +454,26 @@
       for (let c = 0; c < mapWidth; c++) {
         drawGroundTile(c * CELL, r * CELL, grid[r][c], roomMap[r][c]);
       }
+    }
+
+    // Pass 1.5: Props layer (rendered as Emojis for simplicity in editor)
+    if (props) {
+      props.forEach(p => {
+        const x = p.c * CELL;
+        const y = p.r * CELL;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(x + 2, y + 2, CELL - 4, CELL - 4);
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        let emj = '📦';
+        if (p.type === 'bed') emj = '🛌';
+        if (p.type === 'sofa') emj = '🛋';
+        if (p.type === 'plant') emj = '🪴';
+        if (p.type === 'table') emj = '🪑';
+        ctx.fillText(emj, x + CELL / 2, y + CELL / 2 + 7);
+        ctx.textAlign = 'left';
+      });
     }
 
     // Pass 2: Ambient occlusion
@@ -729,6 +772,7 @@
         rooms: f.rooms,
         grid: f.grid.map(row => [...row]),
         roomMap: f.roomMap.map(row => [...row]),
+        props: f.props ? [...f.props] : [],
         stairs: extractStairs(f, i)
       }))
     };

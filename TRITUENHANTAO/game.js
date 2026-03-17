@@ -1380,11 +1380,82 @@
   // ============================================
   // EVENT LISTENERS
   // ============================================
+  // ============================================
+  // CUSTOM MAP LOADING (from Map Editor)
+  // ============================================
+  function tryLoadCustomMap() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('map') !== 'custom') return false;
+
+    try {
+      const raw = localStorage.getItem('customMap');
+      if (!raw) return false;
+      const mapObj = JSON.parse(raw);
+      if (!mapObj || !mapObj.size || !Array.isArray(mapObj.data)) return false;
+
+      // Register in MAPS
+      MAPS.custom = {
+        size: mapObj.size,
+        data: mapObj.data
+      };
+      return true;
+    } catch (e) {
+      console.warn('Failed to load customMap from localStorage:', e);
+      return false;
+    }
+  }
+
+  function injectCustomMapButton() {
+    const mapGrid = document.querySelector('.map-grid');
+    if (!mapGrid) return;
+
+    // Remove any existing custom button
+    const existing = mapGrid.querySelector('[data-map="custom"]');
+    if (existing) existing.remove();
+
+    const btn = document.createElement('button');
+    btn.className = 'map-btn selected';
+    btn.dataset.map = 'custom';
+    btn.innerHTML = '🗺️ Bản Đồ Của Tôi <span>' + MAPS.custom.size + '\u00d7' + MAPS.custom.size + '</span>';
+    mapGrid.appendChild(btn);
+
+    // Deselect all others, select this
+    document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentMapKey = 'custom';
+
+    // Hook up click
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      currentMapKey = 'custom';
+    });
+
+    // Show a small banner
+    const banner = document.createElement('div');
+    banner.style.cssText = [
+      'margin-top:10px',
+      'padding:8px 14px',
+      'background:rgba(6,182,212,0.12)',
+      'border:1px solid rgba(6,182,212,0.3)',
+      'border-radius:8px',
+      'font-size:12px',
+      'color:#06b6d4',
+      'text-align:center'
+    ].join(';');
+    banner.textContent = '✅ Bản đồ tùy chỉnh đã được tải thành công!';
+    mapGrid.parentElement.appendChild(banner);
+    setTimeout(() => banner.remove(), 4000);
+  }
+
   function init() {
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
 
-    // Map selection
+    // Load custom map if URL has ?map=custom
+    const hasCustom = tryLoadCustomMap();
+
+    // Map selection buttons
     document.querySelectorAll('.map-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('selected'));
@@ -1392,6 +1463,11 @@
         currentMapKey = btn.dataset.map;
       });
     });
+
+    // If custom map loaded, inject its button and auto-select it
+    if (hasCustom) {
+      injectCustomMapButton();
+    }
 
     // Start button
     document.getElementById('start-btn').addEventListener('click', async () => {
@@ -1407,7 +1483,6 @@
 
     // Click-to-move on canvas
     canvas.addEventListener('click', handleCanvasClick);
-    // Show pointer cursor on canvas during game
     canvas.style.cursor = 'crosshair';
 
     // Quit button

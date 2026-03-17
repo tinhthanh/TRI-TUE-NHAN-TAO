@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Công cụ tạo bản đồ cho game A* Pathfinding - Người Chăn Cừu">
+  <title>Map Editor – Người Chăn Cừu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="map-editor.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="editor-header">
+    <div class="header-title">
+      <span class="icon">🗺️</span>
+      <div>
+        <h1>Map Editor</h1>
+        <div class="header-subtitle">Tạo bản đồ tùy chỉnh – Người Chăn Cừu</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn btn-back" id="back-btn" onclick="goBack()">← Quay lại Menu</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="editor-main">
+
+    <!-- Left Panel: Tools -->
+    <div class="panel-left">
+
+      <!-- Tool picker -->
+      <div class="panel-card">
+        <h3>🖊 Công cụ</h3>
+        <div class="tool-group">
+          <button class="tool-btn tool-wall active" id="btn-wall" onclick="setTool('wall')">
+            <span class="tool-icon"></span>
+            Tường (Wall)
+          </button>
+          <button class="tool-btn tool-erase" id="btn-erase" onclick="setTool('erase')">
+            <span class="tool-icon"></span>
+            Xóa (Erase)
+          </button>
+        </div>
+      </div>
+
+      <!-- Brush size -->
+      <div class="panel-card">
+        <h3>✏️ Kích cỡ bút</h3>
+        <div class="brush-options">
+          <button class="brush-btn active" id="brush-1" onclick="setBrush(1)">1×1</button>
+          <button class="brush-btn" id="brush-2" onclick="setBrush(2)">2×2</button>
+          <button class="brush-btn" id="brush-3" onclick="setBrush(3)">3×3</button>
+        </div>
+      </div>
+
+      <!-- Grid size -->
+      <div class="panel-card">
+        <h3>📐 Kích cỡ lưới</h3>
+        <div class="size-control">
+          <div class="size-label">
+            <span>Kích thước:</span>
+            <span id="grid-size-value">15×15</span>
+          </div>
+          <input type="range" id="grid-size-slider" min="10" max="25" value="15" step="1">
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-secondary); margin-top:2px;">
+            <span>10</span><span>25</span>
+          </div>
+        </div>
+        <button class="action-btn btn-fill" id="resize-btn" onclick="applyGridSize()" style="margin-top:10px; padding:9px 12px; font-size:13px;">
+          ✓ Áp dụng kích cỡ
+        </button>
+      </div>
+
+      <!-- Legend -->
+      <div class="panel-card">
+        <h3>🎨 Chú thích</h3>
+        <div class="legend-list">
+          <div class="legend-item"><span class="legend-swatch grass"></span>Ô trống (walkable)</div>
+          <div class="legend-item"><span class="legend-swatch wall"></span>Tường (wall)</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="panel-card">
+        <h3>📊 Thống kê</h3>
+        <div class="stats-grid">
+          <div class="stat-box stat-size">
+            <span class="stat-val" id="stat-size">15</span>
+            <span class="stat-lbl">Grid size</span>
+          </div>
+          <div class="stat-box stat-walk">
+            <span class="stat-val" id="stat-walk">225</span>
+            <span class="stat-lbl">Ô trống</span>
+          </div>
+          <div class="stat-box stat-wall">
+            <span class="stat-val" id="stat-wall">0</span>
+            <span class="stat-lbl">Tường</span>
+          </div>
+          <div class="stat-box stat-pct">
+            <span class="stat-val" id="stat-pct">0%</span>
+            <span class="stat-lbl">Mật độ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Center: Canvas -->
+    <div class="canvas-wrapper">
+      <div class="canvas-container">
+        <canvas id="editor-canvas"></canvas>
+      </div>
+      <div class="canvas-hint">
+        🖱️ Nhấn & kéo để vẽ · <kbd>Shift</kbd> + vẽ để xóa nhanh
+      </div>
+    </div>
+
+    <!-- Right Panel: Actions -->
+    <div class="panel-right">
+
+      <div class="panel-card">
+        <h3>⚡ Thao tác</h3>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+
+          <button class="action-btn btn-play" id="save-play-btn" onclick="saveAndPlay()">
+            🎮 Lưu & Chơi
+          </button>
+
+          <div class="btn-divider"></div>
+
+          <button class="action-btn btn-fill" onclick="fillBorder()">
+            ⬜ Viền Tường
+          </button>
+
+          <button class="action-btn btn-invert" onclick="invertMap()">
+            🔄 Đảo Ngược
+          </button>
+
+          <button class="action-btn btn-fill" onclick="generateRandom()" style="background:rgba(6,182,212,0.12); border-color:rgba(6,182,212,0.3); color:var(--accent-teal);">
+            🎲 Random Map
+          </button>
+
+          <div class="btn-divider"></div>
+
+          <button class="action-btn btn-clear" onclick="clearMap()">
+            🗑️ Xóa Tất Cả
+          </button>
+
+          <button class="action-btn btn-export" onclick="openExport()">
+            📋 Export JSON
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Validation -->
+      <div class="panel-card">
+        <h3>✅ Kiểm tra</h3>
+        <div id="validation-box" class="validation-box">
+          Chạm vào canvas để bắt đầu vẽ...
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div class="panel-card">
+        <h3>💡 Mẹo</h3>
+        <div style="font-size:12px; color:var(--text-secondary); line-height:1.7;">
+          <p>• Nhấn & kéo để vẽ liên tục</p>
+          <p>• <strong>Shift</strong> để xóa nhanh</p>
+          <p>• Cần ít nhất <strong>4 ô trống</strong></p>
+          <p>• "Viền Tường" thêm chu vi tường</p>
+          <p>• "Random Map" tạo mê cung ngẫu nhiên</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Export Modal -->
+  <div id="export-modal">
+    <div class="export-dialog">
+      <h2>📋 Export Map JSON</h2>
+      <p>Copy đoạn JSON bên dưới để sử dụng bản đồ trong code game.</p>
+      <textarea id="export-textarea" readonly></textarea>
+      <div class="export-actions">
+        <button class="action-btn btn-export" onclick="copyExport()" style="width:auto; padding:10px 20px;">
+          📎 Copy JSON
+        </button>
+        <button class="action-btn btn-back" onclick="closeExport()" style="width:auto; padding:10px 20px;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script src="map-editor.js"></script>
+</body>
+</html>

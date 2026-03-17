@@ -176,6 +176,36 @@ body {
     transform: translateY(0) scale(0.98);
 }
 
+.editor-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(6, 182, 212, 0.1);
+    border: 2px solid rgba(6, 182, 212, 0.4);
+    border-radius: 50px;
+    padding: 12px 36px;
+    color: #06b6d4;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    margin-bottom: 24px;
+}
+
+.editor-btn:hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: rgba(6, 182, 212, 0.7);
+    box-shadow: 0 0 24px rgba(6, 182, 212, 0.25);
+    transform: translateY(-2px);
+}
+
+.editor-btn:active {
+    transform: translateY(0) scale(0.97);
+}
+
 .controls-info {
     color: var(--text-secondary);
     font-size: 13px;

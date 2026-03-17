@@ -187,8 +187,10 @@
   const sounds = {};
 
   const IMAGE_LIST = [
-    { key: 'grass', src: 'grass1.png' },
-    { key: 'wall', src: 'wall2.png' },
+    { key: 'grass', src: 'grass_new.png' },       // AI-generated grass texture
+    { key: 'wall', src: 'wall_top.png' },          // AI-generated stone top face
+    { key: 'wallSide', src: 'wall_side.png' },     // AI-generated brick side face
+    { key: 'targetGem', src: 'target_gem.png' },   // AI-generated glowing gem
     { key: 'player', src: 'man2.png' },
     { key: 'enemy1', src: 'efect/conma1.png' },
     { key: 'enemy2', src: 'efect/conma2.png' },
@@ -897,7 +899,8 @@
   // ============================================
   // 2.5D MAP RENDERING
   // ============================================
-  const WALL_DEPTH = 10; // pixel height for wall side face
+  const WALL_DEPTH = 14; // pixel height for wall front face
+  const WALL_DEPTH_SIDE = 7; // pixel width for wall right-side shadow face
 
   function drawMap() {
     // Pass 1: Draw ground tiles
@@ -946,58 +949,75 @@
     }
     ctx.restore();
 
-    // Pass 3: Draw wall side faces (2.5D depth) — bottom row to top for proper overlap
+    // Pass 3: Draw wall 3-face pseudo-3D (front face + right shadow face)
+    // Render bottom-to-top so closer walls overlap farther ones correctly
     for (let row = mapSize - 1; row >= 0; row--) {
       for (let col = 0; col < mapSize; col++) {
         if (mapData[row][col] !== 1) continue;
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
 
-        // Check if the cell below is NOT a wall (i.e., the bottom face would be visible)
-        const showBottomFace = (row + 1 >= mapSize || mapData[row + 1][col] === 0);
+        const showFrontFace = (row + 1 >= mapSize || mapData[row + 1][col] === 0);
+        const showRightFace = (col + 1 >= mapSize || mapData[row][col + 1] === 0);
 
-        if (showBottomFace) {
-          // Draw the side face (darker shade) below the wall top
-          ctx.fillStyle = '#3a2210';
+        // --- FRONT FACE (bottom of block) ---
+        if (showFrontFace) {
+          if (images.wallSide) {
+            // Clip side texture into front face rectangle
+            ctx.drawImage(images.wallSide, x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
+          } else {
+            ctx.fillStyle = '#3a2210';
+            ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
+          }
+          // Darken bottom edge for ground-contact shadow
+          const frontGrad = ctx.createLinearGradient(x, y + CELL_SIZE, x, y + CELL_SIZE + WALL_DEPTH);
+          frontGrad.addColorStop(0, 'rgba(0,0,0,0.0)');
+          frontGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
+          ctx.fillStyle = frontGrad;
           ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
+        }
 
-          // Add gradient for 3D bevel  
-          const sideGrad = ctx.createLinearGradient(x, y + CELL_SIZE, x, y + CELL_SIZE + WALL_DEPTH);
-          sideGrad.addColorStop(0, 'rgba(80, 50, 20, 0.9)');
-          sideGrad.addColorStop(1, 'rgba(20, 10, 5, 0.95)');
-          ctx.fillStyle = sideGrad;
-          ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, WALL_DEPTH);
-
-          // Side edge highlight
-          ctx.fillStyle = 'rgba(255, 200, 100, 0.08)';
-          ctx.fillRect(x, y + CELL_SIZE, 1, WALL_DEPTH);
+        // --- RIGHT FACE (right side of block, darkest) ---
+        if (showRightFace) {
+          if (images.wallSide) {
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.drawImage(images.wallSide, x + CELL_SIZE, y, WALL_DEPTH_SIDE, CELL_SIZE);
+            ctx.restore();
+          } else {
+            ctx.fillStyle = '#251608';
+            ctx.fillRect(x + CELL_SIZE, y, WALL_DEPTH_SIDE, CELL_SIZE);
+          }
+          // Extra darkening for the right-face (shadow side)
+          const rightGrad = ctx.createLinearGradient(x + CELL_SIZE, y, x + CELL_SIZE + WALL_DEPTH_SIDE, y);
+          rightGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+          rightGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
+          ctx.fillStyle = rightGrad;
+          ctx.fillRect(x + CELL_SIZE, y, WALL_DEPTH_SIDE, CELL_SIZE);
         }
       }
     }
 
-    // Pass 4: Draw wall top faces  
+    // Pass 4: Draw wall top faces (brightest — light source from above)
     for (let row = 0; row < mapSize; row++) {
       for (let col = 0; col < mapSize; col++) {
         if (mapData[row][col] !== 1) continue;
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
 
-        // Wall top face (the main wall tile)
         if (images.wall) {
           ctx.drawImage(images.wall, x, y, CELL_SIZE, CELL_SIZE);
         } else {
-          ctx.fillStyle = '#5c3a21';
+          ctx.fillStyle = '#7a6a5a';
           ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
 
-        // Top highlight for 3D bevel feel
-        ctx.fillStyle = 'rgba(255, 230, 160, 0.06)';
+        // Subtle top-left highlight (light from top-left)
+        ctx.fillStyle = 'rgba(255, 245, 220, 0.12)';
         ctx.fillRect(x, y, CELL_SIZE, 2);
-        ctx.fillStyle = 'rgba(255, 230, 160, 0.04)';
         ctx.fillRect(x, y, 2, CELL_SIZE);
-
-        // Inner shadow for depth
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+        // Subtle bottom-right inner shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
         ctx.fillRect(x + CELL_SIZE - 2, y, 2, CELL_SIZE);
         ctx.fillRect(x, y + CELL_SIZE - 2, CELL_SIZE, 2);
       }
@@ -1026,46 +1046,56 @@
   function drawTarget(now) {
     const x = targetX * CELL_SIZE;
     const y = targetY * CELL_SIZE;
+    const cx = x + CELL_SIZE / 2;
+    const cy = y + CELL_SIZE / 2;
+    const pulse = 0.5 + 0.5 * Math.abs(Math.sin(now / 500));
 
-    // Pulsing glow
-    const pulse = 0.4 + 0.6 * Math.abs(Math.sin(now / 400));
+    // Outer glow ring (large, very transparent)
     ctx.save();
-    ctx.globalAlpha = pulse * 0.4;
-    ctx.fillStyle = '#fbbf24';
+    const glowR = CELL_SIZE * (0.9 + pulse * 0.3);
+    const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    glowGrad.addColorStop(0, `rgba(255, 200, 50, ${0.35 * pulse})`);
+    glowGrad.addColorStop(0.5, `rgba(255, 150, 20, ${0.15 * pulse})`);
+    glowGrad.addColorStop(1, 'rgba(255,100,0,0)');
+    ctx.fillStyle = glowGrad;
     ctx.beginPath();
-    ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.8, 0, Math.PI * 2);
+    ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // Bean icon (golden circle with sparkle)
-    ctx.save();
-    const gradient = ctx.createRadialGradient(
-      x + CELL_SIZE / 2, y + CELL_SIZE / 2, 2,
-      x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.35
-    );
-    gradient.addColorStop(0, '#fef3c7');
-    gradient.addColorStop(0.5, '#f59e0b');
-    gradient.addColorStop(1, '#d97706');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Sparkle
-    ctx.fillStyle = '#fff';
-    ctx.globalAlpha = pulse;
-    ctx.beginPath();
-    ctx.arc(x + CELL_SIZE / 2 - 3, y + CELL_SIZE / 2 - 3, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Text label
-    ctx.save();
-    ctx.font = 'bold 10px Inter';
-    ctx.fillStyle = '#fef3c7';
-    ctx.textAlign = 'center';
-    ctx.fillText('🫘', x + CELL_SIZE / 2, y - 2);
-    ctx.restore();
+    if (images.targetGem) {
+      // Draw gem image, bob up and down slightly
+      const bob = Math.sin(now / 400) * 2;
+      const gemSize = CELL_SIZE * 0.85;
+      const gx = cx - gemSize / 2;
+      const gy = cy - gemSize / 2 + bob;
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(images.targetGem, gx, gy, gemSize, gemSize);
+      // Additive glow layer using screen-like blend
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.2 * pulse;
+      ctx.drawImage(images.targetGem, gx - 4, gy - 4, gemSize + 8, gemSize + 8);
+      ctx.restore();
+    } else {
+      // Fallback: golden circle
+      ctx.save();
+      const gradient = ctx.createRadialGradient(cx, cy, 2, cx, cy, CELL_SIZE * 0.35);
+      gradient.addColorStop(0, '#fef3c7');
+      gradient.addColorStop(0.5, '#f59e0b');
+      gradient.addColorStop(1, '#d97706');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy, CELL_SIZE * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      // Sparkle
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = pulse;
+      ctx.beginPath();
+      ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   function drawPathVisualization() {

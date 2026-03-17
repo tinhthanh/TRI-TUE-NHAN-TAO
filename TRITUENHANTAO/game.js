@@ -1184,7 +1184,7 @@
     if (activeDoors && activeDoors.length > 0) {
       activeDoors.forEach(d => {
         let isNear = false;
-        if (Math.abs(d.r - playerRow) <= 1 && Math.abs(d.c - playerCol) <= 1) isNear = true;
+        if (Math.abs(d.r - player.y) <= 1 && Math.abs(d.c - player.x) <= 1) isNear = true;
         for (const a of agents) {
           if (a.active && Math.abs(d.r - a.row) <= 1 && Math.abs(d.c - a.col) <= 1) {
             isNear = true; break;

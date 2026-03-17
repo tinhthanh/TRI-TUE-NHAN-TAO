@@ -716,7 +716,7 @@
 
     draw(ctx, now) {
       if (this.done) return;
-      const t = (now - this.startTime) / this.duration; // 0..1
+      const t = Math.max(0, (now - this.startTime) / this.duration); // clamp to 0..1
       const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
 
       ctx.save();
@@ -895,7 +895,42 @@
   }
 
   function spawnTarget() {
-    const pos = getRandomWalkable();
+    // ── Guarantee target is reachable from player by doing a BFS ──
+    const reachable = [];
+    const queue = [{ x: player.x, y: player.y }];
+    const visited = new Set([player.x + ',' + player.y]);
+
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      reachable.push(curr);
+      
+      const neighbors = [
+        { x: curr.x + 1, y: curr.y },
+        { x: curr.x - 1, y: curr.y },
+        { x: curr.x, y: curr.y + 1 },
+        { x: curr.x, y: curr.y - 1 }
+      ];
+      
+      for (const n of neighbors) {
+        const key = n.x + ',' + n.y;
+        if (!visited.has(key) && !isWall(n.y, n.x)) {
+          visited.add(key);
+          queue.push(n);
+        }
+      }
+    }
+
+    // Pick a random reachable cell (fallback to any walkable if BFS fails weirdly)
+    let pos;
+    if (reachable.length > 1) {
+      // Pick randomly, preferably not the exact cell the player is standing on right now
+      do {
+        pos = reachable[Math.floor(Math.random() * reachable.length)];
+      } while (pos.x === player.x && pos.y === player.y && reachable.length > 1);
+    } else {
+      pos = getRandomWalkable();
+    }
+
     targetX = pos.x;
     targetY = pos.y;
     hasTarget = true;

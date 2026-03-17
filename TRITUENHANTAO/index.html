@@ -27,6 +27,7 @@
                     <button class="map-btn" data-map="map3">Map 4 <span>15×15</span></button>
                     <button class="map-btn" data-map="map4">Map 5 <span>15×15</span></button>
                     <button class="map-btn" data-map="map5">Map 6 <span>15×15</span></button>
+                    <button class="map-btn house-map-btn" data-map="house">🏠 Nhà 3 Tầng <span>3 tầng</span></button>
                 </div>
             </div>
             <button id="start-btn" class="glow-btn">
@@ -56,6 +57,8 @@
                 <div class="sidebar-section logo-section">
                     <img src="Angle.png" alt="Logo" class="logo-img" id="logo-img">
                 </div>
+                <!-- Floor indicator for indoor maps -->
+                <div id="floor-badge" style="display:none;padding:6px 12px;margin:4px 8px;background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.35);border-radius:8px;font-size:13px;color:#06b6d4;font-weight:600;text-align:center;"></div>
                 <div class="sidebar-section score-section" id="score-panel">
                     <div class="score-board-bg">
                         <div class="character-previews">

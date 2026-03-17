@@ -1,0 +1,142 @@
+{
+  "name": "Nhà 3 Tầng",
+  "width": 22,
+  "height": 13,
+  "totalFloors": 3,
+  "floors": [
+    {
+      "id": 1,
+      "name": "Tầng 1",
+      "rooms": [
+        { "id": "yard",    "name": "Sân Trước",    "color": "rgba(34,197,94,0.20)"   },
+        { "id": "living",  "name": "Phòng Khách",  "color": "rgba(59,130,246,0.20)"  },
+        { "id": "kitchen", "name": "Bếp + Ăn",    "color": "rgba(249,115,22,0.20)"  },
+        { "id": "wc1",     "name": "WC",           "color": "rgba(20,184,166,0.20)"  }
+      ],
+      "grid": [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,7,7,7,1,0,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,7,7,7,1,0,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,7,7,7,4,0,0,0,0,0,0,0,0,0,0,4,6,6,6,6,6,1],
+        [1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,8,8,8,8,8,4,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,8,8,8,8,8,8,0,0,0,0,0,0,0,0,4,6,6,6,6,6,1],
+        [1,8,8,8,8,8,8,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,1,1,1,1,4,1,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,0,0,0,0,2,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,6,6,6,6,6,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      "roomMap": [
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+        [null,"wc1","wc1","wc1",null,"living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"wc1","wc1","wc1",null,"living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"wc1","wc1","wc1",null,"living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,null,null,null,null,"living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"kitchen","kitchen","kitchen","kitchen","kitchen",null,"living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"kitchen","kitchen","kitchen","kitchen","kitchen","kitchen","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"kitchen","kitchen","kitchen","kitchen","kitchen","kitchen","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,null,null,null,null,null,null,"living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"living","living","living","living",null,"living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"living","living","living","living","living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,"living","living","living","living","living","living","living","living","living","living","living","living","living","living",null,"yard","yard","yard","yard","yard",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
+      ],
+      "stairs": [
+        { "fromCell": [5, 9], "toFloor": 2, "toCell": [5, 9], "direction": "up" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Tầng 2",
+      "rooms": [
+        { "id": "bed1",    "name": "Phòng Ngủ 1",  "color": "rgba(168,85,247,0.20)"  },
+        { "id": "bed2",    "name": "Phòng Ngủ 2",  "color": "rgba(236,72,153,0.20)"  },
+        { "id": "work",    "name": "Phòng Làm Việc","color": "rgba(59,130,246,0.20)"  },
+        { "id": "dress",   "name": "Phòng Thay Đồ","color": "rgba(245,158,11,0.20)"  },
+        { "id": "wc2",     "name": "WC",           "color": "rgba(20,184,166,0.20)"  },
+        { "id": "balc2",   "name": "Ban Công",     "color": "rgba(34,197,94,0.20)"   }
+      ],
+      "grid": [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,4,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,1,1,4,1,1,1,1,1,1,1,4,1,1,1,5,5,5,5,5,1],
+        [1,7,7,7,1,0,0,0,0,1,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,7,7,4,1,0,0,0,0,1,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,7,7,7,1,0,0,0,0,1,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,5,5,5,5,5,1],
+        [1,0,0,0,0,3,0,0,0,0,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      "roomMap": [
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+        [null,"bed2","bed2","bed2","bed2","bed2","bed2","bed2","bed2",null,"bed1","bed1","bed1","bed1","bed1",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"bed2","bed2","bed2","bed2","bed2","bed2","bed2","bed2",null,"bed1","bed1","bed1","bed1","bed1",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"bed2","bed2","bed2","bed2","bed2","bed2","bed2","bed2",null,"bed1","bed1","bed1","bed1","bed1",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"wc2","wc2","wc2",null,"work","work","work","work",null,"dress","dress","dress","dress","dress",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"wc2","wc2","wc2",null,"work","work","work","work",null,"dress","dress","dress","dress","dress",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"wc2","wc2","wc2",null,"work","work","work","work",null,"dress","dress","dress","dress","dress",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"bed2","bed2","bed2","bed2",null,"work","work","work","work","work","work","work","work","work",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"bed2","bed2","bed2","bed2","bed2","work","work","work","work","work","work","work","work","work",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,"bed2","bed2","bed2","bed2","bed2","work","work","work","work","work","work","work","work","work",null,"balc2","balc2","balc2","balc2","balc2",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
+      ],
+      "stairs": [
+        { "fromCell": [5, 9], "toFloor": 1, "toCell": [5, 9], "direction": "down" },
+        { "fromCell": [5, 9], "toFloor": 3, "toCell": [5, 9], "direction": "up",
+          "_note": "same stair cell serves up/down — code checks floor delta" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Tầng 3",
+      "rooms": [
+        { "id": "bed3",   "name": "Phòng Ngủ 3",      "color": "rgba(168,85,247,0.20)"  },
+        { "id": "altar",  "name": "Phòng Thờ",         "color": "rgba(234,179,8,0.20)"   },
+        { "id": "laundry","name": "Giặt Sấy / Sân Phơi","color": "rgba(34,197,94,0.20)"  },
+        { "id": "wc3",    "name": "WC",                "color": "rgba(20,184,166,0.20)"  },
+        { "id": "balc3",  "name": "Ban Công",          "color": "rgba(100,116,139,0.20)" }
+      ],
+      "grid": [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,8,8,8,8,8,8,1,0,0,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,8,8,8,8,8,8,1,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,8,8,8,8,8,8,4,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,4,1,1,1,1,1,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,7,7,7,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,7,7,4,1,0,0,0,0,0,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,7,7,7,1,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,1,1,4,1,1,1,1,1,1,1,1,4,1,1,5,5,5,5,5,1],
+        [1,0,0,0,0,3,0,0,0,0,0,0,0,0,0,4,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,5,5,5,5,5,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      "roomMap": [
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+        [null,"laundry","laundry","laundry","laundry","laundry","laundry",null,"altar","altar","altar","altar","altar","altar","altar",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"laundry","laundry","laundry","laundry","laundry","laundry",null,"altar","altar","altar","altar","altar","altar","altar",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"laundry","laundry","laundry","laundry","laundry","laundry",null,"altar","altar","altar","altar","altar","altar","altar",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,null,null,null,null,null,null,null,"altar","altar","altar","altar","altar","altar","altar",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"wc3","wc3","wc3",null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"wc3","wc3","wc3",null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"wc3","wc3","wc3",null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"bed3","bed3","bed3","bed3",null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,"bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3","bed3",null,"balc3","balc3","balc3","balc3","balc3",null],
+        [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
+      ],
+      "stairs": [
+        { "fromCell": [5, 9], "toFloor": 2, "toCell": [5, 9], "direction": "down" }
+      ]
+    }
+  ]
+}

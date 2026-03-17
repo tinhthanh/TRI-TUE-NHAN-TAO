@@ -144,8 +144,22 @@
   const AGENT_COUNT = 12;
   const AI_TICK_MS = 350;
   const PLAYER_TWEEN_MS = 130;
-  const TARGET_RESPAWN_TICKS = 12; // number of AI ticks before target respawns
+  const TARGET_RESPAWN_TICKS = 12;
   const SPRITE_ANIM_MS = 250;
+
+  // Indoor tile types
+  const TILE = {
+    FLOOR:       0,
+    WALL:        1,
+    STAIRS_UP:   2,
+    STAIRS_DOWN: 3,
+    DOOR:        4,
+    BALCONY:     5,
+    OUTDOOR:     6,
+    WC:          7,
+    KITCHEN:     8,
+    BEDROOM:     9
+  };
 
   // ============================================
   // GLOBAL STATE
@@ -154,7 +168,19 @@
   let gameRunning = false;
   let currentMapKey = 'map7';
   let mapData = [];
-  let mapSize = 19;
+  let mapSize = 19;    // kept for compatibility (square maps)
+  let mapWidth = 19;   // columns
+  let mapHeight = 19;  // rows
+
+  // ── Multi-floor indoor state ──────────────────
+  let houseData = null;          // parsed house_map.json
+  let currentFloor = 0;         // 0-based floor index
+  let floorFadeAlpha = 0;       // 0=transparent, 1=black (for transitions)
+  let floorFading = false;
+  let floorFadeDir = 0;         // 1=fade-in, -1=fade-out
+  let floorFadeCallback = null;
+  const FLOOR_FADE_SPEED = 4;   // alpha units per 16ms frame
+  let stairsPulse = 0;
 
   // Scores
   let scoreTa = 0;
@@ -196,10 +222,14 @@
   const sounds = {};
 
   const IMAGE_LIST = [
-    { key: 'grass', src: 'grass_new.png' },       // AI-generated grass texture
-    { key: 'wall', src: 'wall_top.png' },          // AI-generated stone top face
-    { key: 'wallSide', src: 'wall_side.png' },     // AI-generated brick side face
-    { key: 'targetGem', src: 'target_gem.png' },   // AI-generated glowing gem
+    { key: 'grass',     src: 'grass_new.png'  },
+    { key: 'wall',      src: 'wall_top.png'   },
+    { key: 'wallSide',  src: 'wall_side.png'  },
+    { key: 'targetGem', src: 'target_gem.png' },
+    { key: 'floorTile', src: 'floor_tile.png' },   // indoor floor
+    { key: 'stairsUp',  src: 'stairs_up.png'  },   // stairs sprite
+    { key: 'door',      src: 'door.png'        },   // door sprite
+    { key: 'balcony',   src: 'balcony.png'     },   // balcony tile
     { key: 'player', src: 'man2.png' },
     { key: 'enemy1', src: 'efect/conma1.png' },
     { key: 'enemy2', src: 'efect/conma2.png' },
@@ -316,7 +346,7 @@
   // ============================================
   // A* PATHFINDING
   // ============================================
-  function astarFind(startX, startY, goalX, goalY, grid, gridSize) {
+  function astarFind(startX, startY, goalX, goalY, grid, gridW, gridH) {
     if (startX === goalX && startY === goalY) return [];
 
     const open = [];
@@ -370,8 +400,8 @@
         const nx = current.x + dx;
         const ny = current.y + dy;
 
-        if (nx < 0 || nx >= gridSize || ny < 0 || ny >= gridSize) continue;
-        if (grid[ny][nx] === 1) continue; // wall check: grid[row][col] = grid[y][x]
+        if (nx < 0 || nx >= gridW || ny < 0 || ny >= gridH) continue;
+        if (grid[ny][nx] === TILE.WALL) continue; // wall check
 
         const nk = key(nx, ny);
         if (closed.has(nk)) continue;
@@ -427,7 +457,7 @@
 
     recalcPath() {
       if (!hasTarget) return;
-      this.path = astarFind(this.x, this.y, targetX, targetY, mapData, mapSize);
+      this.path = astarFind(this.x, this.y, targetX, targetY, mapData, mapWidth, mapHeight);
     }
 
     moveTowardsTarget(now) {
@@ -457,9 +487,9 @@
       const prevX = this.x;
       const prevY = this.y;
 
-      if (this.randomDir === 1 && this.x < mapSize - 1 && !isWall(this.y, this.x + 1)) {
+      if (this.randomDir === 1 && this.x < mapWidth - 1 && !isWall(this.y, this.x + 1)) {
         this.x++;
-      } else if (this.randomDir === 2 && this.y < mapSize - 1 && !isWall(this.y + 1, this.x)) {
+      } else if (this.randomDir === 2 && this.y < mapHeight - 1 && !isWall(this.y + 1, this.x)) {
         this.y++;
       } else if (this.randomDir === 3 && this.x > 0 && !isWall(this.y, this.x - 1)) {
         this.x--;
@@ -487,8 +517,16 @@
   // HELPER FUNCTIONS
   // ============================================
   function isWall(row, col) {
-    if (row < 0 || row >= mapSize || col < 0 || col >= mapSize) return true;
-    return mapData[row][col] === 1;
+    if (row < 0 || row >= mapHeight || col < 0 || col >= mapWidth) return true;
+    if (!mapData[row]) return true; // safety: should never happen, but prevents crash
+    const t = mapData[row][col];
+    return t === TILE.WALL;
+  }
+
+  function getTileType(row, col) {
+    if (row < 0 || row >= mapHeight || col < 0 || col >= mapWidth) return TILE.WALL;
+    if (!mapData[row]) return TILE.WALL;
+    return mapData[row][col];
   }
 
   function findValidDirection(x, y) {
@@ -504,12 +542,158 @@
   function getRandomWalkable() {
     let attempts = 0;
     while (attempts < 1000) {
-      const x = Math.floor(Math.random() * mapSize);
-      const y = Math.floor(Math.random() * mapSize);
-      if (mapData[y][x] === 0) return { x, y };
+      const x = Math.floor(Math.random() * mapWidth);
+      const y = Math.floor(Math.random() * mapHeight);
+      if (!isWall(y, x)) return { x, y };
       attempts++;
     }
     return { x: 1, y: 1 };
+  }
+
+  // ── Multi-floor helpers ──────────────────────
+  async function loadHouseMap() {
+    try {
+      const response = await fetch('house_map.json');
+      houseData = await response.json();
+    } catch (e) {
+      console.warn('house_map.json not found, skipping:', e);
+      houseData = null;
+    }
+  }
+
+  function applyFloor(floorIdx) {
+    if (!houseData) return;
+    const f = houseData.floors[floorIdx];
+    currentFloor = floorIdx;
+    mapData = f.grid;
+    mapWidth  = houseData.width;
+    mapHeight = houseData.height;
+    mapSize   = mapWidth; // for any legacy references
+    updateFloorUI();
+  }
+
+  // ── In-game toast notification ───────────────
+  let gameToastTimer;
+  function showGameToast(msg) {
+    let el = document.getElementById('game-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'game-toast';
+      el.style.cssText = `
+        position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px);
+        background:rgba(6,182,212,0.18); backdrop-filter:blur(12px);
+        border:1px solid rgba(6,182,212,0.45); border-radius:50px;
+        padding:10px 24px; font-size:14px; font-weight:700; color:#06b6d4;
+        font-family:'Inter',sans-serif; z-index:999; pointer-events:none;
+        transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.35s ease;
+        opacity:0; white-space:nowrap;
+      `;
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    el.style.opacity = '1';
+    clearTimeout(gameToastTimer);
+    gameToastTimer = setTimeout(() => {
+      el.style.transform = 'translateX(-50%) translateY(60px)';
+      el.style.opacity = '0';
+    }, 2200);
+  }
+
+  function switchFloor(targetFloorIdx, toCell) {
+    if (floorFading) return;
+    floorFading = true;
+    floorFadeDir = 1;
+    floorFadeAlpha = 0;
+    const targetName = houseData.floors[targetFloorIdx].name;
+    floorFadeCallback = () => {
+      applyFloor(targetFloorIdx);
+      player.x = toCell[0]; player.y = toCell[1];
+      player.renderX = toCell[0]; player.renderY = toCell[1];
+      player.tweenStartX = toCell[0]; player.tweenStartY = toCell[1];
+      player.tweenEndX = toCell[0]; player.tweenEndY = toCell[1];
+      player.tweenStartTime = -Infinity;
+      playerPath = [];
+      // Reset agents to valid walkable cells on the new floor
+      const usedPos = new Set([toCell[0] + ',' + toCell[1]]);
+      agents.forEach(a => {
+        let pos;
+        let tries = 0;
+        do {
+          pos = getRandomWalkable();
+          tries++;
+        } while (usedPos.has(pos.x + ',' + pos.y) && tries < 50);
+        usedPos.add(pos.x + ',' + pos.y);
+        a.x = pos.x; a.y = pos.y;
+        a.renderX = pos.x; a.renderY = pos.y;
+        a.tweenStartX = pos.x; a.tweenStartY = pos.y;
+        a.tweenEndX = pos.x; a.tweenEndY = pos.y;
+        a.tweenStartTime = -Infinity;
+        a.path = [];
+      });
+      // Spawn a fresh bean on the new floor, and trigger agent recalcPath
+      spawnTarget();
+      aiAccumulator = AI_TICK_MS; // kick off AI tick immediately on new floor
+      floorFadeDir = -1;
+      showGameToast((targetFloorIdx > currentFloor ? '⬆️' : '⬇️') + ' ' + targetName);
+    };
+  }
+
+  function checkStairsTrigger() {
+    if (!houseData || floorFading) return;
+    const f = houseData.floors[currentFloor];
+    for (const stair of f.stairs) {
+      const [sc, sr] = stair.fromCell;
+      if (player.x === sc && player.y === sr) {
+        switchFloor(stair.toFloor - 1, stair.toCell);
+        return;
+      }
+    }
+  }
+
+  function updateFloorUI() {
+    const badge = document.getElementById('floor-badge');
+    if (!badge || !houseData) return;
+    const f = houseData.floors[currentFloor];
+
+    // Build floor indicator dots
+    const dots = houseData.floors.map((fl, i) => {
+      const active = i === currentFloor;
+      return `<span class="floor-dot${active ? ' active' : ''}" title="${fl.name}"></span>`;
+    }).join('');
+
+    badge.innerHTML = `
+      <div class="floor-badge-inner">
+        <span class="floor-icon">🏠</span>
+        <span class="floor-name" id="floor-name-label">${f.name}</span>
+        <span class="room-name" id="room-name-label"></span>
+        <div class="floor-dots">${dots}</div>
+      </div>`;
+    badge.style.display = 'block';
+
+    // Update floor tab highlights (in case tabs exist)
+    document.querySelectorAll('.floor-tab-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i === currentFloor);
+    });
+  }
+
+  function updateRoomHUD() {
+    if (!houseData) return;
+    const f = houseData.floors[currentFloor];
+    const roomId = f.roomMap && f.roomMap[player.y] ? f.roomMap[player.y][player.x] : null;
+    const roomLabel = document.getElementById('room-name-label');
+    const floorDots = document.querySelectorAll('.floor-dot');
+    // Update dots
+    floorDots.forEach((d, i) => d.classList.toggle('active', i === currentFloor));
+    if (!roomLabel) return;
+    if (roomId) {
+      const room = f.rooms && f.rooms.find(r => r.id === roomId);
+      roomLabel.textContent = room ? '· ' + room.name : '';
+    } else {
+      const tileType = mapData[player.y] && mapData[player.y][player.x];
+      const names = { 2:'↑ Cầu Thang', 3:'↓ Cầu Thang', 4:'Cửa', 5:'Ban Công', 6:'Sân Ngoài', 7:'WC', 8:'Bếp', 9:'Phòng Ngủ' };
+      roomLabel.textContent = names[tileType] ? '· ' + names[tileType] : '';
+    }
   }
 
   // ============================================
@@ -635,9 +819,20 @@
   // GAME INITIALIZATION
   // ============================================
   function initGame() {
-    const mapInfo = MAPS[currentMapKey];
-    mapData = mapInfo.data;
-    mapSize = mapInfo.size;
+    if (currentMapKey === 'house') {
+      if (!houseData) { console.error('houseData not loaded'); return; }
+      currentFloor = 0;
+      applyFloor(0);
+    } else {
+      houseData = null;
+      const mapInfo = MAPS[currentMapKey];
+      mapData   = mapInfo.data;
+      mapSize   = mapInfo.size;
+      mapWidth  = mapInfo.size;
+      mapHeight = mapInfo.size;
+      const badge = document.getElementById('floor-badge');
+      if (badge) badge.style.display = 'none';
+    }
 
     scoreTa = 0;
     scoreDich = 0;
@@ -649,10 +844,11 @@
     clickEffects = [];
     playerPath = [];
     playerMoveAccumulator = 0;
+    floorFading = false; floorFadeAlpha = 0;
 
     // Canvas sizing
-    canvas.width = mapSize * CELL_SIZE;
-    canvas.height = mapSize * CELL_SIZE;
+    canvas.width  = mapWidth  * CELL_SIZE;
+    canvas.height = mapHeight * CELL_SIZE;
 
     // Init player at position (1,1)
     player = {
@@ -734,6 +930,8 @@
     player.tweenEndY = newY;
     player.tweenStartTime = performance.now();
     checkPlayerCollect();
+    // Room HUD update
+    if (houseData) { updateRoomHUD(); checkStairsTrigger(); }
   }
 
   function handleKeyDown(e) {
@@ -746,11 +944,11 @@
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
       if (player.x > 0 && !isWall(player.y, player.x - 1)) newX--;
     } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-      if (player.x < mapSize - 1 && !isWall(player.y, player.x + 1)) newX++;
+      if (player.x < mapWidth - 1 && !isWall(player.y, player.x + 1)) newX++;
     } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
       if (player.y > 0 && !isWall(player.y - 1, player.x)) newY--;
     } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-      if (player.y < mapSize - 1 && !isWall(player.y + 1, player.x)) newY++;
+      if (player.y < mapHeight - 1 && !isWall(player.y + 1, player.x)) newY++;
     } else {
       return;
     }
@@ -779,7 +977,7 @@
     const cellY = Math.floor(canvasY / CELL_SIZE);
 
     // Only move to walkable cells within bounds
-    if (cellX < 0 || cellX >= mapSize || cellY < 0 || cellY >= mapSize) return;
+    if (cellX < 0 || cellX >= mapWidth || cellY < 0 || cellY >= mapHeight) return;
     if (isWall(cellY, cellX)) return;
 
     // Spawn click effect at cell center
@@ -790,7 +988,7 @@
     if (clickEffects.length > 8) clickEffects.shift();
 
     // Compute A* path from current player grid pos to clicked cell
-    const path = astarFind(player.x, player.y, cellX, cellY, mapData, mapSize);
+    const path = astarFind(player.x, player.y, cellX, cellY, mapData, mapWidth, mapHeight);
     if (path.length > 0) {
       playerPath = path;
       playerMoveAccumulator = 0;
@@ -910,6 +1108,19 @@
 
     const dt = now - lastFrameTime;
     lastFrameTime = now;
+    stairsPulse = now;
+
+    // Floor fade transition
+    if (floorFading) {
+      floorFadeAlpha += floorFadeDir * FLOOR_FADE_SPEED * (dt / 1000);
+      if (floorFadeDir === 1 && floorFadeAlpha >= 1) {
+        floorFadeAlpha = 1;
+        if (floorFadeCallback) { floorFadeCallback(); floorFadeCallback = null; }
+      } else if (floorFadeDir === -1 && floorFadeAlpha <= 0) {
+        floorFadeAlpha = 0;
+        floorFading = false;
+      }
+    }
 
     // AI tick accumulator
     aiAccumulator += dt;
@@ -957,7 +1168,7 @@
       ctx.strokeStyle = 'rgba(80, 200, 255, 0.35)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(player.renderX * CELL_SIZE + CELL_SIZE / 2, player.renderY * CELL_SIZE + CELL_SIZE / 2);
+        ctx.moveTo(player.renderX * CELL_SIZE + CELL_SIZE / 2, player.renderY * CELL_SIZE + CELL_SIZE / 2);
       playerPath.forEach(p => {
         ctx.lineTo(p.x * CELL_SIZE + CELL_SIZE / 2, p.y * CELL_SIZE + CELL_SIZE / 2);
       });
@@ -1015,6 +1226,23 @@
 
     // Draw sidebar character avatars
     drawSidebarAvatars(now);
+
+    // Floor fade overlay
+    if (floorFadeAlpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = floorFadeAlpha;
+      ctx.fillStyle = '#0a0e1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (floorFadeAlpha > 0.5 && houseData) {
+        ctx.globalAlpha = (floorFadeAlpha - 0.5) * 2;
+        ctx.fillStyle = '#06b6d4';
+        ctx.font = 'bold 22px Inter, sans-serif';
+        ctx.textAlign = 'center';
+      ctx.fillText('🏠 ' + houseData.floors[currentFloor].name, canvas.width / 2, canvas.height / 2);
+        ctx.textAlign = 'left';
+      }
+      ctx.restore();
+    }
   }
 
   // ============================================
@@ -1072,41 +1300,91 @@
   const WALL_DEPTH = 14; // pixel height for wall front face
   const WALL_DEPTH_SIDE = 7; // pixel width for wall right-side shadow face
 
+  function drawIndoorGroundTile(x, y, tileType, roomId, floorRooms) {
+    // Select ground texture based on tile type
+    switch (tileType) {
+      case TILE.WALL:  return; // walls drawn in later passes
+      case TILE.OUTDOOR:
+        if (images.grass) ctx.drawImage(images.grass, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#2d5a1e'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        return;
+      case TILE.BALCONY:
+        if (images.balcony) ctx.drawImage(images.balcony, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#b0bec5'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        return;
+      case TILE.DOOR:
+        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#d4a96a'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        if (images.door) {
+          ctx.drawImage(images.door, x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+        }
+        return;
+      case TILE.STAIRS_UP:
+      case TILE.STAIRS_DOWN: {
+        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#c8b89a'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        // Stair sprite
+        if (images.stairsUp) ctx.drawImage(images.stairsUp, x, y, CELL_SIZE, CELL_SIZE);
+        // Pulsing glow
+        const p = 0.4 + 0.4 * Math.abs(Math.sin(stairsPulse / 600));
+        ctx.fillStyle = tileType === TILE.STAIRS_UP
+          ? `rgba(6,182,212,${p * 0.45})`
+          : `rgba(168,85,247,${p * 0.45})`;
+        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+        return;
+      }
+      default: {
+        // Generic indoor floor (with room color overlay)
+        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL_SIZE, CELL_SIZE);
+        else { ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        // Room color overlay
+        if (roomId && floorRooms) {
+          const room = floorRooms.find(r => r.id === roomId);
+          if (room) { ctx.fillStyle = room.color; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        }
+      }
+    }
+  }
+
   function drawMap() {
-    // Pass 1: Draw ground tiles
-    for (let row = 0; row < mapSize; row++) {
-      for (let col = 0; col < mapSize; col++) {
+    const isIndoor = !!houseData;
+    const floorObj = isIndoor ? houseData.floors[currentFloor] : null;
+    const roomMap  = isIndoor ? floorObj.roomMap  : null;
+    const floorRooms = isIndoor ? floorObj.rooms  : null;
+
+    // ── Pass 1: Draw ground tiles ────────────────
+    for (let row = 0; row < mapHeight; row++) {
+      for (let col = 0; col < mapWidth; col++) {
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
+        const tileType = mapData[row][col];
+        const roomId = roomMap ? roomMap[row][col] : null;
 
-        // Draw grass background
-        if (images.grass) {
-          ctx.drawImage(images.grass, x, y, CELL_SIZE, CELL_SIZE);
+        if (isIndoor) {
+          drawIndoorGroundTile(x, y, tileType, roomId, floorRooms);
         } else {
-          ctx.fillStyle = '#2d5a1e';
-          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+          // Outdoor map — original grass
+          if (images.grass) ctx.drawImage(images.grass, x, y, CELL_SIZE, CELL_SIZE);
+          else { ctx.fillStyle = '#2d5a1e'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
         }
 
-        // Subtle grid lines for depth
-        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        // Subtle grid lines
+        ctx.strokeStyle = isIndoor ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.08)';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
       }
     }
 
-    // Pass 2: Draw ambient occlusion (wall shadows on ground)
+    // ── Pass 2: Ambient occlusion shadows ────────
     ctx.save();
-    for (let row = 0; row < mapSize; row++) {
-      for (let col = 0; col < mapSize; col++) {
-        if (mapData[row][col] !== 1) continue;
+    for (let row = 0; row < mapHeight; row++) {
+      for (let col = 0; col < mapWidth; col++) {
+        if (mapData[row][col] !== TILE.WALL) continue;
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
-
-        // Cast shadow below and to the right of walls
         const shadowOffset = 4;
-        const belowIsGround = row + 1 < mapSize && mapData[row + 1][col] === 0;
-        const rightIsGround = col + 1 < mapSize && mapData[row][col + 1] === 0;
-
+        const belowIsGround = row + 1 < mapHeight && mapData[row + 1][col] !== TILE.WALL;
+        const rightIsGround = col + 1 < mapWidth  && mapData[row][col + 1] !== TILE.WALL;
         if (belowIsGround) {
           ctx.fillStyle = 'rgba(0,0,0,0.25)';
           ctx.fillRect(x, y + CELL_SIZE, CELL_SIZE, shadowOffset + 2);
@@ -1119,16 +1397,15 @@
     }
     ctx.restore();
 
-    // Pass 3: Draw wall 3-face pseudo-3D (front face + right shadow face)
-    // Render bottom-to-top so closer walls overlap farther ones correctly
-    for (let row = mapSize - 1; row >= 0; row--) {
-      for (let col = 0; col < mapSize; col++) {
-        if (mapData[row][col] !== 1) continue;
+    // ── Pass 3: Wall front + right faces ─────────
+    for (let row = mapHeight - 1; row >= 0; row--) {
+      for (let col = 0; col < mapWidth; col++) {
+        if (mapData[row][col] !== TILE.WALL) continue;
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
 
-        const showFrontFace = (row + 1 >= mapSize || mapData[row + 1][col] === 0);
-        const showRightFace = (col + 1 >= mapSize || mapData[row][col + 1] === 0);
+        const showFrontFace = (row + 1 >= mapHeight || mapData[row + 1][col] !== TILE.WALL);
+        const showRightFace = (col + 1 >= mapWidth  || mapData[row][col + 1] !== TILE.WALL);
 
         // --- FRONT FACE (bottom of block) ---
         if (showFrontFace) {
@@ -1168,10 +1445,10 @@
       }
     }
 
-    // Pass 4: Draw wall top faces (brightest — light source from above)
-    for (let row = 0; row < mapSize; row++) {
-      for (let col = 0; col < mapSize; col++) {
-        if (mapData[row][col] !== 1) continue;
+    // ── Pass 4: Wall top faces ────────────────────
+    for (let row = 0; row < mapHeight; row++) {
+      for (let col = 0; col < mapWidth; col++) {
+        if (mapData[row][col] !== TILE.WALL) continue;
         const x = col * CELL_SIZE;
         const y = row * CELL_SIZE;
 
@@ -1334,10 +1611,15 @@
   // ============================================
   // GAME FLOW
   // ============================================
-  function startGame() {
+  async function startGame() {
     document.getElementById('start-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
     document.getElementById('modal-overlay').classList.add('hidden');
+
+    // Load house map JSON if needed
+    if (currentMapKey === 'house') {
+      await loadHouseMap();
+    }
 
     initGame();
     gameRunning = true;
@@ -1391,13 +1673,24 @@
       const raw = localStorage.getItem('customMap');
       if (!raw) return false;
       const mapObj = JSON.parse(raw);
-      if (!mapObj || !mapObj.size || !Array.isArray(mapObj.data)) return false;
+      if (!mapObj) return false;
 
-      // Register in MAPS
-      MAPS.custom = {
-        size: mapObj.size,
-        data: mapObj.data
-      };
+      // ── New house-type multi-floor map (from Phase 3 editor) ──
+      if (mapObj.type === 'house' && Array.isArray(mapObj.floors)) {
+        houseData = {
+          name: 'Custom Map',
+          width:  mapObj.width,
+          height: mapObj.height,
+          totalFloors: mapObj.floors.length,
+          floors: mapObj.floors
+        };
+        currentMapKey = 'house';
+        return true;
+      }
+
+      // ── Legacy single-floor square map ──
+      if (!mapObj.size || !Array.isArray(mapObj.data)) return false;
+      MAPS.custom = { size: mapObj.size, data: mapObj.data };
       return true;
     } catch (e) {
       console.warn('Failed to load customMap from localStorage:', e);

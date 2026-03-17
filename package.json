@@ -1,0 +1,13 @@
+{
+  "name": "tri-tue-nhan-tao",
+  "version": "1.0.0",
+  "description": "Trí Tuệ Nhân Tạo - Game HTML/CSS/JS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

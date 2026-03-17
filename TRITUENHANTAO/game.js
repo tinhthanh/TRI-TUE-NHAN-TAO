@@ -238,6 +238,11 @@
     { key: 'propSofa',  src: 'prop_sofa.png'   },
     { key: 'propPlant', src: 'prop_plant.png'  },
     { key: 'propTable', src: 'prop_table.png'  },
+    { key: 'floorClinic',  src: 'floor_clinic.png' },
+    { key: 'propVetTable', src: 'prop_vet_table.png' },
+    { key: 'propVetCage',  src: 'prop_vet_cage.png' },
+    { key: 'propVetXray',  src: 'prop_vet_xray.png' },
+    { key: 'propVetCabinet', src: 'prop_vet_cabinet.png' },
     { key: 'doorOpen',  src: 'door_open.png'   },
     { key: 'player', src: 'man2.png' },
     { key: 'enemy1', src: 'efect/conma1.png' },
@@ -1378,6 +1383,7 @@
     function getFloorImg(fallback) {
       if (!roomId) return fallback;
       const s = String(roomId).toLowerCase();
+      if (s.startsWith('vet') || s.startsWith('clinic') || s.startsWith('surgery') || s.startsWith('xray') || s.startsWith('grooming') || s.startsWith('medicine') || s.startsWith('recovery') || s.startsWith('reception')) return images.floorClinic || fallback;
       if (s.startsWith('bed') || s.startsWith('work') || s.startsWith('dress') || s.startsWith('altar')) return images.floorWood || fallback;
       if (s.startsWith('living') || s.startsWith('guest') || s.startsWith('kitchen') || s.startsWith('dining')) return images.floorRetro || fallback;
       return fallback;
@@ -1468,6 +1474,10 @@
           else if (p.type === 'sofa') img = images.propSofa;
           else if (p.type === 'plant') img = images.propPlant;
           else if (p.type === 'table') img = images.propTable;
+          else if (p.type === 'vet_table') img = images.propVetTable;
+          else if (p.type === 'vet_cage') img = images.propVetCage;
+          else if (p.type === 'vet_xray') img = images.propVetXray;
+          else if (p.type === 'vet_cabinet') img = images.propVetCabinet;
           
           if (img) ctx.drawImage(img, x, y, CELL_SIZE, CELL_SIZE);
         }

@@ -656,7 +656,7 @@
         {
           "r": 2,
           "c": 5,
-          "type": "table"
+          "type": "vet_table"
         },
         {
           "r": 2,
@@ -666,7 +666,7 @@
         {
           "r": 4,
           "c": 5,
-          "type": "table"
+          "type": "vet_table"
         },
         {
           "r": 4,
@@ -1387,32 +1387,32 @@
         {
           "r": 2,
           "c": 3,
-          "type": "bed"
+          "type": "vet_table"
         },
         {
           "r": 4,
           "c": 5,
-          "type": "table"
+          "type": "vet_table"
         },
         {
           "r": 5,
           "c": 13,
-          "type": "bed"
+          "type": "vet_cage"
         },
         {
           "r": 5,
           "c": 15,
-          "type": "bed"
+          "type": "vet_cage"
         },
         {
           "r": 5,
           "c": 17,
-          "type": "bed"
+          "type": "vet_cage"
         },
         {
           "r": 5,
           "c": 19,
-          "type": "bed"
+          "type": "vet_cage"
         },
         {
           "r": 8,
@@ -2068,7 +2068,7 @@
         {
           "r": 2,
           "c": 4,
-          "type": "table"
+          "type": "vet_cabinet"
         },
         {
           "r": 2,
@@ -2078,7 +2078,7 @@
         {
           "r": 4,
           "c": 5,
-          "type": "table"
+          "type": "vet_cabinet"
         },
         {
           "r": 7,

@@ -17,12 +17,15 @@
     { id: 7, name: 'WC',              emoji: '🚽', color: '#0d9488', paint: 7 },
     { id: 8, name: 'Bếp/Giặt/Phòng', emoji: '🏠', color: '#f97316', paint: 8 },
     { id: 9, name: 'Phòng ngủ',       emoji: '🛏',  color: '#a855f7', paint: 9 },
-    // Props
     { id: 10, name: 'Giường',        emoji: '🛌', color: 'rgba(0,0,0,0)', paint: 10, propType: 'bed' },
     { id: 11, name: 'Ghế Sofa',      emoji: '🛋', color: 'rgba(0,0,0,0)', paint: 11, propType: 'sofa' },
     { id: 12, name: 'Chậu cây',      emoji: '🪴', color: 'rgba(0,0,0,0)', paint: 12, propType: 'plant' },
     { id: 13, name: 'Bàn ăn',        emoji: '🪑', color: 'rgba(0,0,0,0)', paint: 13, propType: 'table' },
-    { id: 14, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 14, propType: 'clear' }
+    { id: 14, name: 'Bàn khám Vet',  emoji: '🩺', color: 'rgba(0,0,0,0)', paint: 14, propType: 'vet_table' },
+    { id: 15, name: 'Lồng Pet',      emoji: '🐾', color: 'rgba(0,0,0,0)', paint: 15, propType: 'vet_cage' },
+    { id: 16, name: 'Máy X-Quang',   emoji: '🩻', color: 'rgba(0,0,0,0)', paint: 16, propType: 'vet_xray' },
+    { id: 17, name: 'Tủ thuốc Vet',  emoji: '💊', color: 'rgba(0,0,0,0)', paint: 17, propType: 'vet_cabinet' },
+    { id: 18, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' }
   ];
 
   // Walkable tile IDs (anything except WALL=1)
@@ -466,11 +469,14 @@
         ctx.fillStyle = '#fff';
         ctx.font = '20px sans-serif';
         ctx.textAlign = 'center';
-        let emj = '📦';
         if (p.type === 'bed') emj = '🛌';
         if (p.type === 'sofa') emj = '🛋';
         if (p.type === 'plant') emj = '🪴';
         if (p.type === 'table') emj = '🪑';
+        if (p.type === 'vet_table') emj = '🩺';
+        if (p.type === 'vet_cage') emj = '🐾';
+        if (p.type === 'vet_xray') emj = '🩻';
+        if (p.type === 'vet_cabinet') emj = '💊';
         ctx.fillText(emj, x + CELL / 2, y + CELL / 2 + 7);
         ctx.textAlign = 'left';
       });

@@ -180,6 +180,15 @@
   // Effects
   let explosionEffect = null;
 
+  // Click effects array (supports multiple simultaneous)
+  let clickEffects = [];
+
+  // Click-to-move player path
+  let playerPath = [];
+  let playerMoveAccumulator = 0;
+  // Step duration for click-to-move (ms per step, synced to AI speed feel)
+  const PLAYER_MOVE_MS = 200;
+
   // ============================================
   // ASSET LOADING
   // ============================================
@@ -504,6 +513,86 @@
   }
 
   // ============================================
+  // CLICK EFFECT (game-style mouse click animation)
+  // ============================================
+  class ClickEffect {
+    constructor(canvasX, canvasY) {
+      this.cx = canvasX; // pixel center x
+      this.cy = canvasY; // pixel center y
+      this.startTime = performance.now();
+      this.duration = 600; // ms
+      this.done = false;
+    }
+
+    update(now) {
+      if ((now - this.startTime) >= this.duration) {
+        this.done = true;
+      }
+    }
+
+    draw(ctx, now) {
+      if (this.done) return;
+      const t = (now - this.startTime) / this.duration; // 0..1
+      const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+
+      ctx.save();
+
+      // --- Ripple ring 1 (fast expanding) ---
+      const r1 = ease * CELL_SIZE * 1.6;
+      const alpha1 = (1 - t) * 0.8;
+      ctx.beginPath();
+      ctx.arc(this.cx, this.cy, r1, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(100, 220, 255, ${alpha1})`;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // --- Ripple ring 2 (slightly delayed / smaller) ---
+      const t2 = Math.max(0, t - 0.15);
+      const ease2 = 1 - Math.pow(1 - t2, 3);
+      const r2 = ease2 * CELL_SIZE * 1.0;
+      const alpha2 = (1 - t2) * 0.65;
+      ctx.beginPath();
+      ctx.arc(this.cx, this.cy, r2, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(180, 240, 255, ${alpha2})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // --- Targeting reticle (4 corner brackets) ---
+      const reticleSize = CELL_SIZE * 0.55 * (0.5 + 0.5 * (1 - ease));
+      const gap = reticleSize * 0.35;
+      const alphaR = 1 - t;
+      ctx.strokeStyle = `rgba(50, 255, 180, ${alphaR})`;
+      ctx.lineWidth = 2;
+      const corners = [
+        [-1, -1], [1, -1], [1, 1], [-1, 1]
+      ];
+      corners.forEach(([sx, sy]) => {
+        const ox = this.cx + sx * reticleSize;
+        const oy = this.cy + sy * reticleSize;
+        ctx.beginPath();
+        // horizontal arm
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(ox - sx * gap, oy);
+        // vertical arm
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(ox, oy - sy * gap);
+        ctx.stroke();
+      });
+
+      // --- Center dot flash ---
+      if (t < 0.25) {
+        const dotAlpha = (1 - t / 0.25);
+        ctx.beginPath();
+        ctx.arc(this.cx, this.cy, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${dotAlpha})`;
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  // ============================================
   // EXPLOSION EFFECT
   // ============================================
   class ExplosionEffect {
@@ -557,6 +646,9 @@
     gameTime = 0;
     aiAccumulator = 0;
     explosionEffect = null;
+    clickEffects = [];
+    playerPath = [];
+    playerMoveAccumulator = 0;
 
     // Canvas sizing
     canvas.width = mapSize * CELL_SIZE;
@@ -629,14 +721,27 @@
   // ============================================
   const keysDown = {};
 
+  function movePlayerToCell(newX, newY) {
+    const prevX = player.x;
+    const prevY = player.y;
+    if (newX === prevX && newY === prevY) return;
+    player.sprite.setDirection(prevX, prevY, newX, newY, true);
+    player.tweenStartX = player.renderX;
+    player.tweenStartY = player.renderY;
+    player.x = newX;
+    player.y = newY;
+    player.tweenEndX = newX;
+    player.tweenEndY = newY;
+    player.tweenStartTime = performance.now();
+    checkPlayerCollect();
+  }
+
   function handleKeyDown(e) {
     if (!gameRunning) return;
     keysDown[e.code] = true;
 
     let newX = player.x;
     let newY = player.y;
-    const prevX = player.x;
-    const prevY = player.y;
 
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
       if (player.x > 0 && !isWall(player.y, player.x - 1)) newX--;
@@ -651,22 +756,48 @@
     }
 
     e.preventDefault();
-    player.sprite.setDirection(prevX, prevY, newX, newY, true);
-    // Start tween from current render position
-    player.tweenStartX = player.renderX;
-    player.tweenStartY = player.renderY;
-    player.x = newX;
-    player.y = newY;
-    player.tweenEndX = newX;
-    player.tweenEndY = newY;
-    player.tweenStartTime = performance.now();
-
-    // Check if player collected target
-    checkPlayerCollect();
+    // Cancel any click-to-move path on manual key press
+    playerPath = [];
+    movePlayerToCell(newX, newY);
   }
 
   function handleKeyUp(e) {
     keysDown[e.code] = false;
+  }
+
+  function handleCanvasClick(e) {
+    if (!gameRunning) return;
+
+    const rect = canvas.getBoundingClientRect();
+    // Scale from CSS pixels to canvas pixels
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    const cellX = Math.floor(canvasX / CELL_SIZE);
+    const cellY = Math.floor(canvasY / CELL_SIZE);
+
+    // Only move to walkable cells within bounds
+    if (cellX < 0 || cellX >= mapSize || cellY < 0 || cellY >= mapSize) return;
+    if (isWall(cellY, cellX)) return;
+
+    // Spawn click effect at cell center
+    const sfx = cellX * CELL_SIZE + CELL_SIZE / 2;
+    const sfy = cellY * CELL_SIZE + CELL_SIZE / 2;
+    clickEffects.push(new ClickEffect(sfx, sfy));
+    // Keep array from growing unbounded
+    if (clickEffects.length > 8) clickEffects.shift();
+
+    // Compute A* path from current player grid pos to clicked cell
+    const path = astarFind(player.x, player.y, cellX, cellY, mapData, mapSize);
+    if (path.length > 0) {
+      playerPath = path;
+      playerMoveAccumulator = 0;
+    } else if (cellX === player.x && cellY === player.y) {
+      // Already there — just show effect
+      playerPath = [];
+    }
   }
 
   // ============================================
@@ -788,6 +919,17 @@
       if (!gameRunning) return;
     }
 
+    // Click-to-move player step accumulator
+    if (playerPath.length > 0) {
+      playerMoveAccumulator += dt;
+      while (playerMoveAccumulator >= PLAYER_MOVE_MS && playerPath.length > 0) {
+        const next = playerPath.shift();
+        movePlayerToCell(next.x, next.y);
+        playerMoveAccumulator -= PLAYER_MOVE_MS;
+        if (!gameRunning) return;
+      }
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw map
@@ -802,6 +944,34 @@
     if (explosionEffect && !explosionEffect.done) {
       explosionEffect.update(now);
       explosionEffect.draw(ctx);
+    }
+
+    // Draw click effects (on top of map, below characters)
+    clickEffects = clickEffects.filter(ce => !ce.done);
+    clickEffects.forEach(ce => { ce.update(now); ce.draw(ctx, now); });
+
+    // Draw click-to-move path indicator (subtle dots from player to destination)
+    if (playerPath.length > 0) {
+      ctx.save();
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(80, 200, 255, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(player.renderX * CELL_SIZE + CELL_SIZE / 2, player.renderY * CELL_SIZE + CELL_SIZE / 2);
+      playerPath.forEach(p => {
+        ctx.lineTo(p.x * CELL_SIZE + CELL_SIZE / 2, p.y * CELL_SIZE + CELL_SIZE / 2);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Destination marker — pulsing filled circle
+      const dest = playerPath[playerPath.length - 1];
+      const pulse = 0.5 + 0.5 * Math.abs(Math.sin(now / 200));
+      ctx.globalAlpha = 0.5 + 0.4 * pulse;
+      ctx.beginPath();
+      ctx.arc(dest.x * CELL_SIZE + CELL_SIZE / 2, dest.y * CELL_SIZE + CELL_SIZE / 2, 5 + pulse * 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(80, 220, 255, 0.7)';
+      ctx.fill();
+      ctx.restore();
     }
 
     // Time-based tween interpolation (frame-rate independent)
@@ -1234,6 +1404,11 @@
     // Keyboard
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
+
+    // Click-to-move on canvas
+    canvas.addEventListener('click', handleCanvasClick);
+    // Show pointer cursor on canvas during game
+    canvas.style.cursor = 'crosshair';
 
     // Quit button
     document.getElementById('quit-btn').addEventListener('click', showStartScreen);

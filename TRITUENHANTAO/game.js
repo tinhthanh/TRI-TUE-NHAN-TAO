@@ -1796,7 +1796,7 @@
           totalFloors: mapObj.floors.length,
           floors: mapObj.floors
         };
-        currentMapKey = 'house';
+        currentMapKey = 'custom';
         return true;
       }
 
@@ -1821,7 +1821,15 @@
     const btn = document.createElement('button');
     btn.className = 'map-btn selected';
     btn.dataset.map = 'custom';
-    btn.innerHTML = '🗺️ Bản Đồ Của Tôi <span>' + MAPS.custom.size + '\u00d7' + MAPS.custom.size + '</span>';
+    
+    if (MAPS.custom) {
+      btn.innerHTML = '🗺️ Bản Đồ Của Tôi <span>' + MAPS.custom.size + '\u00d7' + MAPS.custom.size + '</span>';
+    } else if (houseData) {
+      btn.innerHTML = '🗺️ Bản Đồ Của Tôi <span>' + houseData.width + '\u00d7' + houseData.height + '</span>';
+    } else {
+      btn.innerHTML = '🗺️ Bản Đồ Của Tôi';
+    }
+    
     mapGrid.appendChild(btn);
 
     // Deselect all others, select this

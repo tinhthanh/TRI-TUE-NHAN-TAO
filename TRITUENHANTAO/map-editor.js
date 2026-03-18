@@ -25,6 +25,14 @@
     { id: 15, name: 'Lồng Pet',      emoji: '🐾', color: 'rgba(0,0,0,0)', paint: 15, propType: 'vet_cage' },
     { id: 16, name: 'Máy X-Quang',   emoji: '🩻', color: 'rgba(0,0,0,0)', paint: 16, propType: 'vet_xray' },
     { id: 17, name: 'Tủ thuốc Vet',  emoji: '💊', color: 'rgba(0,0,0,0)', paint: 17, propType: 'vet_cabinet' },
+    { id: 19, name: 'Quầy Lễ Tân',   emoji: '🖥', color: 'rgba(0,0,0,0)', paint: 19, propType: 'reception_desk' },
+    { id: 20, name: 'Ghế chờ',       emoji: '💺', color: 'rgba(0,0,0,0)', paint: 20, propType: 'waiting_chair' },
+    { id: 21, name: 'Kính hiển vi',   emoji: '🔬', color: 'rgba(0,0,0,0)', paint: 21, propType: 'microscope' },
+    { id: 22, name: 'Truyền dịch',   emoji: '💉', color: 'rgba(0,0,0,0)', paint: 22, propType: 'iv_stand' },
+    { id: 23, name: 'Bàn Grooming',  emoji: '🪥', color: 'rgba(0,0,0,0)', paint: 23, propType: 'grooming_table' },
+    { id: 24, name: 'Bồn rửa tay',   emoji: '🧼', color: 'rgba(0,0,0,0)', paint: 24, propType: 'surgical_sink' },
+    { id: 25, name: 'Siêu âm',       emoji: '📡', color: 'rgba(0,0,0,0)', paint: 25, propType: 'ultrasound' },
+    { id: 26, name: 'Tủ vaccine',    emoji: '🧊', color: 'rgba(0,0,0,0)', paint: 26, propType: 'vaccine_fridge' },
     { id: 18, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' }
   ];
 
@@ -395,9 +403,10 @@
         const r = row + dr, c = col + dc;
         if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
 
-        if (value >= 10 && value <= 18) {
-          // Props layer
-          const td = TILE_DEFS[value];
+        if (value >= 10) {
+          // Props layer — use find by ID since IDs may have gaps
+          const td = TILE_DEFS.find(t => t.id === value);
+          if (!td || !td.propType) continue;
           const floorProps = floors[currentFloorIdx].props;
           const exIdx = floorProps.findIndex(p => p.r === r && p.c === c);
           if (exIdx >= 0) floorProps.splice(exIdx, 1);
@@ -478,6 +487,14 @@
         if (p.type === 'vet_cage') emj = '🐾';
         if (p.type === 'vet_xray') emj = '🩻';
         if (p.type === 'vet_cabinet') emj = '💊';
+        if (p.type === 'reception_desk') emj = '🖥';
+        if (p.type === 'waiting_chair') emj = '💺';
+        if (p.type === 'microscope') emj = '🔬';
+        if (p.type === 'iv_stand') emj = '💉';
+        if (p.type === 'grooming_table') emj = '🪥';
+        if (p.type === 'surgical_sink') emj = '🧼';
+        if (p.type === 'ultrasound') emj = '📡';
+        if (p.type === 'vaccine_fridge') emj = '🧊';
         ctx.fillText(emj, x + CELL / 2, y + CELL / 2 + 7);
         ctx.textAlign = 'left';
       });

@@ -240,10 +240,20 @@
     { key: 'propPlant', src: 'prop_plant.png'  },
     { key: 'propTable', src: 'prop_table.png'  },
     { key: 'floorClinic',  src: 'floor_clinic.png' },
+    { key: 'floorSurgery', src: 'floor_surgery.png' },
+    { key: 'floorGrooming', src: 'floor_grooming.png' },
     { key: 'propVetTable', src: 'prop_vet_table.png' },
     { key: 'propVetCage',  src: 'prop_vet_cage.png' },
     { key: 'propVetXray',  src: 'prop_vet_xray.png' },
     { key: 'propVetCabinet', src: 'prop_vet_cabinet.png' },
+    { key: 'propReceptionDesk', src: 'prop_reception_desk.png' },
+    { key: 'propWaitingChair', src: 'prop_waiting_chair.png' },
+    { key: 'propMicroscope', src: 'prop_microscope.png' },
+    { key: 'propIvStand', src: 'prop_iv_stand.png' },
+    { key: 'propGroomingTable', src: 'prop_grooming_table.png' },
+    { key: 'propSurgicalSink', src: 'prop_surgical_sink.png' },
+    { key: 'propUltrasound', src: 'prop_ultrasound.png' },
+    { key: 'propVaccineFridge', src: 'prop_vaccine_fridge.png' },
     { key: 'doorOpen',  src: 'door_open.png'   },
     { key: 'player', src: 'man2.png' },
     { key: 'enemy1', src: 'efect/conma1.png' },
@@ -1530,8 +1540,15 @@
     function getFloorImg(fallback) {
       if (!roomId) return fallback;
       const s = String(roomId).toLowerCase();
-      if (s.startsWith('vet') || s.startsWith('clinic') || s.startsWith('surgery') || s.startsWith('xray') || s.startsWith('grooming') || s.startsWith('medicine') || s.startsWith('recovery') || s.startsWith('reception')) return images.floorClinic || fallback;
-      if (s.startsWith('bed') || s.startsWith('work') || s.startsWith('dress') || s.startsWith('altar')) return images.floorWood || fallback;
+      // Surgery rooms → white epoxy floor
+      if (s.startsWith('surgery')) return images.floorSurgery || images.floorClinic || fallback;
+      // Grooming → blue anti-slip floor
+      if (s.startsWith('grooming')) return images.floorGrooming || fallback;
+      // Vet/clinic/medical rooms → clinic floor
+      if (s.startsWith('vet') || s.startsWith('clinic') || s.startsWith('xray') || s.startsWith('medicine') || s.startsWith('recovery') || s.startsWith('reception') || s.startsWith('lab') || s.startsWith('pharmacy')) return images.floorClinic || fallback;
+      // Waiting room → retro/carpet floor
+      if (s.startsWith('waiting') || s.startsWith('lobby')) return images.floorRetro || fallback;
+      if (s.startsWith('bed') || s.startsWith('work') || s.startsWith('dress') || s.startsWith('altar') || s.startsWith('staff') || s.startsWith('office')) return images.floorWood || fallback;
       if (s.startsWith('living') || s.startsWith('guest') || s.startsWith('kitchen') || s.startsWith('dining')) return images.floorRetro || fallback;
       return fallback;
     }
@@ -1625,6 +1642,14 @@
           else if (p.type === 'vet_cage') img = images.propVetCage;
           else if (p.type === 'vet_xray') img = images.propVetXray;
           else if (p.type === 'vet_cabinet') img = images.propVetCabinet;
+          else if (p.type === 'reception_desk') img = images.propReceptionDesk;
+          else if (p.type === 'waiting_chair') img = images.propWaitingChair;
+          else if (p.type === 'microscope') img = images.propMicroscope;
+          else if (p.type === 'iv_stand') img = images.propIvStand;
+          else if (p.type === 'grooming_table') img = images.propGroomingTable;
+          else if (p.type === 'surgical_sink') img = images.propSurgicalSink;
+          else if (p.type === 'ultrasound') img = images.propUltrasound;
+          else if (p.type === 'vaccine_fridge') img = images.propVaccineFridge;
           
           if (img) {
             // Subtle drop shadow beneath the prop

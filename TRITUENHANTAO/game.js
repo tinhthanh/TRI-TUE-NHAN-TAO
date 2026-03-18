@@ -143,7 +143,7 @@
   const WIN_SCORE = 12;
   const AGENT_COUNT = 12;
   const AI_TICK_MS = 350;
-  const PLAYER_TWEEN_MS = 130;
+  const PLAYER_TWEEN_MS = 120;
   const TARGET_RESPAWN_TICKS = 12;
   const SPRITE_ANIM_MS = 250;
 
@@ -215,7 +215,7 @@
   let playerPath = [];
   let playerMoveAccumulator = 0;
   // Step duration for click-to-move (ms per step, synced to AI speed feel)
-  const PLAYER_MOVE_MS = 200;
+  const PLAYER_MOVE_MS = 120;
 
   // ============================================
   // ASSET LOADING

@@ -395,7 +395,7 @@
         const r = row + dr, c = col + dc;
         if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
 
-        if (value >= 10 && value <= 14) {
+        if (value >= 10 && value <= 18) {
           // Props layer
           const td = TILE_DEFS[value];
           const floorProps = floors[currentFloorIdx].props;

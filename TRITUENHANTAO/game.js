@@ -175,11 +175,12 @@
   // ── Multi-floor indoor state ──────────────────
   let houseData = null;          // parsed house_map.json
   let currentFloor = 0;         // 0-based floor index
-  let floorFadeAlpha = 0;       // 0=transparent, 1=black (for transitions)
+  let floorFadeAlpha = 0;       // 0=transparent, 1=full (for transitions)
   let floorFading = false;
   let floorFadeDir = 0;         // 1=fade-in, -1=fade-out
   let floorFadeCallback = null;
-  const FLOOR_FADE_SPEED = 4;   // alpha units per 16ms frame
+  const FLOOR_FADE_SPEED = 3.5; // alpha units per second
+  let floorSlideDir = 1;        // +1=going up, -1=going down (visual slide direction)
   let stairsPulse = 0;
   let activeProps = [];         // props/furniture for the current floor
   let activeDoors = [];         // animated doors for the current floor
@@ -641,6 +642,7 @@
     floorFading = true;
     floorFadeDir = 1;
     floorFadeAlpha = 0;
+    floorSlideDir = targetFloorIdx > currentFloor ? 1 : -1;
     const targetName = houseData.floors[targetFloorIdx].name;
     floorFadeCallback = () => {
       applyFloor(targetFloorIdx);
@@ -1330,22 +1332,142 @@
     // Draw sidebar character avatars
     drawSidebarAvatars(now);
 
-    // Floor fade overlay
+    // Floor slide transition overlay
     if (floorFadeAlpha > 0) {
       ctx.save();
-      ctx.globalAlpha = floorFadeAlpha;
+      // Slide the entire scene
+      const slideOffset = floorFadeAlpha * canvas.height * 0.15 * (-floorSlideDir);
+      // Dark overlay that slides in
       ctx.fillStyle = '#0a0e1a';
+      ctx.globalAlpha = floorFadeAlpha * 0.85;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if (floorFadeAlpha > 0.5 && houseData) {
-        ctx.globalAlpha = (floorFadeAlpha - 0.5) * 2;
-        ctx.fillStyle = '#06b6d4';
-        ctx.font = 'bold 22px Inter, sans-serif';
+      // Floor name text with elevator-style display
+      if (floorFadeAlpha > 0.3 && houseData) {
+        const textAlpha = Math.min((floorFadeAlpha - 0.3) / 0.4, 1);
+        ctx.globalAlpha = textAlpha;
+        // Arrow indicator
+        const arrow = floorSlideDir > 0 ? '⬆' : '⬇';
+        ctx.font = 'bold 36px Inter, sans-serif';
         ctx.textAlign = 'center';
-      ctx.fillText('🏠 ' + houseData.floors[currentFloor].name, canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = floorSlideDir > 0 ? '#06b6d4' : '#a855f7';
+        ctx.fillText(arrow, canvas.width / 2, canvas.height / 2 - 30 + slideOffset);
+        // Floor name
+        ctx.font = 'bold 20px Inter, sans-serif';
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillText(houseData.floors[currentFloor].name, canvas.width / 2, canvas.height / 2 + 10 + slideOffset);
+        // Floor number display
+        ctx.font = '13px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(229,231,235,0.5)';
+        ctx.fillText('Tầng ' + (currentFloor + 1) + ' / ' + houseData.totalFloors, canvas.width / 2, canvas.height / 2 + 35 + slideOffset);
         ctx.textAlign = 'left';
       }
       ctx.restore();
     }
+
+    // Isometric stacked floor minimap
+    if (houseData && !floorFading) {
+      drawFloorMinimap();
+    }
+  }
+
+  // ============================================
+  // ISOMETRIC FLOOR MINIMAP
+  // ============================================
+  function drawFloorMinimap() {
+    if (!houseData) return;
+    const totalFloors = houseData.totalFloors;
+    const cellPx = 3;                 // each cell in minimap
+    const mw = mapWidth * cellPx;     // minimap width
+    const mh = mapHeight * cellPx;    // minimap height per floor
+    const stackGap = 14;              // vertical gap between stacked floors
+    const totalH = totalFloors * mh + (totalFloors - 1) * stackGap;
+    const padding = 10;
+    const baseX = canvas.width - mw - padding - 12;
+    const baseY = canvas.height - totalH - padding - 8;
+
+    ctx.save();
+
+    // Background panel
+    ctx.fillStyle = 'rgba(10, 14, 26, 0.7)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    const panelX = baseX - 8;
+    const panelY = baseY - 22;
+    const panelW = mw + 16;
+    const panelH = totalH + 34;
+    ctx.beginPath();
+    ctx.roundRect(panelX, panelY, panelW, panelH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Title
+    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(229,231,235,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏢 TẦNG', panelX + panelW / 2, panelY + 12);
+    ctx.textAlign = 'left';
+
+    // Draw each floor (top floor first = bottom of stack visually)
+    for (let fi = totalFloors - 1; fi >= 0; fi--) {
+      const isActive = fi === currentFloor;
+      const floorY = baseY + (totalFloors - 1 - fi) * (mh + stackGap);
+      const floorGrid = houseData.floors[fi].grid;
+
+      // Floor label
+      ctx.font = '8px Inter, sans-serif';
+      ctx.fillStyle = isActive ? '#06b6d4' : 'rgba(229,231,235,0.35)';
+      ctx.textAlign = 'right';
+      ctx.fillText('T' + (fi + 1), baseX - 3, floorY + mh / 2 + 3);
+      ctx.textAlign = 'left';
+
+      // Draw cells
+      ctx.globalAlpha = isActive ? 1.0 : 0.3;
+      for (let r = 0; r < mapHeight; r++) {
+        for (let c = 0; c < mapWidth; c++) {
+          const tile = floorGrid[r][c];
+          const cx = baseX + c * cellPx;
+          const cy = floorY + r * cellPx;
+          if (tile === 1) {
+            ctx.fillStyle = isActive ? '#64748b' : '#475569';
+          } else if (tile === 6) {
+            ctx.fillStyle = '#22c55e';
+          } else if (tile === 2 || tile === 3) {
+            ctx.fillStyle = '#06b6d4';
+          } else if (tile === 4) {
+            ctx.fillStyle = '#f59e0b';
+          } else {
+            ctx.fillStyle = isActive ? '#e2e8f0' : '#94a3b8';
+          }
+          ctx.fillRect(cx, cy, cellPx, cellPx);
+        }
+      }
+
+      // Active floor glow border
+      if (isActive) {
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 6;
+        ctx.strokeRect(baseX - 0.5, floorY - 0.5, mw + 1, mh + 1);
+        ctx.shadowBlur = 0;
+
+        // Player dot (pulsing)
+        const pulse = 0.5 + 0.5 * Math.abs(Math.sin(performance.now() / 300));
+        ctx.fillStyle = `rgba(239, 68, 68, ${0.7 + 0.3 * pulse})`;
+        ctx.beginPath();
+        ctx.arc(
+          baseX + player.renderX * cellPx + cellPx / 2,
+          floorY + player.renderY * cellPx + cellPx / 2,
+          2.5, 0, Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
   }
 
   // ============================================

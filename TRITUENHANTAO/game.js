@@ -568,11 +568,19 @@
 
   // ── Multi-floor helpers ──────────────────────
   async function loadHouseMap() {
+    // Map key → JSON file
+    const MAP_FILES = {
+      house: 'house_map.json',
+      vet:   'vet_clinic_map.json',
+      villa: 'villa_map.json',
+    };
+    const file = MAP_FILES[currentMapKey];
+    if (!file) return; // custom maps are loaded via localStorage, not fetch
     try {
-      const response = await fetch('house_map.json');
+      const response = await fetch(file);
       houseData = await response.json();
     } catch (e) {
-      console.warn('house_map.json not found, skipping:', e);
+      console.warn(file + ' not found, skipping:', e);
       houseData = null;
     }
   }

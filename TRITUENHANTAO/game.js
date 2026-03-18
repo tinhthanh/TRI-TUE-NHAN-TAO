@@ -678,12 +678,29 @@
   function checkStairsTrigger() {
     if (!houseData || floorFading) return;
     const f = houseData.floors[currentFloor];
-    for (const stair of f.stairs) {
-      const [sc, sr] = stair.fromCell;
-      if (player.x === sc && player.y === sr) {
-        switchFloor(stair.toFloor - 1, stair.toCell);
-        return;
+
+    // If the map has an explicit stairs array, use it
+    if (Array.isArray(f.stairs)) {
+      for (const stair of f.stairs) {
+        const [sc, sr] = stair.fromCell;
+        if (player.x === sc && player.y === sr) {
+          switchFloor(stair.toFloor - 1, stair.toCell);
+          return;
+        }
       }
+      return;
+    }
+
+    // Fallback: scan grid for stair tiles at player position
+    const tile = mapData[player.y]?.[player.x];
+    if (tile === TILE.STAIRS_UP && currentFloor < houseData.totalFloors - 1) {
+      // Go up: find matching stairs-down on next floor
+      const nextFloor = currentFloor + 1;
+      switchFloor(nextFloor, [player.x, player.y]);
+    } else if (tile === TILE.STAIRS_DOWN && currentFloor > 0) {
+      // Go down: find matching stairs-up on previous floor
+      const prevFloor = currentFloor - 1;
+      switchFloor(prevFloor, [player.x, player.y]);
     }
   }
 

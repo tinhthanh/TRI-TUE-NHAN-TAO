@@ -469,6 +469,7 @@
         ctx.fillStyle = '#fff';
         ctx.font = '20px sans-serif';
         ctx.textAlign = 'center';
+        let emj = '📦';
         if (p.type === 'bed') emj = '🛌';
         if (p.type === 'sofa') emj = '🛋';
         if (p.type === 'plant') emj = '🪴';

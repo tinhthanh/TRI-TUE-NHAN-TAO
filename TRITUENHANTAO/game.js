@@ -1504,7 +1504,18 @@
           else if (p.type === 'vet_xray') img = images.propVetXray;
           else if (p.type === 'vet_cabinet') img = images.propVetCabinet;
           
-          if (img) ctx.drawImage(img, x, y, CELL_SIZE, CELL_SIZE);
+          if (img) {
+            // Subtle drop shadow beneath the prop
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            ctx.beginPath();
+            ctx.ellipse(x + CELL_SIZE / 2, y + CELL_SIZE - 3, CELL_SIZE * 0.38, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Draw prop with slight padding
+            const pad = 2;
+            ctx.drawImage(img, x + pad, y + pad, CELL_SIZE - pad * 2, CELL_SIZE - pad * 2);
+            ctx.restore();
+          }
         }
       }
       if (activeDoors) {

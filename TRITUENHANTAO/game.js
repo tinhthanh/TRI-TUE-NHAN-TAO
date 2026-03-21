@@ -266,6 +266,27 @@
     { key: 'bigbang', src: 'bigbang.png' },
     { key: 'bangdiem', src: 'bangdiem.png' },
     { key: 'angle', src: 'Angle.png' },
+    { key: 'openclaw', src: 'openclaw.png' },
+  ];
+
+  // ── Prop type → image key lookup (replaces if-else chain) ──
+  const PROP_IMAGE_MAP = {
+    bed: 'propBed', sofa: 'propSofa', plant: 'propPlant', table: 'propTable',
+    vet_table: 'propVetTable', vet_cage: 'propVetCage', vet_xray: 'propVetXray',
+    vet_cabinet: 'propVetCabinet', reception_desk: 'propReceptionDesk',
+    waiting_chair: 'propWaitingChair', microscope: 'propMicroscope',
+    iv_stand: 'propIvStand', grooming_table: 'propGroomingTable',
+    surgical_sink: 'propSurgicalSink', ultrasound: 'propUltrasound',
+    vaccine_fridge: 'propVaccineFridge',
+  };
+
+  // ── Floor texture rules: prefix → image keys (with fallback chain) ──
+  const FLOOR_TEXTURE_RULES = [
+    { prefixes: ['surgery'], keys: ['floorSurgery', 'floorClinic'] },
+    { prefixes: ['grooming'], keys: ['floorGrooming'] },
+    { prefixes: ['vet','clinic','xray','medicine','recovery','reception','lab','pharmacy'], keys: ['floorClinic'] },
+    { prefixes: ['waiting','lobby','living','guest','kitchen','dining'], keys: ['floorRetro'] },
+    { prefixes: ['bed','work','dress','altar','staff','office'], keys: ['floorWood'] },
   ];
 
   const SOUND_LIST = [
@@ -534,7 +555,10 @@
     levelUpGhost() {
       this.levelGhost++;
       if (this.levelGhost > 6) this.levelGhost = 6;
-      this.sprite.imgKey = 'enemy' + this.levelGhost;
+      // Don't change sprite for openclaw enemies – they keep the crab look
+      if (this.sprite.imgKey !== 'openclaw') {
+        this.sprite.imgKey = 'enemy' + this.levelGhost;
+      }
     }
   }
 
@@ -645,6 +669,46 @@
       el.style.transform = 'translateX(-50%) translateY(60px)';
       el.style.opacity = '0';
     }, 2200);
+  }
+
+  // ── Onboarding overlay (shown once per session) ──
+  let onboardingShown = false;
+
+  function showOnboarding() {
+    if (onboardingShown) return;
+    onboardingShown = true;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'onboarding-overlay';
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.65);
+      display:flex; align-items:center; justify-content:center;
+      z-index:50; transition:opacity 0.4s ease;
+      backdrop-filter:blur(4px); cursor:pointer;
+    `;
+    overlay.innerHTML = `
+      <div style="text-align:center; max-width:400px; padding:32px;">
+        <div style="font-size:48px; margin-bottom:16px;">💎</div>
+        <div style="font-family:'Baloo 2',cursive; font-size:26px; font-weight:700; color:#fbbf24; margin-bottom:12px;">
+          Thu thập 12 hạt đậu thần<br>trước bầy sói!
+        </div>
+        <div style="font-size:14px; color:#9ca3af; margin-bottom:20px;">
+          Click chuột vào ô hoặc dùng phím WASD để di chuyển
+        </div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.4);">Click hoặc nhấn phím bất kỳ để bắt đầu</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function dismiss() {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 400);
+      document.removeEventListener('keydown', dismiss);
+    }
+
+    setTimeout(dismiss, 5000);
+    overlay.addEventListener('click', dismiss);
+    document.addEventListener('keydown', dismiss, { once: true });
   }
 
   function switchFloor(targetFloorIdx, toCell) {
@@ -939,8 +1003,10 @@
       usedPositions.add(pos.x + ',' + pos.y);
 
       const isAlly = i >= AGENT_COUNT / 2; // first half = enemies, second half = allies
-      const imgKey = isAlly ? 'ally' : 'enemy1';
-      const agent = new Agent(pos.x, pos.y, isAlly, imgKey, isAlly ? 3 : 3, isAlly ? 4 : 4);
+      // Alternate between regular enemies and openclaw crabs
+      const isOpenClaw = !isAlly && (i % 2 === 1);
+      const imgKey = isAlly ? 'ally' : (isOpenClaw ? 'openclaw' : 'enemy1');
+      const agent = new Agent(pos.x, pos.y, isAlly, imgKey, isOpenClaw ? 5 : 3, 4);
 
       // Only the first enemy starts active
       if (i === 0) agent.active = true;
@@ -1493,13 +1559,13 @@
       avatarLastAnim = now;
     }
 
-    // Player large avatar (64x64)
-    drawAvatarCanvas('player-avatar', images.player, 5, 4, avatarAnimFrame, 64);
+    // Player avatar (48x48)
+    drawAvatarCanvas('player-avatar', images.player, 5, 4, avatarAnimFrame, 48);
 
-    // Enemy large avatar (64x64)
+    // Enemy avatar (48x48)
     const firstEnemy = agents.find(a => !a.isAlly && a.active);
     const enemyImgKey = firstEnemy ? firstEnemy.sprite.imgKey : 'enemy1';
-    drawAvatarCanvas('enemy-avatar', images[enemyImgKey], 3, 4, avatarAnimFrame, 64);
+    drawAvatarCanvas('enemy-avatar', images[enemyImgKey], 3, 4, avatarAnimFrame, 48);
 
     // Score row small sprites (32x32)
     drawAvatarCanvas('score-player-sprite', images.player, 5, 4, avatarAnimFrame, 32);
@@ -1536,20 +1602,16 @@
   const WALL_DEPTH_SIDE = 7; // pixel width for wall right-side shadow face
 
   function drawIndoorGroundTile(x, y, tileType, roomId, floorRooms) {
-    // Helper to get specialized floor based on room ID
+    // Helper to get specialized floor based on room ID (uses FLOOR_TEXTURE_RULES)
     function getFloorImg(fallback) {
       if (!roomId) return fallback;
       const s = String(roomId).toLowerCase();
-      // Surgery rooms → white epoxy floor
-      if (s.startsWith('surgery')) return images.floorSurgery || images.floorClinic || fallback;
-      // Grooming → blue anti-slip floor
-      if (s.startsWith('grooming')) return images.floorGrooming || fallback;
-      // Vet/clinic/medical rooms → clinic floor
-      if (s.startsWith('vet') || s.startsWith('clinic') || s.startsWith('xray') || s.startsWith('medicine') || s.startsWith('recovery') || s.startsWith('reception') || s.startsWith('lab') || s.startsWith('pharmacy')) return images.floorClinic || fallback;
-      // Waiting room → retro/carpet floor
-      if (s.startsWith('waiting') || s.startsWith('lobby')) return images.floorRetro || fallback;
-      if (s.startsWith('bed') || s.startsWith('work') || s.startsWith('dress') || s.startsWith('altar') || s.startsWith('staff') || s.startsWith('office')) return images.floorWood || fallback;
-      if (s.startsWith('living') || s.startsWith('guest') || s.startsWith('kitchen') || s.startsWith('dining')) return images.floorRetro || fallback;
+      for (const rule of FLOOR_TEXTURE_RULES) {
+        if (rule.prefixes.some(p => s.startsWith(p))) {
+          for (const k of rule.keys) { if (images[k]) return images[k]; }
+          return fallback;
+        }
+      }
       return fallback;
     }
 
@@ -1633,23 +1695,8 @@
         for (const p of activeProps) {
           const x = p.c * CELL_SIZE;
           const y = p.r * CELL_SIZE;
-          let img = null;
-          if (p.type === 'bed') img = images.propBed;
-          else if (p.type === 'sofa') img = images.propSofa;
-          else if (p.type === 'plant') img = images.propPlant;
-          else if (p.type === 'table') img = images.propTable;
-          else if (p.type === 'vet_table') img = images.propVetTable;
-          else if (p.type === 'vet_cage') img = images.propVetCage;
-          else if (p.type === 'vet_xray') img = images.propVetXray;
-          else if (p.type === 'vet_cabinet') img = images.propVetCabinet;
-          else if (p.type === 'reception_desk') img = images.propReceptionDesk;
-          else if (p.type === 'waiting_chair') img = images.propWaitingChair;
-          else if (p.type === 'microscope') img = images.propMicroscope;
-          else if (p.type === 'iv_stand') img = images.propIvStand;
-          else if (p.type === 'grooming_table') img = images.propGroomingTable;
-          else if (p.type === 'surgical_sink') img = images.propSurgicalSink;
-          else if (p.type === 'ultrasound') img = images.propUltrasound;
-          else if (p.type === 'vaccine_fridge') img = images.propVaccineFridge;
+          const imgKey = PROP_IMAGE_MAP[p.type];
+          const img = imgKey ? images[imgKey] : null;
           
           if (img) {
             // Subtle drop shadow beneath the prop
@@ -1930,6 +1977,7 @@
     gameRunning = true;
     lastFrameTime = performance.now();
     aiAccumulator = 0;
+    showOnboarding();
     requestAnimationFrame(render);
   }
 
@@ -2090,6 +2138,11 @@
     // Click-to-move on canvas
     canvas.addEventListener('click', handleCanvasClick);
     canvas.style.cursor = 'crosshair';
+
+    // Help button — show controls toast
+    document.getElementById('help-btn').addEventListener('click', () => {
+      showGameToast('WASD / Arrow / Click chuột để di chuyển');
+    });
 
     // Quit button
     document.getElementById('quit-btn').addEventListener('click', showStartScreen);

@@ -30,7 +30,7 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     overflow: hidden;
-    background-image: 
+    background-image:
         radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
@@ -62,7 +62,7 @@ body {
 }
 
 .game-title {
-    margin-bottom: 40px;
+    margin-bottom: 32px;
 }
 
 .title-icon {
@@ -90,54 +90,73 @@ body {
 }
 
 .subtitle {
-    color: var(--text-secondary);
-    font-size: 16px;
-    letter-spacing: 1px;
+    color: var(--accent-yellow);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
+/* ── Map Selector ── */
 .map-selector {
     background: var(--bg-card);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 28px;
+    padding: 20px;
+    margin-bottom: 24px;
     backdrop-filter: blur(20px);
 }
 
-.map-selector h2 {
-    font-family: 'Baloo 2', cursive;
-    font-size: 20px;
+.map-category {
     margin-bottom: 16px;
-    color: var(--accent-green);
+}
+
+.map-category:last-child {
+    margin-bottom: 0;
+}
+
+.category-header {
+    font-family: 'Baloo 2', cursive;
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-align: left;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .map-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
 }
 
 .map-btn {
     background: var(--glass);
     border: 2px solid var(--glass-border);
     border-radius: var(--radius-sm);
-    padding: 12px 8px;
+    padding: 10px 8px;
     color: var(--text-primary);
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .map-btn span {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
     font-weight: 400;
+}
+
+.diff-stars {
+    color: var(--accent-yellow) !important;
+    font-size: 11px !important;
+    letter-spacing: 1px;
 }
 
 .map-btn:hover {
@@ -164,7 +183,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 30px var(--accent-green-glow);
-    margin-bottom: 28px;
+    margin-bottom: 16px;
 }
 
 .glow-btn:hover {
@@ -176,42 +195,11 @@ body {
     transform: translateY(0) scale(0.98);
 }
 
-.editor-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: rgba(6, 182, 212, 0.1);
-    border: 2px solid rgba(6, 182, 212, 0.4);
-    border-radius: 50px;
-    padding: 12px 36px;
-    color: #06b6d4;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    margin-bottom: 24px;
-}
-
-.editor-btn:hover {
-    background: rgba(6, 182, 212, 0.2);
-    border-color: rgba(6, 182, 212, 0.7);
-    box-shadow: 0 0 24px rgba(6, 182, 212, 0.25);
-    transform: translateY(-2px);
-}
-
-.editor-btn:active {
-    transform: translateY(0) scale(0.97);
-}
-
-/* House Map button — special amber/gold theme */
+/* House Map button — amber/gold theme (no full-width) */
 .map-btn.house-map-btn {
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.4);
     color: #f59e0b;
-    grid-column: 1 / -1;   /* full width row */
 }
 
 .map-btn.house-map-btn:hover,
@@ -227,7 +215,6 @@ body {
     background: rgba(13, 148, 136, 0.12);
     border-color: rgba(13, 148, 136, 0.4);
     color: #0d9488;
-    grid-column: 1 / -1;
 }
 .map-btn.vet-map-btn:hover,
 .map-btn.vet-map-btn.selected {
@@ -242,7 +229,6 @@ body {
     background: rgba(168, 85, 247, 0.12);
     border-color: rgba(168, 85, 247, 0.4);
     color: #a855f7;
-    grid-column: 1 / -1;
 }
 .map-btn.villa-map-btn:hover,
 .map-btn.villa-map-btn.selected {
@@ -252,7 +238,7 @@ body {
     color: #c084fc;
 }
 
-/* Floor tab buttons (for future map editor multi-floor) */
+/* Floor tab buttons (map editor multi-floor) */
 .floor-tab-btn {
     padding: 4px 10px;
     font-size: 11px;
@@ -269,10 +255,10 @@ body {
     border-color: rgba(6,182,212,0.6);
 }
 
-
 .controls-info {
     color: var(--text-secondary);
     font-size: 13px;
+    margin-bottom: 12px;
 }
 
 .key-group {
@@ -288,8 +274,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
+    min-width: 32px;
     height: 32px;
+    padding: 0 8px;
     background: var(--glass);
     border: 1px solid var(--glass-border);
     border-radius: 6px;
@@ -299,6 +286,22 @@ body {
 }
 
 .or { margin: 0 4px; color: var(--text-secondary); }
+
+/* Editor link — small, de-emphasized */
+.editor-link-small {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+.editor-link-small:hover {
+    opacity: 1;
+    color: #06b6d4;
+    text-decoration: underline;
+}
 
 /* ============================================
    Game Screen
@@ -326,8 +329,8 @@ body {
 
 #game-canvas {
     border-radius: var(--radius);
-    box-shadow: 
-        var(--shadow-lg), 
+    box-shadow:
+        var(--shadow-lg),
         0 0 60px rgba(16, 185, 129, 0.1),
         0 30px 80px rgba(0, 0, 0, 0.4);
     border: 2px solid var(--glass-border);
@@ -362,29 +365,56 @@ body {
    Sidebar
    ============================================ */
 #sidebar {
-    width: 250px;
+    width: 240px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .sidebar-section {
     background: var(--bg-card);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 14px;
     backdrop-filter: blur(20px);
 }
 
-.logo-section {
-    text-align: center;
-    padding: 12px;
+/* Sidebar header: logo + help button */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    backdrop-filter: blur(20px);
 }
 
-.logo-img {
-    max-width: 120px;
+.logo-img-small {
+    max-width: 60px;
     height: auto;
-    border-radius: 8px;
+    border-radius: 6px;
+}
+
+.help-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.help-btn:hover {
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.4);
+    color: #06b6d4;
 }
 
 .score-board-bg {
@@ -396,9 +426,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--glass-border);
 }
 
@@ -406,11 +436,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .char-preview canvas {
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(0,0,0,0.3);
     border: 2px solid var(--glass-border);
     image-rendering: pixelated;
@@ -419,16 +449,16 @@ body {
 
 .player-preview canvas {
     border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 .enemy-preview canvas {
     border-color: rgba(239, 68, 68, 0.4);
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
 .char-name {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -437,7 +467,7 @@ body {
 
 .vs-badge {
     font-family: 'Baloo 2', cursive;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     color: var(--accent-yellow);
     text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
@@ -445,9 +475,9 @@ body {
 
 /* Score row sprite */
 .score-sprite {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     flex-shrink: 0;
@@ -455,8 +485,8 @@ body {
 
 .score-board-bg h3 {
     font-family: 'Baloo 2', cursive;
-    font-size: 22px;
-    margin-bottom: 14px;
+    font-size: 20px;
+    margin-bottom: 10px;
     background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -467,10 +497,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: var(--radius-sm);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     font-weight: 600;
+    font-size: 13px;
 }
 
 .player-score {
@@ -485,7 +516,7 @@ body {
 
 .score-value {
     font-family: 'Baloo 2', cursive;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     line-height: 1;
 }
@@ -494,11 +525,11 @@ body {
 .enemy-score .score-value { color: var(--accent-red); }
 
 .score-bar-container {
-    height: 6px;
+    height: 5px;
     background: var(--accent-red);
     border-radius: 3px;
     overflow: hidden;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .score-bar {
@@ -512,45 +543,17 @@ body {
 .info-section {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .info-item {
     display: flex;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .info-label { color: var(--text-secondary); }
 .info-value { font-weight: 600; color: var(--text-primary); }
-
-.controls-section {
-    text-align: center;
-}
-
-.controls-section h4 {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 10px;
-}
-
-.mini-keys { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.key-row { display: flex; gap: 4px; }
-
-.key-mini {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    height: 28px;
-    padding: 0 6px;
-    background: var(--glass);
-    border: 1px solid var(--glass-border);
-    border-radius: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
 
 .quit-btn {
     background: rgba(239, 68, 68, 0.15);
@@ -696,7 +699,7 @@ body {
 }
 
 /* ============================================
-   PHASE 4 – Floor Badge & Room HUD
+   Floor Badge & Room HUD
    ============================================ */
 #floor-badge {
     margin: 4px 8px 2px;
@@ -763,9 +766,3 @@ body {
     box-shadow: 0 0 6px rgba(6,182,212,0.7);
     transform: scale(1.3);
 }
-
-/* House map button full-width */
-.map-btn.house-map-btn {
-    grid-column: 1 / -1;
-}
-

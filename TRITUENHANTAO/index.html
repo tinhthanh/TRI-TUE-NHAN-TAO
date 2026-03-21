@@ -16,36 +16,41 @@
             <div class="game-title">
                 <span class="title-icon">🐑</span>
                 <h1>Người Chăn Cừu</h1>
-                <p class="subtitle">Thuật toán tìm đường A* &mdash; AI Pathfinding Game</p>
+                <p class="subtitle">Thu thập 12 hạt đậu thần trước bầy sói!</p>
             </div>
             <div class="map-selector">
-                <h2>Chọn Bản Đồ</h2>
-                <div class="map-grid">
-                    <button class="map-btn selected" data-map="map7">Map 1 <span>19×19</span></button>
-                    <button class="map-btn" data-map="map1">Map 2 <span>15×15</span></button>
-                    <button class="map-btn" data-map="map2">Map 3 <span>15×15</span></button>
-                    <button class="map-btn" data-map="map3">Map 4 <span>15×15</span></button>
-                    <button class="map-btn" data-map="map4">Map 5 <span>15×15</span></button>
-                    <button class="map-btn" data-map="map5">Map 6 <span>15×15</span></button>
-                    <button class="map-btn house-map-btn" data-map="house">🏠 Nhà 3 Tầng <span>3 tầng</span></button>
-                    <button class="map-btn vet-map-btn" data-map="vet">🏥 Khám Thú Y <span>3 tầng</span></button>
-                    <button class="map-btn villa-map-btn" data-map="villa">🏢 Biệt Thự <span>3 tầng</span></button>
+                <div class="map-category">
+                    <h3 class="category-header">🌿 Mê Cung</h3>
+                    <div class="map-grid maze-grid">
+                        <button class="map-btn selected" data-map="map7">Map 1 <span>19×19</span><span class="diff-stars">★★★</span></button>
+                        <button class="map-btn" data-map="map1">Map 2 <span>15×15</span><span class="diff-stars">★★</span></button>
+                        <button class="map-btn" data-map="map2">Map 3 <span>15×15</span><span class="diff-stars">★★</span></button>
+                        <button class="map-btn" data-map="map3">Map 4 <span>15×15</span><span class="diff-stars">★</span></button>
+                        <button class="map-btn" data-map="map4">Map 5 <span>15×15</span><span class="diff-stars">★</span></button>
+                        <button class="map-btn" data-map="map5">Map 6 <span>15×15</span><span class="diff-stars">★★</span></button>
+                    </div>
+                </div>
+                <div class="map-category">
+                    <h3 class="category-header">🏠 Khám Phá</h3>
+                    <div class="map-grid indoor-grid">
+                        <button class="map-btn house-map-btn" data-map="house">🏠 Nhà 3 Tầng <span>3 tầng</span></button>
+                        <button class="map-btn vet-map-btn" data-map="vet">🏥 Khám Thú Y <span>3 tầng</span></button>
+                        <button class="map-btn villa-map-btn" data-map="villa">🏢 Biệt Thự <span>3 tầng</span></button>
+                    </div>
                 </div>
             </div>
             <button id="start-btn" class="glow-btn">
                 <span>🎮 Bắt Đầu Chơi</span>
             </button>
-            <a href="map-editor.html" class="editor-btn" id="editor-btn">
-                🗺️ Tạo Bản Đồ
-            </a>
             <div class="controls-info">
                 <div class="key-group">
                     <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span>
                     <span class="or">hoặc</span>
-                    <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span>
+                    <span class="key">Click chuột</span>
                 </div>
                 <p>Di chuyển nhân vật</p>
             </div>
+            <a href="map-editor.html" class="editor-link-small" id="editor-btn">🗺️ Tạo Bản Đồ Riêng</a>
         </div>
     </div>
 
@@ -56,8 +61,9 @@
                 <canvas id="game-canvas"></canvas>
             </div>
             <div id="sidebar">
-                <div class="sidebar-section logo-section">
-                    <img src="Angle.png" alt="Logo" class="logo-img" id="logo-img">
+                <div class="sidebar-header">
+                    <img src="Angle.png" alt="Logo" class="logo-img-small" id="logo-img">
+                    <button id="help-btn" class="help-btn" title="Hướng dẫn">?</button>
                 </div>
                 <!-- Floor indicator for indoor maps -->
                 <div id="floor-badge" style="display:none;padding:6px 12px;margin:4px 8px;background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.35);border-radius:8px;font-size:13px;color:#06b6d4;font-weight:600;text-align:center;"></div>
@@ -65,24 +71,24 @@
                     <div class="score-board-bg">
                         <div class="character-previews">
                             <div class="char-preview player-preview">
-                                <canvas id="player-avatar" width="64" height="64"></canvas>
+                                <canvas id="player-avatar" width="48" height="48"></canvas>
                                 <span class="char-name">Người chơi</span>
                             </div>
                             <div class="vs-badge">VS</div>
                             <div class="char-preview enemy-preview">
-                                <canvas id="enemy-avatar" width="64" height="64"></canvas>
+                                <canvas id="enemy-avatar" width="48" height="48"></canvas>
                                 <span class="char-name">Bầy sói</span>
                             </div>
                         </div>
                         <h3>Bảng Điểm</h3>
                         <div class="score-row player-score">
                             <canvas id="score-player-sprite" class="score-sprite" width="32" height="32"></canvas>
-                            <span class="score-label">Điểm Ta:</span>
+                            <span class="score-label">Điểm Bạn:</span>
                             <span class="score-value" id="score-ta">0</span>
                         </div>
                         <div class="score-row enemy-score">
                             <canvas id="score-enemy-sprite" class="score-sprite" width="32" height="32"></canvas>
-                            <span class="score-label">Điểm Máy:</span>
+                            <span class="score-label">Điểm Sói:</span>
                             <span class="score-value" id="score-dich">0</span>
                         </div>
                         <div class="score-bar-container">
@@ -108,17 +114,6 @@
                         <span class="info-value" id="game-time">0s</span>
                     </div>
                 </div>
-                <div class="sidebar-section controls-section">
-                    <h4>Điều khiển</h4>
-                    <div class="mini-keys">
-                        <div class="key-row"><span class="key-mini">W/↑</span></div>
-                        <div class="key-row">
-                            <span class="key-mini">A/←</span>
-                            <span class="key-mini">S/↓</span>
-                            <span class="key-mini">D/→</span>
-                        </div>
-                    </div>
-                </div>
                 <button id="quit-btn" class="quit-btn">✖ Thoát</button>
             </div>
         </div>
@@ -131,8 +126,8 @@
             <h2 id="modal-title">Bạn đã thắng!</h2>
             <p id="modal-message">Chúc mừng! Bạn đã thu thập đủ 12 hạt đậu thần.</p>
             <div class="modal-stats">
-                <div class="stat"><span class="stat-label">Điểm Ta</span><span class="stat-value" id="modal-score-ta">0</span></div>
-                <div class="stat"><span class="stat-label">Điểm Máy</span><span class="stat-value" id="modal-score-dich">0</span></div>
+                <div class="stat"><span class="stat-label">Điểm Bạn</span><span class="stat-value" id="modal-score-ta">0</span></div>
+                <div class="stat"><span class="stat-label">Điểm Sói</span><span class="stat-value" id="modal-score-dich">0</span></div>
                 <div class="stat"><span class="stat-label">Thời gian</span><span class="stat-value" id="modal-time">0s</span></div>
             </div>
             <div class="modal-buttons">

@@ -264,9 +264,9 @@
     { key: 'enemy6', src: 'efect/conma6.png' },
     { key: 'ally', src: 'efect/ta.png' },
     { key: 'bigbang', src: 'bigbang.png' },
-    { key: 'bangdiem', src: 'bangdiem.png' },
-    { key: 'angle', src: 'Angle.png' },
     { key: 'openclaw', src: 'openclaw.png' },
+    { key: 'dog', src: 'efect/dog.png' },
+    { key: 'cat', src: 'efect/cat.png' },
   ];
 
   // ── Prop type → image key lookup (replaces if-else chain) ──
@@ -345,7 +345,7 @@
       this.cols = cols;
       this.rows = rows;
       this.frameX = 0;
-      this.dirRow = 0; // 0=down, 1=left, 2=right, 3=up for player; 0=down,1=left,2=up,3=right for AI
+      this.dirRow = 0; // player: 0=up,1=right,2=down,3=left | openclaw(4-row): 0=up,1=left,2=down,3=right | AI(3-row): 0=down,1=left,2=up
       this.lastAnim = 0;
     }
 
@@ -378,12 +378,18 @@
         else if (newY > prevY) this.dirRow = 2;   // down
         else if (newX < prevX) this.dirRow = 3;   // left
       } else {
-        // AI sprite (3 rows): row0=down, row1=left, row2=up, row3 wraps
-        if (newY > prevY) this.dirRow = 0;       // down
-        else if (newX < prevX) this.dirRow = 1;   // left
-        else if (newY < prevY) this.dirRow = 2;   // up
-        else if (newX > prevX) {
-          this.dirRow = 2; // right - reuse up row or wrap
+        if (this.rows === 4) {
+          // 4-row sprite (openclaw): row0=up, row1=right, row2=down, row3=left
+          if (newY < prevY) this.dirRow = 0;       // up
+          else if (newX < prevX) this.dirRow = 3;   // left
+          else if (newY > prevY) this.dirRow = 2;   // down
+          else if (newX > prevX) this.dirRow = 1;   // right
+        } else {
+          // AI sprite (3 rows): row0=down, row1=left, row2=up
+          if (newY > prevY) this.dirRow = 0;       // down
+          else if (newX < prevX) this.dirRow = 1;   // left
+          else if (newY < prevY) this.dirRow = 2;   // up
+          else if (newX > prevX) this.dirRow = 2;   // right (reuse up)
         }
       }
     }
@@ -555,8 +561,8 @@
     levelUpGhost() {
       this.levelGhost++;
       if (this.levelGhost > 6) this.levelGhost = 6;
-      // Don't change sprite for openclaw enemies – they keep the crab look
-      if (this.sprite.imgKey !== 'openclaw') {
+      // Don't change sprite for openclaw/dog/cat enemies – they keep their look
+      if (this.sprite.imgKey !== 'openclaw' && this.sprite.imgKey !== 'dog' && this.sprite.imgKey !== 'cat') {
         this.sprite.imgKey = 'enemy' + this.levelGhost;
       }
     }
@@ -1003,10 +1009,13 @@
       usedPositions.add(pos.x + ',' + pos.y);
 
       const isAlly = i >= AGENT_COUNT / 2; // first half = enemies, second half = allies
-      // Alternate between regular enemies and openclaw crabs
-      const isOpenClaw = !isAlly && (i % 2 === 1);
-      const imgKey = isAlly ? 'ally' : (isOpenClaw ? 'openclaw' : 'enemy1');
-      const agent = new Agent(pos.x, pos.y, isAlly, imgKey, isOpenClaw ? 5 : 3, 4);
+      // Alternate between dog, openclaw, and cat enemies
+      const isOpenClaw = !isAlly && (i % 3 === 1);
+      const isDog = !isAlly && (i % 3 === 0);
+      const isCat = !isAlly && (i % 3 === 2);
+      const imgKey = isAlly ? 'ally' : (isOpenClaw ? 'openclaw' : (isDog ? 'dog' : (isCat ? 'cat' : 'enemy1')));
+      const spriteCols = (isOpenClaw || isDog || isCat) ? 5 : 3;
+      const agent = new Agent(pos.x, pos.y, isAlly, imgKey, spriteCols, 4);
 
       // Only the first enemy starts active
       if (i === 0) agent.active = true;
@@ -1564,12 +1573,14 @@
 
     // Enemy avatar (48x48)
     const firstEnemy = agents.find(a => !a.isAlly && a.active);
-    const enemyImgKey = firstEnemy ? firstEnemy.sprite.imgKey : 'enemy1';
-    drawAvatarCanvas('enemy-avatar', images[enemyImgKey], 3, 4, avatarAnimFrame, 48);
+    const enemyImgKey = firstEnemy ? firstEnemy.sprite.imgKey : 'dog';
+    const enemyCols = firstEnemy ? firstEnemy.sprite.cols : 5;
+    const enemyRows = firstEnemy ? firstEnemy.sprite.rows : 4;
+    drawAvatarCanvas('enemy-avatar', images[enemyImgKey], enemyCols, enemyRows, avatarAnimFrame, 48);
 
     // Score row small sprites (32x32)
     drawAvatarCanvas('score-player-sprite', images.player, 5, 4, avatarAnimFrame, 32);
-    drawAvatarCanvas('score-enemy-sprite', images[enemyImgKey], 3, 4, avatarAnimFrame, 32);
+    drawAvatarCanvas('score-enemy-sprite', images[enemyImgKey], enemyCols, enemyRows, avatarAnimFrame, 32);
   }
 
   function drawAvatarCanvas(canvasId, img, cols, rows, frame, size) {
@@ -2140,21 +2151,21 @@
     canvas.style.cursor = 'crosshair';
 
     // Help button — show controls toast
-    document.getElementById('help-btn').addEventListener('click', () => {
+    document.getElementById('help-btn')?.addEventListener('click', () => {
       showGameToast('WASD / Arrow / Click chuột để di chuyển');
     });
 
     // Quit button
-    document.getElementById('quit-btn').addEventListener('click', showStartScreen);
+    document.getElementById('quit-btn')?.addEventListener('click', showStartScreen);
 
     // Replay button
-    document.getElementById('replay-btn').addEventListener('click', () => {
-      document.getElementById('modal-overlay').classList.add('hidden');
+    document.getElementById('replay-btn')?.addEventListener('click', () => {
+      document.getElementById('modal-overlay')?.classList.add('hidden');
       startGame();
     });
 
     // Menu button
-    document.getElementById('menu-btn').addEventListener('click', showStartScreen);
+    document.getElementById('menu-btn')?.addEventListener('click', showStartScreen);
   }
 
   // Start

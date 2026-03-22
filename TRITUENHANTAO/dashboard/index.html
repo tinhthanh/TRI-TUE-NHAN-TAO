@@ -1,0 +1,3304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VetGo - Clinic & Pet Hotel Floor Plan</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0f1117;--surface:#1a1d27;--surface2:#232736;--border:#2e3348;
+    --text:#e4e6f0;--text2:#9498b0;--accent:#6c5ce7;--accent2:#a29bfe;
+    --green:#00b894;--orange:#fdcb6e;--red:#e17055;--blue:#74b9ff;
+    --pink:#fd79a8;
+  }
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw}
+  #app{position:relative;width:100%;height:100%}
+
+  /* Header */
+  #header{position:fixed;top:0;left:0;right:0;height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:100;gap:10px}
+  #header h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--accent2),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+  #header .subtitle{font-size:11px;color:var(--text2);margin-left:2px;white-space:nowrap}
+  #back-btn{display:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;white-space:nowrap}
+  #back-btn:hover{background:var(--accent);border-color:var(--accent)}
+  .header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .legend{display:flex;gap:10px;font-size:10px;color:var(--text2)}
+  .legend-item{display:flex;align-items:center;gap:3px}
+  .legend-dot{width:7px;height:7px;border-radius:50%}
+
+  /* Search */
+  #search-wrap{position:relative;display:flex;align-items:center}
+  #search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px 6px 32px;border-radius:8px;font-size:12px;width:180px;outline:none;transition:all .2s}
+  #search-input:focus{border-color:var(--accent);width:220px;box-shadow:0 0 0 3px rgba(108,92,231,.15)}
+  #search-input::placeholder{color:var(--text2)}
+  #search-icon{position:absolute;left:10px;font-size:13px;color:var(--text2);pointer-events:none}
+  #search-results{position:absolute;top:100%;left:0;right:0;margin-top:6px;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:300px;overflow-y:auto;display:none;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:200}
+  .search-result{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background .15s}
+  .search-result:last-child{border-bottom:none}
+  .search-result:hover{background:var(--surface2)}
+  .search-result.highlighted{background:rgba(108,92,231,.15);border-left:3px solid var(--accent)}
+  .sr-icon{font-size:20px;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surface2)}
+  .sr-info{flex:1;min-width:0}
+  .sr-name{font-size:13px;font-weight:600}
+  .sr-detail{font-size:10px;color:var(--text2);margin-top:1px}
+  .sr-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap}
+
+  /* Filter bar */
+  #filter-bar{position:fixed;top:56px;left:0;right:0;height:40px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;z-index:95;transition:opacity .3s}
+  #filter-bar.hidden{opacity:0;pointer-events:none;height:0;overflow:hidden}
+  .filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px}
+  .filter-btn:hover{border-color:var(--accent2);color:var(--text)}
+  .filter-btn.active{background:rgba(108,92,231,.2);border-color:var(--accent);color:var(--accent2)}
+  .filter-sep{width:1px;height:20px;background:var(--border)}
+
+  /* Main canvas area */
+  #canvas2d{position:absolute;top:96px;left:0;width:100%;height:calc(100% - 96px);cursor:pointer}
+
+  /* 3D Container */
+  #view3d{position:absolute;top:96px;left:0;width:100%;height:calc(100% - 96px);display:none;opacity:0;transition:opacity .4s}
+  #view3d canvas{width:100%!important;height:100%!important}
+
+  /* Floor Selector */
+  #floor-selector{position:fixed;left:14px;top:50%;transform:translateY(-50%);z-index:90;display:flex;flex-direction:column-reverse;gap:3px;transition:opacity .3s}
+  #floor-selector.hidden{opacity:0;pointer-events:none}
+  .floor-btn{
+    width:60px;height:56px;border:2px solid var(--border);background:var(--surface);
+    border-radius:10px;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:1px;transition:all .25s;position:relative;
+    color:var(--text2);
+  }
+  .floor-btn:hover{border-color:var(--accent2);background:var(--surface2);transform:scale(1.05)}
+  .floor-btn.active{border-color:var(--accent);background:rgba(108,92,231,.15);color:var(--text);box-shadow:0 0 20px rgba(108,92,231,.3)}
+  .floor-btn .floor-num{font-size:16px;font-weight:700;line-height:1}
+  .floor-btn .floor-label{font-size:7px;text-transform:uppercase;letter-spacing:.3px;opacity:.7}
+  .floor-btn .floor-pets{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:var(--red);border-radius:9px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid var(--bg);padding:0 3px}
+  .floor-btn .floor-pets.empty{display:none}
+  .elevator-connector{width:2px;height:8px;background:var(--border);margin:0 auto}
+
+  /* Minimap (stacked 3-floor overview) */
+  #minimap{display:none;position:fixed;right:14px;top:104px;width:190px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;z-index:90;transition:opacity .3s,transform .3s}
+  #minimap.hidden{opacity:0;pointer-events:none;transform:translateX(10px)}
+  #minimap h3{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+  .minimap-floor{margin-bottom:6px;cursor:pointer;border-radius:6px;padding:4px;transition:background .15s}
+  .minimap-floor:hover{background:var(--surface2)}
+  .minimap-floor.active{background:rgba(108,92,231,.1)}
+  .minimap-floor-label{font-size:9px;color:var(--text2);margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}
+  .minimap-floor-label .mf-pets{font-size:8px;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent2)}
+  .minimap-canvas{width:100%;height:40px;border-radius:4px;background:rgba(0,0,0,.2)}
+
+  /* Stats bar */
+  #stats-bar{position:fixed;bottom:0;left:0;right:0;height:48px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:24px;z-index:90;transition:opacity .3s,transform .3s}
+  #stats-bar.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+  .stat-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+  .stat-item .stat-num{font-size:18px;font-weight:700;color:var(--text)}
+  .stat-item .stat-icon{font-size:16px}
+  .stat-divider{width:1px;height:24px;background:var(--border)}
+
+  /* Room Info Panel */
+  #info-panel{position:fixed;right:-360px;top:56px;width:340px;height:calc(100% - 56px);background:var(--surface);border-left:1px solid var(--border);padding:20px;transition:right .35s cubic-bezier(.4,0,.2,1);z-index:91;overflow-y:auto}
+  #info-panel.open{right:0}
+  .panel-room-name{font-size:20px;font-weight:700;margin-bottom:2px}
+  .panel-room-sub{color:var(--text2);font-size:12px;margin-bottom:8px}
+  .panel-room-status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:12px}
+  .status-available{background:rgba(0,184,148,.15);color:var(--green)}
+  .status-occupied{background:rgba(225,112,85,.15);color:var(--red)}
+  .status-cleaning{background:rgba(253,203,110,.15);color:var(--orange)}
+  .panel-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .panel-section h3{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .pet-card{background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;position:relative}
+  .pet-card .name{font-weight:600;font-size:14px}
+  .pet-card .breed{font-size:12px;color:var(--text2)}
+  .pet-card .date{font-size:11px;color:var(--accent2);margin-top:3px}
+  .pet-card .pet-timer{position:absolute;right:12px;top:12px;font-size:10px;color:var(--orange);background:rgba(253,203,110,.1);padding:2px 8px;border-radius:6px}
+  .furniture-list{display:flex;flex-wrap:wrap;gap:5px}
+  .furniture-tag{background:var(--surface2);padding:3px 9px;border-radius:6px;font-size:11px;color:var(--text2)}
+
+  /* Tooltip */
+  #tooltip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:12px;z-index:200;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+
+  /* Capacity Bar */
+  .capacity-bar{margin-top:12px}
+  .capacity-bar-label{font-size:11px;color:var(--text2);margin-bottom:4px;display:flex;justify-content:space-between}
+  .capacity-bar-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+  .capacity-bar-fill{height:100%;border-radius:3px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+  /* Quick Action Buttons */
+  .quick-actions{display:flex;gap:8px;margin-top:14px}
+  .qa-btn{flex:1;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+  .qa-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .qa-btn.checkin{border-color:rgba(0,184,148,.3);background:rgba(0,184,148,.1)}
+  .qa-btn.checkin:hover{background:rgba(0,184,148,.25);border-color:var(--green)}
+  .qa-btn.checkout{border-color:rgba(225,112,85,.3);background:rgba(225,112,85,.1)}
+  .qa-btn.checkout:hover{background:rgba(225,112,85,.25);border-color:var(--red)}
+  .qa-btn.clean{border-color:rgba(253,203,110,.3);background:rgba(253,203,110,.1)}
+  .qa-btn.clean:hover{background:rgba(253,203,110,.25);border-color:var(--orange)}
+  .qa-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+  /* Notification Toasts */
+  #toast-container{position:fixed;bottom:60px;right:16px;z-index:300;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none}
+  .toast{pointer-events:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:toastIn .35s cubic-bezier(.4,0,.2,1) forwards;max-width:340px;min-width:260px}
+  .toast.leaving{animation:toastOut .3s cubic-bezier(.4,0,.2,1) forwards}
+  .toast-icon{font-size:20px;flex-shrink:0}
+  .toast-body{flex:1;min-width:0}
+  .toast-title{font-size:12px;font-weight:600}
+  .toast-detail{font-size:10px;color:var(--text2);margin-top:1px}
+  .toast-time{font-size:9px;color:var(--text2);flex-shrink:0}
+  .toast-accent{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
+  @keyframes toastIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+  @keyframes toastOut{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(40px) scale(.9)}}
+
+  /* Clock & User */
+  #clock-wrap{display:flex;align-items:center;gap:8px;margin-left:8px}
+  #clock{font-size:11px;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #user-badge{display:flex;align-items:center;gap:5px;background:var(--surface2);padding:3px 10px 3px 4px;border-radius:20px;font-size:11px;color:var(--text2)}
+  #user-badge .avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--blue));display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700}
+
+  /* Dashboard Panel */
+  #dashboard{position:fixed;right:14px;top:104px;width:190px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;z-index:89;transition:opacity .3s,transform .3s;max-height:calc(100vh - 168px);overflow-y:auto}
+  #dashboard.hidden{opacity:0;pointer-events:none;transform:translateX(10px)}
+  #dashboard::-webkit-scrollbar{width:3px}
+  #dashboard::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  #dashboard h3{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .dash-donut-wrap{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .dash-donut{position:relative;width:64px;height:64px;flex-shrink:0}
+  .dash-donut canvas{width:64px;height:64px}
+  .dash-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+  .dash-donut-center .num{font-size:16px;font-weight:700;line-height:1}
+  .dash-donut-center .label{font-size:7px;color:var(--text2);text-transform:uppercase}
+  .dash-legend{display:flex;flex-direction:column;gap:4px}
+  .dash-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+  .dash-legend-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .dash-section{border-top:1px solid var(--border);padding-top:8px;margin-top:8px}
+  .dash-section h4{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+
+  /* Revenue cards */
+  .revenue-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+  .rev-card{background:var(--surface2);border-radius:8px;padding:8px;text-align:center;border:1px solid var(--border)}
+  .rev-card .rev-label{font-size:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+  .rev-card .rev-value{font-size:14px;font-weight:700;color:var(--green)}
+  .rev-card .rev-value.orange{color:var(--orange)}
+  .rev-card .rev-value.blue{color:var(--blue)}
+  .rev-card .rev-value.pink{color:var(--pink)}
+  .rev-card.full-width{grid-column:1/-1}
+  .occupancy-bar-wrap{margin-top:4px}
+  .occupancy-bar-track{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+  .occupancy-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+  /* Upcoming bookings */
+  .booking-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(46,51,72,.5)}
+  .booking-item:last-child{border-bottom:none}
+  .booking-icon{font-size:16px;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--surface2);flex-shrink:0}
+  .booking-info{flex:1;min-width:0}
+  .booking-name{font-size:11px;font-weight:600;color:var(--text)}
+  .booking-detail{font-size:9px;color:var(--text2)}
+  .booking-date{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap}
+  .booking-date.today{background:rgba(225,112,85,.15);color:var(--red)}
+  .booking-date.tomorrow{background:rgba(253,203,110,.15);color:var(--orange)}
+  .booking-date.later{background:rgba(116,185,255,.15);color:var(--blue)}
+
+  /* Price tag in info panel */
+  .panel-price{display:inline-flex;align-items:center;gap:4px;background:rgba(0,184,148,.1);color:var(--green);padding:4px 10px;border-radius:6px;font-size:13px;font-weight:700;margin:6px 0}
+  .panel-price .price-unit{font-size:10px;font-weight:400;color:var(--text2)}
+
+  /* Owner info in pet card */
+  .pet-owner{font-size:10px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:4px}
+  .pet-checkout{font-size:10px;color:var(--orange);margin-top:1px}
+
+  /* Contact buttons */
+  .pet-contact{display:flex;gap:6px;margin-top:6px}
+  .contact-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);text-decoration:none;transition:all .15s}
+  .contact-btn:hover{transform:scale(1.03)}
+  .contact-btn.call{border-color:rgba(0,184,148,.3);color:var(--green)}
+  .contact-btn.call:hover{background:rgba(0,184,148,.12)}
+  .contact-btn.sms{border-color:rgba(116,185,255,.3);color:var(--blue)}
+  .contact-btn.sms:hover{background:rgba(116,185,255,.12)}
+
+  /* Weekly revenue chart */
+  .weekly-chart{display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:6px;padding:4px 0}
+  .weekly-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .weekly-bar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .5s;position:relative}
+  .weekly-bar-label{font-size:7px;color:var(--text2)}
+  .weekly-bar-val{font-size:7px;color:var(--text);font-weight:600;white-space:nowrap}
+  .dash-alert{display:flex;align-items:center;gap:6px;font-size:10px;padding:5px 0;color:var(--text2)}
+  .dash-alert .da-icon{font-size:14px;flex-shrink:0}
+  .dash-alert .da-text{flex:1;line-height:1.3}
+  .dash-alert .da-badge{font-size:9px;padding:1px 6px;border-radius:4px;font-weight:600;flex-shrink:0}
+
+  /* Empty state */
+  .empty-state{text-align:center;padding:24px 12px;color:var(--text2)}
+  .empty-state .es-icon{font-size:40px;margin-bottom:8px;opacity:.5}
+  .empty-state .es-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .empty-state .es-sub{font-size:11px;line-height:1.4}
+
+  /* Highlight pulse for search */
+  @keyframes roomPulse{
+    0%,100%{filter:brightness(1)}
+    50%{filter:brightness(1.8)}
+  }
+
+  /* Floor transition */
+  #floor-transition{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:85;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+  #floor-transition.active{opacity:1}
+  #floor-transition .ft-content{background:var(--surface);border:1px solid var(--border);padding:12px 28px;border-radius:12px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+  #floor-transition .ft-arrow{font-size:20px;color:var(--accent2);animation:bounce .4s ease infinite alternate}
+  #floor-transition .ft-text{font-size:13px;font-weight:600}
+  @keyframes bounce{from{transform:translateY(2px)}to{transform:translateY(-2px)}}
+
+  /* Transition overlay */
+  #transition-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);z-index:80;pointer-events:none;opacity:0;transition:opacity .3s}
+
+  /* Edit Mode */
+  #edit-mode-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;transition:all .2s;white-space:nowrap}
+  #edit-mode-btn:hover{border-color:var(--accent2);color:var(--text)}
+  #edit-mode-btn.active{background:rgba(108,92,231,.2);border-color:var(--accent);color:var(--accent2);box-shadow:0 0 12px rgba(108,92,231,.2)}
+
+  #edit-toolbar{position:fixed;top:96px;left:0;right:0;height:40px;background:var(--surface);border-bottom:2px solid var(--accent);display:flex;align-items:center;padding:0 16px;gap:8px;z-index:95;transition:opacity .3s}
+  #edit-toolbar.hidden{opacity:0;pointer-events:none;height:0;overflow:hidden;border:none}
+  .et-label{font-size:11px;color:var(--accent2);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .et-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .et-btn:hover{border-color:var(--accent2);color:var(--text);background:var(--surface)}
+  .et-btn.save{border-color:rgba(0,184,148,.3);color:var(--green)}
+  .et-btn.save:hover{background:rgba(0,184,148,.1)}
+  .et-btn.danger{border-color:rgba(225,112,85,.3);color:var(--red)}
+  .et-btn.danger:hover{background:rgba(225,112,85,.1)}
+  .et-hint{font-size:10px;color:var(--text2);margin-left:auto;opacity:.7}
+
+  #app.edit-active #canvas2d{top:136px;height:calc(100% - 136px)}
+  #app.edit-active #filter-bar{display:none}
+
+  /* Edit form in info panel */
+  .edit-form-group{margin-bottom:10px}
+  .edit-form-group label{display:block;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;font-weight:600}
+  .edit-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;outline:none;transition:border-color .2s}
+  .edit-input:focus{border-color:var(--accent)}
+  .edit-select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;outline:none;cursor:pointer}
+  .edit-color-row{display:flex;gap:8px;align-items:center}
+  .edit-color-swatch{width:36px;height:32px;border:none;border-radius:6px;cursor:pointer;padding:0}
+  .edit-btn-row{display:flex;gap:8px;margin-top:16px}
+  .edit-btn{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+  .edit-btn:hover{transform:translateY(-1px)}
+  .edit-btn.primary{background:var(--accent);color:#fff}
+  .edit-btn.primary:hover{background:var(--accent2)}
+  .edit-btn.danger{background:rgba(225,112,85,.15);color:var(--red);border:1px solid rgba(225,112,85,.3)}
+  .edit-btn.danger:hover{background:rgba(225,112,85,.25)}
+  .edit-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+  .edit-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .edit-panel-title{font-size:16px;font-weight:700}
+  .edit-close-btn{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:4px}
+  .edit-close-btn:hover{color:var(--text);background:var(--surface2)}
+  .edit-grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .edit-tag-row{display:flex;gap:4px;flex-wrap:wrap}
+  .edit-tag-btn{padding:4px 10px;border-radius:12px;font-size:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s}
+  .edit-tag-btn.active{background:rgba(108,92,231,.2);border-color:var(--accent);color:var(--accent2)}
+
+  /* Room palette (simple add) */
+  .room-palette{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .rp-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s}
+  .rp-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  .rp-card .rp-icon{font-size:20px;margin-bottom:3px}
+  .rp-card .rp-name{font-size:10px;font-weight:600;color:var(--text)}
+  .rp-card .rp-price{font-size:9px;color:var(--green);margin-top:1px}
+  .rp-card .rp-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+
+  /* Floor template modal */
+  .ft-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center}
+  .ft-modal-content{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:420px;max-height:80vh;overflow-y:auto}
+  .ft-modal h2{font-size:16px;font-weight:700;margin-bottom:16px}
+  .ft-template-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+  .ft-template-card:hover{border-color:var(--accent);background:rgba(108,92,231,.05)}
+  .ft-template-card h3{font-size:13px;font-weight:700;margin-bottom:4px}
+  .ft-template-card p{font-size:11px;color:var(--text2);line-height:1.4}
+  .ft-template-card .ft-rooms{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+  .ft-template-card .ft-room-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--bg);color:var(--text2)}
+
+  /* Wizard */
+  .wiz-step{margin-bottom:20px}
+  .wiz-step h3{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .wiz-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .wiz-floor-count{display:flex;align-items:center;gap:12px;margin:12px 0}
+  .wiz-floor-count button{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .wiz-floor-count button:hover{border-color:var(--accent);background:var(--accent);color:#fff}
+  .wiz-floor-count .wiz-num{font-size:28px;font-weight:700;color:var(--accent2);min-width:40px;text-align:center}
+  .wiz-floor-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(46,51,72,.5)}
+  .wiz-floor-row:last-child{border-bottom:none}
+  .wiz-floor-icon{font-size:18px;width:32px;text-align:center;flex-shrink:0}
+  .wiz-floor-label{font-size:12px;font-weight:600;min-width:60px}
+  .wiz-floor-select{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:11px}
+  .wiz-generate{width:100%;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--blue));color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;transition:all .2s}
+  .wiz-generate:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(108,92,231,.3)}
+  .wiz-preview{font-size:10px;color:var(--text2);text-align:center;margin-top:8px}
+
+  /* Mobile */
+  @media(max-width:768px){
+    #info-panel{width:100%;right:-100%}
+    .legend{display:none}
+    #header h1{font-size:15px}
+    #floor-selector{left:6px}
+    .floor-btn{width:48px;height:48px}
+    .floor-btn .floor-num{font-size:14px}
+    #minimap{width:140px;right:6px;top:100px}
+    #search-input{width:120px}
+    #search-input:focus{width:160px}
+    #filter-bar{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .stat-item{font-size:11px}
+    .stat-item .stat-num{font-size:15px}
+  }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <button id="back-btn">&#8592; Floor Plan</button>
+    <h1>VetGo Clinic</h1>
+    <span class="subtitle">Pet Hotel & Vet</span>
+    <div id="search-wrap">
+      <span id="search-icon">&#128269;</span>
+      <input id="search-input" type="text" placeholder="Tìm pet, phòng..." autocomplete="off">
+      <div id="search-results"></div>
+    </div>
+    <div class="header-right">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Available</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Occupied</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Cleaning</div>
+      </div>
+      <button id="edit-mode-btn">&#9998; Edit</button>
+      <div id="clock-wrap">
+        <span id="clock"></span>
+        <div id="user-badge"><div class="avatar">A</div> Admin</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="filter-bar">
+    <span style="font-size:11px;color:var(--text2);margin-right:4px">Filter:</span>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <span class="filter-sep"></span>
+    <button class="filter-btn" data-filter="available">&#9679; Available</button>
+    <button class="filter-btn" data-filter="occupied">&#9679; Occupied</button>
+    <button class="filter-btn" data-filter="cleaning">&#9679; Cleaning</button>
+    <span class="filter-sep"></span>
+    <button class="filter-btn" data-filter="dog">&#128054; Cho</button>
+    <button class="filter-btn" data-filter="cat">&#128049; Meo</button>
+    <button class="filter-btn" data-filter="exotic">&#129422; Thu la</button>
+    <button class="filter-btn" data-filter="medical">&#9877;&#65039; Y te</button>
+  </div>
+
+  <div id="edit-toolbar" class="hidden">
+    <span class="et-label">&#9998; Edit Mode</span>
+    <span class="filter-sep"></span>
+    <button class="et-btn" id="btn-wizard" style="border-color:var(--accent);color:var(--accent2)">&#10024; Tạo mới</button>
+    <button class="et-btn" id="btn-floor-template">+ Thêm tầng</button>
+    <button class="et-btn danger" id="btn-remove-floor">- Xóa tầng</button>
+    <span class="filter-sep"></span>
+    <button class="et-btn save" id="btn-save">&#128190; Lưu</button>
+    <button class="et-btn danger" id="btn-reset">&#128260; Reset</button>
+    <span class="et-hint">Click phòng để sửa/xóa &middot; Kéo để di chuyển</span>
+  </div>
+
+  <div id="floor-selector"></div>
+  <div id="minimap">
+    <h3>&#127970; All Floors</h3>
+    <div id="minimap-floors"></div>
+  </div>
+  <div id="dashboard" class="hidden">
+    <h3>&#127970; All Floors</h3>
+    <div id="dashboard-minimaps"></div>
+    <div class="dash-section">
+      <h4>&#128202; Tổng quan</h4>
+      <div class="dash-donut-wrap">
+        <div class="dash-donut"><canvas id="donut-canvas" width="128" height="128"></canvas>
+          <div class="dash-donut-center"><div class="num" id="donut-total">--</div><div class="label">công suất</div></div>
+        </div>
+        <div class="dash-legend" id="dash-legend"></div>
+      </div>
+    </div>
+    <div class="dash-section">
+      <h4>&#128176; Doanh thu</h4>
+      <div id="dash-revenue"></div>
+      <div id="dash-weekly-chart"></div>
+    </div>
+    <div class="dash-section">
+      <h4>&#128197; Checkout sắp tới</h4>
+      <div id="dash-bookings"></div>
+    </div>
+    <div class="dash-section">
+      <h4>&#9888;&#65039; Cần chú ý</h4>
+      <div id="dash-alerts"></div>
+    </div>
+  </div>
+  <canvas id="canvas2d"></canvas>
+  <div id="view3d"></div>
+  <div id="info-panel"></div>
+  <div id="tooltip"></div>
+  <div id="transition-overlay"></div>
+  <div id="floor-transition">
+    <div class="ft-content">
+      <span class="ft-arrow" id="ft-arrow">&#9650;</span>
+      <span class="ft-text" id="ft-text">Dang chuyen tang...</span>
+    </div>
+  </div>
+  <div id="stats-bar"></div>
+  <div id="toast-container"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ══════════════════════════════════════
+// ── FLOOR & ROOM DATA ──
+// ══════════════════════════════════════
+const floors = [
+  {
+    id:1, name:'Tầng 1', nameEn:'Ground Floor', description:'Tiếp đón & Khám bệnh', icon:'\u{1F3E5}',
+    tags:['medical'],
+    rooms: [
+      { id:'reception', name:'Lễ tân', nameEn:'Reception', color:'#4a6fa5', colorLight:'#7ba3d4',
+        gridX:0,gridY:0,gridW:3,gridH:2, status:'available', tags:['medical'], price:0,
+        furniture:['Reception Desk','Chairs x4','Magazine Rack','Water Dispenser'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.8,h:0.9,d:0.7,x:0,z:-0.3,color:0x5a4fcf},
+          {type:'box',w:0.5,h:0.45,d:0.5,x:-0.8,z:0.6,color:0x4a4a6a},
+          {type:'box',w:0.5,h:0.45,d:0.5,x:0.0,z:0.6,color:0x4a4a6a},
+          {type:'box',w:0.5,h:0.45,d:0.5,x:0.8,z:0.6,color:0x4a4a6a},
+          {type:'box',w:0.3,h:1.2,d:0.3,x:1.2,z:-0.8,color:0x3d3d5c},
+        ]
+      },
+      { id:'exam1', name:'Phòng khám 1', nameEn:'Exam Room 1', color:'#5b8dbf', colorLight:'#8bb8e0',
+        gridX:3,gridY:0,gridW:2,gridH:2, status:'occupied', tags:['medical'], price:350000,
+        furniture:['Examination Table','Medicine Cabinet','Scale','Stool'],
+        pets:[{name:'Buddy',breed:'Golden Retriever',checkin:'2026-03-19',checkout:'2026-03-22',type:'dog',owner:'Nguyễn Văn An',phone:'0901234567'}],
+        furnitureItems:[
+          {type:'box',w:1.4,h:0.75,d:0.8,x:0,z:0,color:0x2d8fd5},
+          {type:'box',w:0.8,h:1.5,d:0.4,x:-1.0,z:-0.8,color:0x2a5298},
+          {type:'cylinder',r:0.2,h:0.5,x:0.8,z:0.6,color:0x4a4a6a},
+          {type:'box',w:0.4,h:0.15,d:0.4,x:0.8,z:-0.7,color:0x7f8c8d},
+        ]
+      },
+      { id:'exam2', name:'Phòng khám 2', nameEn:'Exam Room 2', color:'#5b8dbf', colorLight:'#8bb8e0',
+        gridX:5,gridY:0,gridW:2,gridH:2, status:'available', tags:['medical'], price:350000,
+        furniture:['Examination Table','X-Ray Viewer','Stool','Cabinet'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.4,h:0.75,d:0.8,x:0,z:0,color:0x2d8fd5},
+          {type:'box',w:1.0,h:0.8,d:0.05,x:-1.0,z:-0.8,color:0x74b9ff},
+          {type:'cylinder',r:0.2,h:0.5,x:0.8,z:0.6,color:0x4a4a6a},
+          {type:'box',w:0.6,h:1.5,d:0.4,x:1.0,z:-0.8,color:0x2a5298},
+        ]
+      },
+      { id:'pharmacy', name:'Nhà thuốc', nameEn:'Pharmacy', color:'#4a8fa5', colorLight:'#7bbdd4',
+        gridX:0,gridY:2,gridW:2,gridH:2, status:'available', tags:['medical'], price:0,
+        furniture:['Medicine Shelf x3','Counter','Fridge','Computer'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.6,h:0.9,d:0.5,x:0,z:0.4,color:0x00a8a3},
+          {type:'box',w:0.4,h:1.6,d:0.3,x:-1.0,z:-0.6,color:0x2d6b6a},
+          {type:'box',w:0.4,h:1.6,d:0.3,x:-0.4,z:-0.6,color:0x2d6b6a},
+          {type:'box',w:0.5,h:1.0,d:0.5,x:1.0,z:-0.6,color:0xdfe6e9},
+        ]
+      },
+      { id:'waiting', name:'Phòng chờ', nameEn:'Waiting Area', color:'#6b8cae', colorLight:'#9ab5cf',
+        gridX:2,gridY:2,gridW:3,gridH:2, status:'occupied', tags:['medical'], price:50000,
+        furniture:['Bench x3','TV','Vending Machine'],
+        pets:[{name:'Coco',breed:'Poodle',checkin:'2026-03-21',checkout:'2026-03-21',type:'dog',owner:'Trần Thị Bích',phone:'0912345678'}],
+        furnitureItems:[
+          {type:'box',w:1.2,h:0.45,d:0.5,x:-0.6,z:0.4,color:0x6c5ce7},
+          {type:'box',w:1.2,h:0.45,d:0.5,x:0.8,z:0.4,color:0x6c5ce7},
+          {type:'box',w:0.8,h:0.05,d:0.5,x:0,z:-0.8,color:0x2d3436},
+          {type:'box',w:0.4,h:1.3,d:0.4,x:1.3,z:-0.6,color:0x636e72},
+        ]
+      },
+      { id:'emergency', name:'Phòng cấp cứu', nameEn:'Emergency', color:'#c0706b', colorLight:'#d9a09c',
+        gridX:5,gridY:2,gridW:2,gridH:2, status:'cleaning', tags:['medical'], price:500000,
+        furniture:['Emergency Table','Monitor','Oxygen Tank','IV Stand'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.6,h:0.8,d:0.7,x:0,z:0,color:0xb8b8b8},
+          {type:'box',w:0.5,h:1.0,d:0.2,x:1.0,z:-0.7,color:0x2d3436},
+          {type:'cylinder',r:0.12,h:1.0,x:-1.0,z:-0.6,color:0x27ae60},
+          {type:'cylinder',r:0.03,h:1.5,x:0.6,z:-0.5,color:0xbdc3c7},
+        ]
+      }
+    ]
+  },
+  {
+    id:2, name:'Tầng 2', nameEn:'2nd Floor', description:'Lưu trú thú cưng', icon:'\u{1F43E}',
+    tags:['dog','cat','exotic'],
+    rooms: [
+      { id:'dog_large', name:'Phòng chó lớn', nameEn:'Large Dog Boarding', color:'#b07d56', colorLight:'#d4a87a',
+        gridX:0,gridY:0,gridW:3,gridH:2, status:'occupied', tags:['dog'], price:450000,
+        furniture:['Kennel x4','Water Bowls','Food Bowls','Play Area'],
+        pets:[
+          {name:'Max',breed:'Husky',checkin:'2026-03-18',checkout:'2026-03-23',type:'dog',owner:'Lê Minh Tuấn',phone:'0903456789'},
+          {name:'Rocky',breed:'German Shepherd',checkin:'2026-03-17',checkout:'2026-03-24',type:'dog',owner:'Phạm Đức Hùng',phone:'0918765432'},
+          {name:'Bear',breed:'Labrador',checkin:'2026-03-19',checkout:'2026-03-22',type:'dog',owner:'Võ Thanh Sơn',phone:'0987654321'},
+        ],
+        furnitureItems:[
+          {type:'kennel',w:0.8,h:0.9,d:0.7,x:-0.9,z:-0.5,color:0xc0392b},
+          {type:'kennel',w:0.8,h:0.9,d:0.7,x:0.0,z:-0.5,color:0xc0392b},
+          {type:'kennel',w:0.8,h:0.9,d:0.7,x:0.9,z:-0.5,color:0xc0392b},
+          {type:'kennel',w:0.8,h:0.9,d:0.7,x:-0.9,z:0.5,color:0xc0392b},
+          {type:'cylinder',r:0.15,h:0.08,x:0.5,z:0.7,color:0x74b9ff},
+          {type:'cylinder',r:0.15,h:0.08,x:0.8,z:0.7,color:0xfdcb6e},
+        ]
+      },
+      { id:'dog_small', name:'Phòng chó nhỏ', nameEn:'Small Dog Boarding', color:'#c4956a', colorLight:'#dbb896',
+        gridX:3,gridY:0,gridW:2,gridH:2, status:'occupied', tags:['dog'], price:300000,
+        furniture:['Kennel x3','Water Bowls','Toys','Bed x3'],
+        pets:[
+          {name:'Luna',breed:'Corgi',checkin:'2026-03-20',checkout:'2026-03-25',type:'dog',owner:'Nguyễn Thị Mai',phone:'0945678901'},
+          {name:'Milo',breed:'Chihuahua',checkin:'2026-03-19',checkout:'2026-03-22',type:'dog',owner:'Hoàng Văn Đức',phone:'0976543210'},
+        ],
+        furnitureItems:[
+          {type:'kennel',w:0.6,h:0.6,d:0.5,x:-0.5,z:-0.4,color:0xe67e22},
+          {type:'kennel',w:0.6,h:0.6,d:0.5,x:0.3,z:-0.4,color:0xe67e22},
+          {type:'kennel',w:0.6,h:0.6,d:0.5,x:-0.5,z:0.4,color:0xe67e22},
+          {type:'cylinder',r:0.1,h:0.06,x:0.5,z:0.5,color:0x74b9ff},
+          {type:'box',w:0.3,h:0.1,d:0.3,x:0.5,z:0.1,color:0xff6b6b},
+        ]
+      },
+      { id:'cat_board', name:'Phòng mèo', nameEn:'Cat Boarding', color:'#c9a84c', colorLight:'#dfc47a',
+        gridX:5,gridY:0,gridW:2,gridH:2, status:'occupied', tags:['cat'], price:280000,
+        furniture:['Cat Condo x3','Litter Box','Scratching Post','Toys'],
+        pets:[
+          {name:'Mimi',breed:'Persian',checkin:'2026-03-19',checkout:'2026-03-23',type:'cat',owner:'Đặng Thùy Linh',phone:'0934567890'},
+          {name:'Tom',breed:'British Shorthair',checkin:'2026-03-20',checkout:'2026-03-25',type:'cat',owner:'Bùi Quốc Anh',phone:'0965432109'},
+          {name:'Kitty',breed:'Ragdoll',checkin:'2026-03-21',checkout:'2026-03-24',type:'cat',owner:'Trịnh Hà My',phone:'0923456789'},
+        ],
+        furnitureItems:[
+          {type:'catcondo',w:0.5,h:1.2,d:0.5,x:-0.6,z:-0.5,color:0xd4a017},
+          {type:'catcondo',w:0.5,h:1.2,d:0.5,x:0.1,z:-0.5,color:0xd4a017},
+          {type:'catcondo',w:0.5,h:1.2,d:0.5,x:0.8,z:-0.5,color:0xd4a017},
+          {type:'cylinder',r:0.08,h:1.0,x:-0.7,z:0.6,color:0x8B7355},
+          {type:'box',w:0.5,h:0.15,d:0.4,x:0.6,z:0.7,color:0x95a5a6},
+        ]
+      },
+      { id:'exotic', name:'Phòng thú lạ', nameEn:'Exotic Pet Room', color:'#7a9e6d', colorLight:'#a5c498',
+        gridX:0,gridY:2,gridW:2,gridH:2, status:'occupied', tags:['exotic'], price:350000,
+        furniture:['Terrarium x2','Aquarium','Heat Lamp','Humidity Control'],
+        pets:[{name:'Rango',breed:'Iguana',checkin:'2026-03-20',checkout:'2026-03-27',type:'exotic',owner:'Ngô Quang Hải',phone:'0956789012'}],
+        furnitureItems:[
+          {type:'box',w:0.8,h:0.6,d:0.5,x:-0.4,z:-0.4,color:0x27ae60},
+          {type:'box',w:0.8,h:0.6,d:0.5,x:0.5,z:-0.4,color:0x27ae60},
+          {type:'box',w:0.7,h:0.5,d:0.4,x:0,z:0.5,color:0x2980b9},
+          {type:'cylinder',r:0.1,h:0.3,x:0.8,z:0.5,color:0xf39c12},
+        ]
+      },
+      { id:'play', name:'Khu vui chơi', nameEn:'Play Area', color:'#b5936e', colorLight:'#d4b89a',
+        gridX:2,gridY:2,gridW:3,gridH:2, status:'available', tags:['dog','cat'], price:100000,
+        furniture:['Obstacle Course','Ball Pit','Tunnel','Toys'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:0.6,h:0.4,d:0.3,x:-0.5,z:-0.3,color:0xe84393},
+          {type:'cylinder',r:0.5,h:0.2,x:0.4,z:0,color:0xfd79a8},
+          {type:'cylinder',r:0.2,h:0.8,x:-0.3,z:0.5,color:0xfab1a0},
+          {type:'box',w:0.2,h:0.15,d:0.2,x:0.8,z:0.6,color:0xff6b6b},
+        ]
+      },
+      { id:'food', name:'Chuẩn bị thức ăn', nameEn:'Food Prep', color:'#8a8273', colorLight:'#b3ac9e',
+        gridX:5,gridY:2,gridW:2,gridH:2, status:'available', tags:[], price:0,
+        furniture:['Counter','Fridge','Sink','Shelf'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.6,h:0.9,d:0.5,x:0,z:-0.4,color:0x636e72},
+          {type:'box',w:0.6,h:1.3,d:0.5,x:-0.8,z:0.5,color:0xdfe6e9},
+          {type:'box',w:0.5,h:0.8,d:0.4,x:0.3,z:0.5,color:0x95a5a6},
+          {type:'box',w:0.3,h:1.5,d:0.3,x:0.9,z:0.5,color:0x7f8c8d},
+        ]
+      }
+    ]
+  },
+  {
+    id:3, name:'Tầng 3', nameEn:'3rd Floor', description:'Phẫu thuật & Chăm sóc', icon:'\u2695\uFE0F',
+    tags:['medical'],
+    rooms: [
+      { id:'surg1', name:'Phòng phẫu thuật 1', nameEn:'Surgery 1', color:'#7b8a98', colorLight:'#a3b1be',
+        gridX:0,gridY:0,gridW:3,gridH:2, status:'occupied', tags:['medical'], price:1500000,
+        furniture:['Operating Table','Surgical Light','Instrument Tray','Monitor','Anesthesia'],
+        pets:[{name:'Charlie',breed:'Beagle',checkin:'2026-03-21',checkout:'2026-03-23',type:'dog',owner:'Lý Hoàng Nam',phone:'0908765432'}],
+        furnitureItems:[
+          {type:'box',w:1.6,h:0.8,d:0.7,x:0,z:0,color:0xb8b8b8},
+          {type:'cylinder',r:0.05,h:2.0,x:0.3,z:-0.1,color:0x636e72},
+          {type:'cylinder',r:0.4,h:0.05,x:0.3,z:-0.1,color:0xdfe6e9,posY:2.0},
+          {type:'box',w:0.6,h:0.8,d:0.3,x:-1.0,z:-0.6,color:0x636e72},
+          {type:'box',w:0.5,h:1.0,d:0.2,x:1.0,z:-0.7,color:0x2d3436},
+        ]
+      },
+      { id:'surg2', name:'Phòng phẫu thuật 2', nameEn:'Surgery 2', color:'#8694a2', colorLight:'#adb9c5',
+        gridX:3,gridY:0,gridW:2,gridH:2, status:'available', tags:['medical'], price:1500000,
+        furniture:['Operating Table','Surgical Light','Tray','Monitor'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.4,h:0.8,d:0.6,x:0,z:0,color:0xb8b8b8},
+          {type:'cylinder',r:0.05,h:2.0,x:0.2,z:-0.1,color:0x636e72},
+          {type:'cylinder',r:0.35,h:0.05,x:0.2,z:-0.1,color:0xdfe6e9,posY:2.0},
+          {type:'box',w:0.5,h:0.8,d:0.3,x:-0.8,z:-0.5,color:0x636e72},
+        ]
+      },
+      { id:'groom', name:'Phòng tắm rửa', nameEn:'Grooming', color:'#6a9e8f', colorLight:'#96c4b5',
+        gridX:5,gridY:0,gridW:2,gridH:2, status:'occupied', tags:['dog','cat'], price:200000,
+        furniture:['Bath Tub','Grooming Table','Dryer','Supply Shelf'],
+        pets:[{name:'Daisy',breed:'Pomeranian',checkin:'2026-03-21',checkout:'2026-03-21',type:'dog',owner:'Mai Phương Thảo',phone:'0967890123'}],
+        furnitureItems:[
+          {type:'tub',w:1.2,h:0.6,d:0.7,x:-0.4,z:-0.4,color:0x74b9ff},
+          {type:'box',w:1.0,h:0.75,d:0.6,x:0.7,z:0.3,color:0xb2bec3},
+          {type:'cylinder',r:0.15,h:1.2,x:-0.9,z:0.7,color:0xdfe6e9},
+          {type:'box',w:0.8,h:1.4,d:0.3,x:1.0,z:-0.7,color:0x636e72},
+        ]
+      },
+      { id:'recovery', name:'Phòng hồi phục', nameEn:'Recovery', color:'#7a7fa5', colorLight:'#a3a8c8',
+        gridX:0,gridY:2,gridW:2,gridH:2, status:'occupied', tags:['medical'], price:400000,
+        furniture:['Recovery Cage x4','IV Stand x2','Monitor','Heating Pad'],
+        pets:[
+          {name:'Simba',breed:'Maine Coon',checkin:'2026-03-20',checkout:'2026-03-23',type:'cat',owner:'Đỗ Hữu Tài',phone:'0943216789'},
+          {name:'Nala',breed:'Siamese',checkin:'2026-03-19',checkout:'2026-03-22',type:'cat',owner:'Phan Thị Hồng',phone:'0912340987'},
+        ],
+        furnitureItems:[
+          {type:'kennel',w:0.7,h:0.6,d:0.5,x:-0.5,z:-0.4,color:0x5a4fcf},
+          {type:'kennel',w:0.7,h:0.6,d:0.5,x:0.4,z:-0.4,color:0x5a4fcf},
+          {type:'kennel',w:0.7,h:0.6,d:0.5,x:-0.5,z:0.4,color:0x5a4fcf},
+          {type:'kennel',w:0.7,h:0.6,d:0.5,x:0.4,z:0.4,color:0x5a4fcf},
+          {type:'cylinder',r:0.03,h:1.5,x:-0.1,z:0,color:0xbdc3c7},
+        ]
+      },
+      { id:'lab', name:'Phòng xét nghiệm', nameEn:'Laboratory', color:'#6d8ba0', colorLight:'#99b3c5',
+        gridX:2,gridY:2,gridW:3,gridH:2, status:'available', tags:['medical'], price:250000,
+        furniture:['Microscope','Centrifuge','Lab Counter','Sample Fridge'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.8,h:0.9,d:0.5,x:0,z:-0.4,color:0x2a5298},
+          {type:'box',w:0.3,h:0.4,d:0.2,x:-0.6,z:-0.35,color:0x636e72},
+          {type:'cylinder',r:0.15,h:0.3,x:0.3,z:-0.35,color:0xdfe6e9},
+          {type:'box',w:0.5,h:1.2,d:0.5,x:1.0,z:0.5,color:0xdfe6e9},
+        ]
+      },
+      { id:'staff', name:'Phòng nhân viên', nameEn:'Staff Room', color:'#7a8085', colorLight:'#a3a9ae',
+        gridX:5,gridY:2,gridW:2,gridH:2, status:'available', tags:[], price:0,
+        furniture:['Desk','Lockers','Coffee Machine','Sofa'],
+        pets:[],
+        furnitureItems:[
+          {type:'box',w:1.0,h:0.75,d:0.5,x:0,z:-0.5,color:0x636e72},
+          {type:'box',w:0.8,h:1.5,d:0.3,x:-0.9,z:-0.6,color:0x7f8c8d},
+          {type:'box',w:0.3,h:0.5,d:0.3,x:0.8,z:-0.5,color:0x2d3436},
+          {type:'box',w:1.2,h:0.45,d:0.6,x:0,z:0.5,color:0x4a4a6a},
+        ]
+      }
+    ]
+  }
+];
+
+// ── Room Templates ──
+const ROOM_TEMPLATES = {
+  exam:        { name:'Phòng khám', nameEn:'Exam Room', color:'#5b8dbf', colorLight:'#8bb8e0', tags:['medical'], price:350000, furniture:['Examination Table','Cabinet','Scale','Stool'], furnitureItems:[{type:'box',w:1.4,h:0.75,d:0.8,x:0,z:0,color:0x2d8fd5},{type:'box',w:0.8,h:1.5,d:0.4,x:-1,z:-0.8,color:0x2a5298}] },
+  boarding_dog:{ name:'Phòng chó', nameEn:'Dog Boarding', color:'#b07d56', colorLight:'#d4a87a', tags:['dog'], price:350000, furniture:['Kennel x4','Water Bowls','Food Bowls'], furnitureItems:[{type:'kennel',w:0.8,h:0.9,d:0.7,x:-0.9,z:-0.5,color:0xc0392b},{type:'kennel',w:0.8,h:0.9,d:0.7,x:0,z:-0.5,color:0xc0392b},{type:'kennel',w:0.8,h:0.9,d:0.7,x:0.9,z:-0.5,color:0xc0392b},{type:'kennel',w:0.8,h:0.9,d:0.7,x:-0.9,z:0.5,color:0xc0392b}] },
+  boarding_cat:{ name:'Phòng mèo', nameEn:'Cat Boarding', color:'#c9a84c', colorLight:'#dfc47a', tags:['cat'], price:280000, furniture:['Cat Condo x3','Litter Box','Scratching Post'], furnitureItems:[{type:'catcondo',w:0.5,h:1.2,d:0.5,x:-0.6,z:-0.5,color:0xd4a017},{type:'catcondo',w:0.5,h:1.2,d:0.5,x:0.1,z:-0.5,color:0xd4a017},{type:'catcondo',w:0.5,h:1.2,d:0.5,x:0.8,z:-0.5,color:0xd4a017}] },
+  exotic:      { name:'Phòng thú lạ', nameEn:'Exotic Pet Room', color:'#7a9e6d', colorLight:'#a5c498', tags:['exotic'], price:350000, furniture:['Terrarium x2','Aquarium','Heat Lamp'], furnitureItems:[{type:'box',w:0.8,h:0.6,d:0.5,x:-0.4,z:-0.4,color:0x27ae60},{type:'box',w:0.8,h:0.6,d:0.5,x:0.5,z:-0.4,color:0x27ae60}] },
+  surgery:     { name:'Phòng phẫu thuật', nameEn:'Surgery', color:'#7b8a98', colorLight:'#a3b1be', tags:['medical'], price:1500000, furniture:['Operating Table','Surgical Light','Instrument Tray','Monitor'], furnitureItems:[{type:'box',w:1.6,h:0.8,d:0.7,x:0,z:0,color:0xb8b8b8},{type:'cylinder',r:0.05,h:2,x:0.3,z:-0.1,color:0x636e72}] },
+  grooming:    { name:'Phòng tắm rửa', nameEn:'Grooming', color:'#6a9e8f', colorLight:'#96c4b5', tags:['dog','cat'], price:200000, furniture:['Bath Tub','Grooming Table','Dryer','Supply Shelf'], furnitureItems:[{type:'tub',w:1.2,h:0.6,d:0.7,x:-0.4,z:-0.4,color:0x74b9ff},{type:'box',w:1,h:0.75,d:0.6,x:0.7,z:0.3,color:0xb2bec3}] },
+  recovery:    { name:'Phòng hồi phục', nameEn:'Recovery', color:'#7a7fa5', colorLight:'#a3a8c8', tags:['medical'], price:400000, furniture:['Recovery Cage x4','IV Stand x2','Monitor'], furnitureItems:[{type:'kennel',w:0.7,h:0.6,d:0.5,x:-0.5,z:-0.4,color:0x5a4fcf},{type:'kennel',w:0.7,h:0.6,d:0.5,x:0.4,z:-0.4,color:0x5a4fcf},{type:'kennel',w:0.7,h:0.6,d:0.5,x:-0.5,z:0.4,color:0x5a4fcf},{type:'kennel',w:0.7,h:0.6,d:0.5,x:0.4,z:0.4,color:0x5a4fcf}] },
+  reception:   { name:'Lễ tân', nameEn:'Reception', color:'#4a6fa5', colorLight:'#7ba3d4', tags:['medical'], price:0, furniture:['Reception Desk','Chairs x4','Magazine Rack'], furnitureItems:[{type:'box',w:1.8,h:0.9,d:0.7,x:0,z:-0.3,color:0x5a4fcf}] },
+  play_area:   { name:'Khu vui chơi', nameEn:'Play Area', color:'#b5936e', colorLight:'#d4b89a', tags:['dog','cat'], price:100000, furniture:['Obstacle Course','Ball Pit','Tunnel','Toys'], furnitureItems:[{type:'box',w:0.6,h:0.4,d:0.3,x:-0.5,z:-0.3,color:0xe84393},{type:'cylinder',r:0.5,h:0.2,x:0.4,z:0,color:0xfd79a8}] },
+  lab:         { name:'Phòng xét nghiệm', nameEn:'Laboratory', color:'#6d8ba0', colorLight:'#99b3c5', tags:['medical'], price:250000, furniture:['Microscope','Centrifuge','Lab Counter','Sample Fridge'], furnitureItems:[{type:'box',w:1.8,h:0.9,d:0.5,x:0,z:-0.4,color:0x2a5298}] },
+  pharmacy:    { name:'Nhà thuốc', nameEn:'Pharmacy', color:'#4a8fa5', colorLight:'#7bbdd4', tags:['medical'], price:0, furniture:['Medicine Shelf x3','Counter','Fridge','Computer'], furnitureItems:[{type:'box',w:1.6,h:0.9,d:0.5,x:0,z:0.4,color:0x00a8a3}] },
+  staff:       { name:'Phòng nhân viên', nameEn:'Staff Room', color:'#7a8085', colorLight:'#a3a9ae', tags:[], price:0, furniture:['Desk','Lockers','Coffee Machine','Sofa'], furnitureItems:[{type:'box',w:1,h:0.75,d:0.5,x:0,z:-0.5,color:0x636e72}] },
+  empty:       { name:'Phòng trống', nameEn:'Empty Room', color:'#6b7280', colorLight:'#9ca3af', tags:[], price:0, furniture:[], furnitureItems:[] },
+};
+
+// ── State ──
+let currentFloor = 0;
+let currentView = '2d';
+let hoveredRoom = null;
+let selectedRoom = null;
+let animFrame2d = null;
+let floorTransitioning = false;
+let stackedView = false; // false = original single-floor isometric view
+let activeFilter = 'all';
+let highlightedRoomId = null;
+let highlightPulseTime = 0;
+
+// Edit mode state
+let editMode = false;
+let editDragRoom = null;
+let editDragStart = null;
+let editGhostPos = null;
+let editSelectedRoom = null;
+let editMouseDown = false;
+let editDragMoved = false;
+let editResizeEdge = null; // 'right','bottom','left','top' or null
+let editResizeRoom = null;
+let editResizePreview = null; // {gridX,gridY,gridW,gridH}
+
+function activeRooms() { return floors[currentFloor].rooms; }
+function allRooms() { return floors.flatMap((f,fi) => f.rooms.map(r => ({...r, floorIdx:fi, floorName:f.name}))); }
+function allPets() { return allRooms().flatMap(r => r.pets.map(p => ({...p, room:r.name, roomId:r.id, floorIdx:r.floorIdx, floorName:r.floorName, price:r.price||0}))); }
+
+// ── Revenue Helpers ──
+function formatVND(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1).replace('.0','') + 'M';
+  if (n >= 1000) return (n/1000).toFixed(0) + 'K';
+  return n.toLocaleString('vi-VN');
+}
+function formatVNDFull(n) { return n.toLocaleString('vi-VN') + 'đ'; }
+
+function calcRevenue() {
+  const today = new Date().toISOString().slice(0,10);
+  const rooms = allRooms();
+  let dailyRevenue = 0;
+  let monthlyRevenue = 0;
+  let totalCapacity = 0;
+  let totalOccupied = 0;
+  const upcomingCheckouts = [];
+
+  rooms.forEach(r => {
+    const cap = getRoomCapacity(r);
+    if(cap > 0) { totalCapacity += cap; totalOccupied += r.pets.length; }
+
+    r.pets.forEach(p => {
+      const price = r.price || 0;
+      const checkinDate = new Date(p.checkin);
+      const days = Math.max(1, Math.floor((Date.now() - checkinDate.getTime()) / 86400000));
+
+      // Daily revenue: price per pet per day (for pets currently in)
+      dailyRevenue += price;
+      // Monthly: accumulate days stayed × price
+      monthlyRevenue += price * days;
+
+      // Upcoming checkouts
+      if(p.checkout) {
+        const coDate = new Date(p.checkout);
+        const diffDays = Math.round((coDate - new Date(today)) / 86400000);
+        if(diffDays >= 0 && diffDays <= 3) {
+          upcomingCheckouts.push({
+            name: p.name,
+            breed: p.breed,
+            type: p.type,
+            room: r.name,
+            roomId: r.id,
+            floorIdx: r.floorIdx,
+            checkout: p.checkout,
+            owner: p.owner || '',
+            phone: p.phone || '',
+            diffDays: diffDays,
+            price: price
+          });
+        }
+      }
+    });
+  });
+
+  upcomingCheckouts.sort((a,b) => a.diffDays - b.diffDays);
+  const occupancyRate = totalCapacity > 0 ? (totalOccupied / totalCapacity * 100) : 0;
+
+  return { dailyRevenue, monthlyRevenue, occupancyRate, totalCapacity, totalOccupied, upcomingCheckouts };
+}
+
+function getWeeklyRevenue() {
+  const today = new Date();
+  const dayNames = ['CN','T2','T3','T4','T5','T6','T7'];
+  const week = [];
+  const rev = calcRevenue();
+  const dailyBase = rev.dailyRevenue;
+  for(let i=6; i>=0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate()-i);
+    const dayIdx = d.getDay();
+    // Simulate variation: weekends higher, some random variation
+    const variation = i === 0 ? 1 : (0.6 + Math.sin(i*1.7)*0.3 + (dayIdx===0||dayIdx===6 ? 0.2 : 0));
+    const amount = Math.round(dailyBase * variation);
+    week.push({
+      label: dayNames[dayIdx],
+      value: amount,
+      isToday: i === 0,
+      date: d.toISOString().slice(5,10)
+    });
+  }
+  return week;
+}
+
+function getCheckoutBadge(room) {
+  const today = new Date().toISOString().slice(0,10);
+  let soonest = Infinity;
+  room.pets.forEach(p => {
+    if(!p.checkout) return;
+    const diff = Math.round((new Date(p.checkout) - new Date(today)) / 86400000);
+    if(diff >= 0 && diff < soonest) soonest = diff;
+  });
+  if(soonest === 0) return {text:'HÔM NAY', color:'#e17055', bg:'rgba(225,112,85,.85)'};
+  if(soonest === 1) return {text:'NGÀY MAI', color:'#fdcb6e', bg:'rgba(253,203,110,.85)'};
+  if(soonest <= 3) return {text:soonest+'D', color:'#74b9ff', bg:'rgba(116,185,255,.7)'};
+  return null;
+}
+
+// ── DOM ──
+const canvas = document.getElementById('canvas2d');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const infoPanel = document.getElementById('info-panel');
+const backBtn = document.getElementById('back-btn');
+const overlay = document.getElementById('transition-overlay');
+const view3dEl = document.getElementById('view3d');
+const floorSelectorEl = document.getElementById('floor-selector');
+const floorTransEl = document.getElementById('floor-transition');
+const ftArrow = document.getElementById('ft-arrow');
+const ftText = document.getElementById('ft-text');
+const statsBar = document.getElementById('stats-bar');
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+const filterBar = document.getElementById('filter-bar');
+const minimapEl = document.getElementById('minimap');
+const minimapFloorsEl = document.getElementById('minimap-floors');
+
+// ══════════════════════════════════
+// ── SEARCH ──
+// ══════════════════════════════════
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) { searchResults.style.display = 'none'; highlightedRoomId = null; return; }
+
+  const results = [];
+
+  // Search pets
+  allPets().forEach(p => {
+    if (p.name.toLowerCase().includes(q) || p.breed.toLowerCase().includes(q)) {
+      results.push({ type:'pet', icon:p.type==='cat'?'\u{1F431}':p.type==='exotic'?'\u{1F98E}':'\u{1F436}',
+        name:p.name, detail:`${p.breed} \u00B7 ${p.room} \u00B7 ${p.floorName}`,
+        floorIdx:p.floorIdx, roomId:p.roomId, petType:p.type });
+    }
+  });
+
+  // Search rooms
+  allRooms().forEach(r => {
+    if (r.name.toLowerCase().includes(q) || r.nameEn.toLowerCase().includes(q)) {
+      results.push({ type:'room', icon:'\u{1F6AA}',
+        name:r.name, detail:`${r.nameEn} \u00B7 ${r.floorName}`,
+        floorIdx:r.floorIdx, roomId:r.id, status:r.status });
+    }
+  });
+
+  if (results.length === 0) {
+    searchResults.innerHTML = '<div style="padding:14px;text-align:center;color:var(--text2);font-size:12px">Không tìm thấy kết quả</div>';
+  } else {
+    searchResults.innerHTML = results.slice(0, 8).map(r => {
+      const statusColors = {available:'var(--green)',occupied:'var(--red)',cleaning:'var(--orange)'};
+      const badge = r.status ? `<span class="sr-badge" style="background:${statusColors[r.status]}20;color:${statusColors[r.status]}">${r.status}</span>` : '';
+      return `<div class="search-result" data-floor="${r.floorIdx}" data-room="${r.roomId}">
+        <div class="sr-icon">${r.icon}</div>
+        <div class="sr-info"><div class="sr-name">${r.name}</div><div class="sr-detail">${r.detail}</div></div>
+        ${badge}
+      </div>`;
+    }).join('');
+  }
+  searchResults.style.display = 'block';
+});
+
+searchResults.addEventListener('click', e => {
+  const item = e.target.closest('.search-result');
+  if (!item) return;
+  const fi = parseInt(item.dataset.floor);
+  const rid = item.dataset.room;
+
+  searchResults.style.display = 'none';
+  searchInput.value = '';
+
+  // Navigate to floor and highlight room
+  highlightedRoomId = rid;
+  highlightPulseTime = performance.now();
+  if (fi !== currentFloor) {
+    switchFloor(fi, () => { /* room will be highlighted in draw loop */ });
+  }
+  // Auto-clear highlight after 3s
+  setTimeout(() => { highlightedRoomId = null; }, 3000);
+});
+
+searchInput.addEventListener('blur', () => { setTimeout(() => searchResults.style.display = 'none', 200); });
+searchInput.addEventListener('keydown', e => { if(e.key==='Escape'){searchInput.value='';searchResults.style.display='none';highlightedRoomId=null;} });
+
+// ══════════════════════════════════
+// ── FILTERS ──
+// ══════════════════════════════════
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+  });
+});
+
+function isRoomVisible(room) {
+  if (activeFilter === 'all') return true;
+  if (['available','occupied','cleaning'].includes(activeFilter)) return room.status === activeFilter;
+  if (['dog','cat','exotic','medical'].includes(activeFilter)) return room.tags && room.tags.includes(activeFilter);
+  return true;
+}
+
+// ══════════════════════════════════
+// ── FLOOR SELECTOR ──
+// ══════════════════════════════════
+function buildFloorSelector() {
+  floorSelectorEl.innerHTML = '';
+  floors.forEach((floor, idx) => {
+    if (idx > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'elevator-connector';
+      floorSelectorEl.appendChild(conn);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'floor-btn' + (idx === currentFloor ? ' active' : '');
+    btn.dataset.floor = idx;
+    const totalPets = floor.rooms.reduce((s,r) => s + r.pets.length, 0);
+    btn.innerHTML = `
+      <span class="floor-num">${floor.icon} ${floor.id}</span>
+      <span class="floor-label">${floor.nameEn}</span>
+      <span class="floor-pets ${totalPets===0?'empty':''}">${totalPets}</span>
+    `;
+    btn.addEventListener('click', () => switchFloor(idx));
+    floorSelectorEl.appendChild(btn);
+  });
+}
+
+function updateFloorSelector() {
+  floorSelectorEl.querySelectorAll('.floor-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.floor) === currentFloor);
+  });
+}
+
+// ══════════════════════════════════
+// ── MINIMAP (Stacked 3-floor) ──
+// ══════════════════════════════════
+function buildMinimap() {
+  // Build into both old minimap container AND dashboard
+  const targets = [minimapFloorsEl, document.getElementById('dashboard-minimaps')].filter(Boolean);
+  targets.forEach(container => {
+    container.innerHTML = '';
+    [...floors].reverse().forEach((floor, revIdx) => {
+      const idx = floors.length - 1 - revIdx;
+      const div = document.createElement('div');
+      div.className = 'minimap-floor' + (idx === currentFloor ? ' active' : '');
+      div.dataset.floor = idx;
+      const totalPets = floor.rooms.reduce((s,r) => s + r.pets.length, 0);
+      div.innerHTML = `
+        <div class="minimap-floor-label">
+          <span>${floor.icon} ${floor.name}</span>
+          <span class="mf-pets">${totalPets} \u{1F43E}</span>
+        </div>
+        <canvas class="minimap-canvas" data-floor="${idx}"></canvas>
+      `;
+      div.addEventListener('click', () => switchFloor(idx));
+      container.appendChild(div);
+    });
+  });
+  drawAllMinimaps();
+}
+
+function drawAllMinimaps() {
+  document.querySelectorAll('.minimap-canvas').forEach(mc => {
+    const fi = parseInt(mc.dataset.floor);
+    const floor = floors[fi];
+    const w = mc.clientWidth || 160;
+    const h = 40;
+    mc.width = w * 1.5; mc.height = h * 1.5;
+    mc.style.width = w + 'px'; mc.style.height = h + 'px';
+    const c = mc.getContext('2d');
+    c.setTransform(1.5, 0, 0, 1.5, 0, 0);
+    c.clearRect(0, 0, w, h);
+
+    const tw = 14, th = 7;
+    const ox = w / 2, oy = 6;
+    function proj(gx,gy){ return { x: (gx-gy)*tw/2+ox, y: (gx+gy)*th/2+oy }; }
+
+    floor.rooms.forEach(room => {
+      const tl = proj(room.gridX, room.gridY);
+      const tr = proj(room.gridX+room.gridW, room.gridY);
+      const br = proj(room.gridX+room.gridW, room.gridY+room.gridH);
+      const bl = proj(room.gridX, room.gridY+room.gridH);
+      c.beginPath();
+      c.moveTo(tl.x,tl.y); c.lineTo(tr.x,tr.y); c.lineTo(br.x,br.y); c.lineTo(bl.x,bl.y);
+      c.closePath();
+      const statusColors = {available:'#00b894',occupied:'#e17055',cleaning:'#fdcb6e'};
+      c.fillStyle = isRoomVisible(room) ? (room.color + 'cc') : (room.color + '33');
+      c.fill();
+      c.strokeStyle = 'rgba(255,255,255,0.15)';
+      c.lineWidth = 0.5;
+      c.stroke();
+      // Mini status dot
+      const cx = (tl.x+br.x)/2, cy = (tl.y+br.y)/2;
+      c.beginPath();
+      c.arc(cx, cy, 2, 0, Math.PI*2);
+      c.fillStyle = statusColors[room.status];
+      c.fill();
+    });
+  });
+}
+
+function updateMinimapActive() {
+  document.querySelectorAll('.minimap-floor').forEach(mf => {
+    mf.classList.toggle('active', parseInt(mf.dataset.floor) === currentFloor);
+  });
+}
+
+// ══════════════════════════════════
+// ── STATS BAR ──
+// ══════════════════════════════════
+function updateStats() {
+  const all = allRooms();
+  const totalPets = allPets().length;
+  const totalRooms = all.length;
+  const avail = all.filter(r=>r.status==='available').length;
+  const occ = all.filter(r=>r.status==='occupied').length;
+  const clean = all.filter(r=>r.status==='cleaning').length;
+  const dogs = allPets().filter(p=>p.type==='dog').length;
+  const cats = allPets().filter(p=>p.type==='cat').length;
+  const exotics = allPets().filter(p=>p.type==='exotic').length;
+  const rev = calcRevenue();
+
+  statsBar.innerHTML = `
+    <span class="stat-item"><span class="stat-icon">\u{1F3E2}</span> <span class="stat-num">${floors.length}</span> tầng</span>
+    <span class="stat-divider"></span>
+    <span class="stat-item"><span class="stat-icon">\u{1F6AA}</span> <span class="stat-num">${totalRooms}</span> phòng</span>
+    <span class="stat-divider"></span>
+    <span class="stat-item"><span class="stat-icon">\u{1F43E}</span> <span class="stat-num">${totalPets}</span> thú cưng</span>
+    <span class="stat-divider"></span>
+    <span class="stat-item"><span class="stat-icon">\u{1F436}</span> <span class="stat-num">${dogs}</span></span>
+    <span class="stat-item"><span class="stat-icon">\u{1F431}</span> <span class="stat-num">${cats}</span></span>
+    ${exotics ? `<span class="stat-item"><span class="stat-icon">\u{1F98E}</span> <span class="stat-num">${exotics}</span></span>` : ''}
+    <span class="stat-divider"></span>
+    <span class="stat-item"><span class="stat-icon">\u{1F4B0}</span> <span class="stat-num" style="color:var(--green)">${formatVND(rev.dailyRevenue)}</span> <span style="font-size:10px">/ngày</span></span>
+    <span class="stat-divider"></span>
+    <span class="stat-item" style="color:var(--green)">\u25CF ${avail}</span>
+    <span class="stat-item" style="color:var(--red)">\u25CF ${occ}</span>
+    <span class="stat-item" style="color:var(--orange)">\u25CF ${clean}</span>
+  `;
+}
+
+// ══════════════════════════════════
+// ── FLOOR TRANSITION ──
+// ══════════════════════════════════
+function switchFloor(newIdx, cb) {
+  if (newIdx === currentFloor || floorTransitioning || currentView !== '2d') return;
+
+  // In stacked view: instant switch (no animation needed, floors are all visible)
+  if (stackedView && !editMode) {
+    currentFloor = newIdx;
+    updateFloorSelector();
+    updateMinimapActive();
+    hoveredRoom = null;
+    if (cb) cb();
+    return;
+  }
+
+  floorTransitioning = true;
+  const goingUp = newIdx > currentFloor;
+  ftArrow.textContent = goingUp ? '\u25B2' : '\u25BC';
+  ftText.textContent = `${goingUp?'\u2B06':'\u2B07'} ${floors[newIdx].name}...`;
+  floorTransEl.classList.add('active');
+
+  canvas.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1), opacity .2s';
+  canvas.style.transform = goingUp ? 'translateY(-30px)' : 'translateY(30px)';
+  canvas.style.opacity = '0';
+
+  setTimeout(() => {
+    currentFloor = newIdx;
+    updateFloorSelector();
+    updateMinimapActive();
+    hoveredRoom = null;
+
+    canvas.style.transition = 'none';
+    canvas.style.transform = goingUp ? 'translateY(30px)' : 'translateY(-30px)';
+    requestAnimationFrame(() => {
+      canvas.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1), opacity .2s';
+      canvas.style.transform = 'translateY(0)';
+      canvas.style.opacity = '1';
+      setTimeout(() => {
+        floorTransEl.classList.remove('active');
+        canvas.style.transition = '';
+        canvas.style.transform = '';
+        floorTransitioning = false;
+        if (cb) cb();
+      }, 350);
+    });
+  }, 300);
+}
+
+// ══════════════════════════════════
+// ── TEXTURE LOADING (from game assets) ──
+// ══════════════════════════════════
+const TEX = {};
+const TEX_LIST = [
+  { key:'floorTile',     src:'../floor_tile.png' },
+  { key:'floorWood',     src:'../floor_wood.png' },
+  { key:'floorClinic',   src:'../floor_clinic.png' },
+  { key:'floorSurgery',  src:'../floor_surgery.png' },
+  { key:'floorGrooming', src:'../floor_grooming.png' },
+  { key:'floorRetro',    src:'../floor_retro.png' },
+  { key:'wallTop',       src:'../wall_top.png' },
+  { key:'wallSide',      src:'../wall_side.png' },
+  { key:'door',          src:'../door.png' },
+  { key:'propVetTable',  src:'../prop_vet_table.png' },
+  { key:'propVetCage',   src:'../prop_vet_cage.png' },
+  { key:'propReceptionDesk', src:'../prop_reception_desk.png' },
+  { key:'propWaitingChair',  src:'../prop_waiting_chair.png' },
+  { key:'propGroomingTable', src:'../prop_grooming_table.png' },
+  { key:'propMicroscope',    src:'../prop_microscope.png' },
+  { key:'propVetCabinet',    src:'../prop_vet_cabinet.png' },
+];
+let texturesLoaded = false;
+(function loadTextures(){
+  let loaded = 0;
+  TEX_LIST.forEach(t => {
+    const img = new Image();
+    img.onload = () => { TEX[t.key] = img; if(++loaded >= TEX_LIST.length) texturesLoaded = true; };
+    img.onerror = () => { if(++loaded >= TEX_LIST.length) texturesLoaded = true; };
+    img.src = t.src;
+  });
+})();
+
+// Room ID → floor texture key mapping
+const ROOM_FLOOR_MAP = {
+  'surgery1':'floorSurgery', 'surgery2':'floorSurgery',
+  'groom':'floorGrooming',
+  'reception':'floorClinic', 'pharmacy':'floorClinic', 'emergency':'floorClinic',
+  'exam1':'floorClinic', 'exam2':'floorClinic', 'lab':'floorClinic', 'recovery':'floorClinic',
+  'waiting':'floorRetro', 'play':'floorRetro', 'food':'floorRetro',
+  'staff':'floorWood',
+  'dog_large':'floorTile', 'dog_small':'floorTile', 'cat_board':'floorTile', 'exotic':'floorTile',
+};
+
+// Room ID → props to draw (icon items placed inside room)
+const ROOM_PROPS_MAP = {
+  'reception': ['propReceptionDesk'],
+  'exam1': ['propVetTable','propVetCabinet'],
+  'exam2': ['propVetTable','propVetCabinet'],
+  'lab': ['propMicroscope'],
+  'groom': ['propGroomingTable'],
+  'dog_large': ['propVetCage'],
+  'dog_small': ['propVetCage'],
+  'cat_board': ['propVetCage'],
+  'waiting': ['propWaitingChair'],
+  'surgery1': ['propVetTable'],
+  'surgery2': ['propVetTable'],
+};
+
+// ══════════════════════════════════
+// ── 2D CANVAS ──
+// ══════════════════════════════════
+const TILE_W = 100, TILE_H = 50;
+let offsetX = 0, offsetY = 0;
+let zoomLevel = 1.0;
+let panX = 0, panY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0, panStartOX = 0, panStartOY = 0;
+
+let initialZoomSet = false;
+function resize2D() {
+  const dpr = Math.min(window.devicePixelRatio, 1.5);
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Auto-fit zoom on first load: fill available space
+  if (!initialZoomSet) {
+    const sidebarW = 220, tabsW = 80;
+    const availW = canvas.clientWidth - sidebarW - tabsW - 40;
+    const availH = canvas.clientHeight - 150;
+    const mapIsoW = 7 * TILE_W;
+    const mapIsoH = 4 * TILE_H + 30;
+    const fitW = availW / mapIsoW;
+    const fitH = availH / mapIsoH;
+    zoomLevel = Math.min(fitW, fitH, 1.8) * 0.95; // 95% fill for bigger map
+    zoomLevel = Math.max(0.6, zoomLevel);
+    initialZoomSet = true;
+  }
+
+  // Center map in available space (between floor tabs and sidebar)
+  const sidebarW = 220;
+  const tabsW = 80;
+  const centerArea = canvas.clientWidth - sidebarW - tabsW;
+  offsetX = tabsW + centerArea / 2 + panX;
+  offsetY = canvas.clientHeight * 0.42 + panY; // slightly above center
+}
+
+function isoProject(gx,gy){ return { x:(gx-gy)*(TILE_W*zoomLevel)/2+offsetX, y:(gx+gy)*(TILE_H*zoomLevel)/2+offsetY }; }
+
+// ── Zoom (mouse wheel) ──
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const oldZoom = zoomLevel;
+  zoomLevel = Math.min(1.8, Math.max(0.6, zoomLevel + delta));
+  // Zoom towards mouse position
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panX += (mx - offsetX) * (1 - zoomLevel / oldZoom);
+  panY += (my - offsetY) * (1 - zoomLevel / oldZoom);
+  resize2D();
+}, { passive: false });
+
+// ── Pan (left-click drag to move) ──
+let panDragMoved = false;
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0 || e.button === 1) {
+    isPanning = true;
+    panDragMoved = false;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    panStartOX = panX;
+    panStartOY = panY;
+  }
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  const dx = e.clientX - panStartX;
+  const dy = e.clientY - panStartY;
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+    panDragMoved = true;
+    canvas.style.cursor = 'grabbing';
+  }
+  panX = panStartOX + dx;
+  panY = panStartOY + dy;
+  resize2D();
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (isPanning) {
+    isPanning = false;
+    canvas.style.cursor = 'pointer';
+  }
+});
+
+// Prevent context menu on canvas for right-click pan
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+function shadeColor(hex, pct) {
+  let r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  r=Math.min(255,Math.max(0,r+pct)); g=Math.min(255,Math.max(0,g+pct)); b=Math.min(255,Math.max(0,b+pct));
+  return `rgb(${r},${g},${b})`;
+}
+
+function pointInPoly(px,py,poly) {
+  let ins=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;
+    if((yi>py)!==(yj>py)&&px<(xj-xi)*(py-yi)/(yj-yi)+xi) ins=!ins;
+  }
+  return ins;
+}
+
+// ── Cell-based Room Utilities ──
+function screenToGrid(px, py) {
+  const dx = px - offsetX;
+  const dy = py - offsetY;
+  const tw = TILE_W * zoomLevel;
+  const th = TILE_H * zoomLevel;
+  const gx = (dx / (tw/2) + dy / (th/2)) / 2;
+  const gy = (dy / (th/2) - dx / (tw/2)) / 2;
+  return { gx: Math.floor(gx), gy: Math.floor(gy) };
+}
+
+function getRoomCells(room) {
+  if (room.cells && room.cells.length > 0) return room.cells;
+  const cells = [];
+  for (let x = room.gridX; x < room.gridX + room.gridW; x++)
+    for (let y = room.gridY; y < room.gridY + room.gridH; y++)
+      cells.push({x, y});
+  return cells;
+}
+
+function hasNeighborCell(cells, x, y, dx, dy) {
+  return cells.some(c => c.x === x+dx && c.y === y+dy);
+}
+
+function roomHasCell(room, gx, gy) {
+  return getRoomCells(room).some(c => c.x === gx && c.y === gy);
+}
+
+function isGridCellOccupied(floor, gx, gy, excludeRoom) {
+  return floor.rooms.some(r => {
+    if (r === excludeRoom) return false;
+    return roomHasCell(r, gx, gy);
+  });
+}
+
+function canPlaceRoom(floor, gx, gy, gw, gh, excludeRoom) {
+  if (gx < 0 || gy < 0 || gx + gw > 7 || gy + gh > 4) return false;
+  for (let x = gx; x < gx + gw; x++)
+    for (let y = gy; y < gy + gh; y++)
+      if (isGridCellOccupied(floor, x, y, excludeRoom)) return false;
+  return true;
+}
+
+function canPlaceCell(floor, gx, gy, excludeRoom) {
+  if (gx < 0 || gy < 0 || gx >= 7 || gy >= 4) return false;
+  return !isGridCellOccupied(floor, gx, gy, excludeRoom);
+}
+
+function pointInRoom(px, py, room) {
+  if (room._polys) return room._polys.some(poly => pointInPoly(px, py, poly));
+  return room._poly && pointInPoly(px, py, room._poly);
+}
+
+// Get adjacent empty cells for expanding a room
+function getExpandableCells(floor, room) {
+  const cells = getRoomCells(room);
+  const result = [];
+  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+  const seen = new Set();
+  cells.forEach(c => {
+    dirs.forEach(({dx,dy}) => {
+      const nx = c.x+dx, ny = c.y+dy;
+      const key = nx+','+ny;
+      if (!seen.has(key) && nx>=0 && ny>=0 && nx<7 && ny<4 && !roomHasCell(room,nx,ny) && canPlaceCell(floor,nx,ny,null)) {
+        seen.add(key);
+        result.push({x:nx, y:ny});
+      }
+    });
+  });
+  return result;
+}
+
+// Check if removing a cell keeps the room connected
+function canRemoveCell(room, cx, cy) {
+  const cells = getRoomCells(room).filter(c => !(c.x===cx && c.y===cy));
+  if (cells.length === 0) return false; // can't remove last cell
+  // BFS from first remaining cell
+  const visited = new Set();
+  const queue = [cells[0]];
+  visited.add(cells[0].x+','+cells[0].y);
+  while (queue.length) {
+    const cur = queue.shift();
+    [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}].forEach(({dx,dy}) => {
+      const key = (cur.x+dx)+','+(cur.y+dy);
+      if (!visited.has(key) && cells.some(c => c.x===cur.x+dx && c.y===cur.y+dy)) {
+        visited.add(key);
+        queue.push({x:cur.x+dx, y:cur.y+dy});
+      }
+    });
+  }
+  return visited.size === cells.length; // all cells reachable = still connected
+}
+
+function drawRoom(room, hovered) {
+  const visible = isRoomVisible(room);
+  const isHighlighted = room.id === highlightedRoomId;
+  const {color,colorLight,name,nameEn,status} = room;
+  const cells = getRoomCells(room);
+  if(cells.length===0) return;
+  const wallH = (hovered ? 2 : 1) * zoomLevel;
+  const isSelected = editMode && editSelectedRoom === room;
+
+  let alpha = visible ? (hovered ? 0.95 : 0.75) : 0.2;
+  if (isHighlighted) {
+    const t = (performance.now() - highlightPulseTime) / 400;
+    alpha = 0.6 + 0.4 * Math.abs(Math.sin(t));
+  }
+
+  room._polys = [];
+
+  // Draw each cell
+  const floorTexKey = ROOM_FLOOR_MAP[room.id] || 'floorTile';
+  const floorTex = texturesLoaded ? TEX[floorTexKey] : null;
+  const wallTopTex = texturesLoaded ? TEX.wallTop : null;
+  const wallSideTex = texturesLoaded ? TEX.wallSide : null;
+
+  cells.forEach(cell => {
+    const tl=isoProject(cell.x,cell.y), tr=isoProject(cell.x+1,cell.y);
+    const br=isoProject(cell.x+1,cell.y+1), bl=isoProject(cell.x,cell.y+1);
+
+    // Floor tile — use texture if available
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tl.x,tl.y); ctx.lineTo(tr.x,tr.y); ctx.lineTo(br.x,br.y); ctx.lineTo(bl.x,bl.y);
+    ctx.closePath();
+    ctx.clip();
+
+    ctx.globalAlpha = alpha;
+    if(floorTex) {
+      // Map texture into isometric diamond using transform
+      const tileW = tr.x - tl.x;
+      const tileH = br.y - tl.y;
+      ctx.drawImage(floorTex, tl.x - tileW*0.15, tl.y - 2, tileW*1.3, tileH*1.1);
+      // Color tint overlay for room identity
+      ctx.globalAlpha = alpha * 0.25;
+      ctx.fillStyle = hovered||isHighlighted||isSelected ? colorLight : color;
+      ctx.fill();
+    } else {
+      // Fallback gradient
+      const grad=ctx.createLinearGradient(tl.x,tl.y,br.x,br.y);
+      grad.addColorStop(0, hovered||isHighlighted||isSelected ? colorLight : color);
+      grad.addColorStop(1, hovered||isHighlighted||isSelected ? color : shadeColor(color,-20));
+      ctx.fillStyle=grad; ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha=1;
+
+    // Tile grid lines
+    ctx.beginPath();
+    ctx.moveTo(tl.x,tl.y); ctx.lineTo(tr.x,tr.y); ctx.lineTo(br.x,br.y); ctx.lineTo(bl.x,bl.y);
+    ctx.closePath();
+    ctx.strokeStyle = isHighlighted ? '#fff' : (hovered||isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)');
+    ctx.lineWidth = isHighlighted ? 3 : 0.5;
+    ctx.stroke();
+
+    if(!visible && !isHighlighted) { room._polys.push([tl,tr,br,bl]); return; }
+
+    // Walls on outer edges — use wall textures
+    // Right wall (no neighbor at x+1)
+    if(!hasNeighborCell(cells,cell.x,cell.y,1,0)){
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(tr.x,tr.y); ctx.lineTo(br.x,br.y); ctx.lineTo(br.x,br.y-wallH); ctx.lineTo(tr.x,tr.y-wallH);
+      ctx.closePath();
+      ctx.clip();
+      if(wallSideTex) {
+        ctx.globalAlpha=0.7;
+        ctx.drawImage(wallSideTex, Math.min(tr.x,br.x), Math.min(tr.y,br.y)-wallH, Math.abs(br.x-tr.x)||wallH, br.y-tr.y+wallH);
+        // Darkening overlay
+        ctx.globalAlpha=0.25;
+        ctx.fillStyle=shadeColor(color,-30);
+        ctx.fill();
+      } else {
+        ctx.fillStyle=shadeColor(color,-20); ctx.globalAlpha=0.45; ctx.fill();
+      }
+      ctx.restore(); ctx.globalAlpha=1;
+      // Wall edge line
+      ctx.beginPath();
+      ctx.moveTo(tr.x,tr.y-wallH); ctx.lineTo(br.x,br.y-wallH);
+      ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=0.5; ctx.stroke();
+    }
+    // Bottom wall (no neighbor at y+1)
+    if(!hasNeighborCell(cells,cell.x,cell.y,0,1)){
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(br.x,br.y); ctx.lineTo(bl.x,bl.y); ctx.lineTo(bl.x,bl.y-wallH); ctx.lineTo(br.x,br.y-wallH);
+      ctx.closePath();
+      ctx.clip();
+      if(wallTopTex) {
+        ctx.globalAlpha=0.7;
+        ctx.drawImage(wallTopTex, Math.min(bl.x,br.x), Math.min(bl.y,br.y)-wallH, Math.abs(br.x-bl.x)||wallH, br.y-bl.y+wallH);
+        ctx.globalAlpha=0.2;
+        ctx.fillStyle=shadeColor(color,-40);
+        ctx.fill();
+      } else {
+        ctx.fillStyle=shadeColor(color,-35); ctx.globalAlpha=0.45; ctx.fill();
+      }
+      ctx.restore(); ctx.globalAlpha=1;
+      // Wall top edge line
+      ctx.beginPath();
+      ctx.moveTo(bl.x,bl.y-wallH); ctx.lineTo(br.x,br.y-wallH);
+      ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=0.5; ctx.stroke();
+    }
+
+    // Top wall edge (no neighbor at y-1) — wall cap line
+    if(!hasNeighborCell(cells,cell.x,cell.y,0,-1)){
+      ctx.beginPath();
+      ctx.moveTo(tl.x,tl.y); ctx.lineTo(tr.x,tr.y);
+      ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    // Left wall edge (no neighbor at x-1)
+    if(!hasNeighborCell(cells,cell.x,cell.y,-1,0)){
+      ctx.beginPath();
+      ctx.moveTo(tl.x,tl.y); ctx.lineTo(bl.x,bl.y);
+      ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // Outer border for selected room
+    if(isSelected) {
+      ctx.strokeStyle='#a29bfe'; ctx.lineWidth=2;
+      if(!hasNeighborCell(cells,cell.x,cell.y,1,0)){ctx.beginPath();ctx.moveTo(tr.x,tr.y);ctx.lineTo(br.x,br.y);ctx.stroke();}
+      if(!hasNeighborCell(cells,cell.x,cell.y,-1,0)){ctx.beginPath();ctx.moveTo(tl.x,tl.y);ctx.lineTo(bl.x,bl.y);ctx.stroke();}
+      if(!hasNeighborCell(cells,cell.x,cell.y,0,1)){ctx.beginPath();ctx.moveTo(bl.x,bl.y);ctx.lineTo(br.x,br.y);ctx.stroke();}
+      if(!hasNeighborCell(cells,cell.x,cell.y,0,-1)){ctx.beginPath();ctx.moveTo(tl.x,tl.y);ctx.lineTo(tr.x,tr.y);ctx.stroke();}
+    }
+
+    room._polys.push([tl,tr,br,bl]);
+  });
+
+  // Draw props inside room (after all cells drawn)
+  if(visible || isHighlighted) {
+    const props = ROOM_PROPS_MAP[room.id];
+    if(props && texturesLoaded) {
+      const avgX = cells.reduce((s,c)=>s+c.x,0)/cells.length + 0.5;
+      const avgY = cells.reduce((s,c)=>s+c.y,0)/cells.length + 0.5;
+      const pc = isoProject(avgX, avgY);
+      props.forEach((propKey, i) => {
+        const propImg = TEX[propKey];
+        if(!propImg) return;
+        const propSize = 22 * zoomLevel;
+        const ox = (i - (props.length-1)/2) * propSize * 1.2;
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(propImg, pc.x + ox - propSize/2, pc.y + 18 - propSize/2, propSize, propSize);
+        ctx.globalAlpha = 1;
+      });
+    }
+  }
+
+  // Backward compat: _poly = first cell
+  room._poly = room._polys[0];
+
+  if(!visible && !isHighlighted) return;
+
+  // Center of mass for labels
+  const avgX = cells.reduce((s,c)=>s+c.x,0)/cells.length + 0.5;
+  const avgY = cells.reduce((s,c)=>s+c.y,0)/cells.length + 0.5;
+  const center = isoProject(avgX, avgY);
+  const cx = center.x, cy = center.y;
+
+  // Bounding box for badges
+  const allXs = cells.map(c=>c.x), allYs = cells.map(c=>c.y);
+  const minX=Math.min(...allXs), maxX=Math.max(...allXs)+1, minY=Math.min(...allYs), maxY=Math.max(...allYs)+1;
+  const tr=isoProject(maxX,minY), bl=isoProject(minX,maxY);
+
+  // Status dot
+  const sc={available:'#00b894',occupied:'#e17055',cleaning:'#fdcb6e'};
+  ctx.beginPath(); ctx.arc(cx,cy-20,5,0,Math.PI*2);
+  ctx.fillStyle=sc[status]; ctx.fill();
+  ctx.strokeStyle='#0f1117'; ctx.lineWidth=2; ctx.stroke();
+
+  // Label
+  ctx.fillStyle='#fff'; ctx.font='bold 11px "Segoe UI",system-ui,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(name,cx,cy-4);
+  ctx.font='9px "Segoe UI",system-ui,sans-serif'; ctx.fillStyle='rgba(255,255,255,0.65)';
+  ctx.fillText(nameEn,cx,cy+9);
+
+  // Capacity bar
+  const roomCap = getRoomCapacity(room);
+  if(roomCap > 0) {
+    const barW = 40, barH = 3, barX = cx-barW/2, barY = cy+14;
+    const capRat = room.pets.length / roomCap;
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.roundRect(barX,barY,barW,barH,1.5); ctx.fill();
+    if(room.pets.length>0){
+      ctx.fillStyle = capRat<=0.5?'#00b894':capRat<=0.8?'#fdcb6e':'#e17055';
+      ctx.beginPath(); ctx.roundRect(barX,barY,barW*capRat,barH,1.5); ctx.fill();
+    }
+  }
+
+  // Pet badge
+  if(room.pets.length>0){
+    const bx=tr.x-8,by=tr.y-2;
+    ctx.beginPath(); ctx.arc(bx,by,10,0,Math.PI*2);
+    ctx.fillStyle='#e17055'; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 10px sans-serif';
+    ctx.fillText(room.pets.length,bx,by+3.5);
+  }
+
+  // Checkout badge
+  const coBadge = getCheckoutBadge(room);
+  if(coBadge && room.pets.length>0){
+    const badgeX=bl.x+8, badgeY=bl.y-4;
+    ctx.font='bold 7px sans-serif';
+    const tw2=ctx.measureText(coBadge.text).width+8;
+    ctx.fillStyle=coBadge.bg; ctx.beginPath(); ctx.roundRect(badgeX-tw2/2,badgeY-6,tw2,12,3); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(coBadge.text,badgeX,badgeY+2);
+  }
+
+  // Price
+  if(room.price>0){
+    ctx.font='8px sans-serif'; ctx.fillStyle='rgba(0,184,148,0.85)'; ctx.textAlign='center';
+    ctx.fillText(formatVND(room.price)+'đ',cx,cy+22);
+  }
+
+  // Highlight glow
+  if(isHighlighted){
+    ctx.save(); ctx.shadowColor='#fff'; ctx.shadowBlur=15;
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2;
+    cells.forEach(c=>{
+      const p=isoProject(c.x,c.y),q=isoProject(c.x+1,c.y),r2=isoProject(c.x+1,c.y+1),s=isoProject(c.x,c.y+1);
+      ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r2.x,r2.y);ctx.lineTo(s.x,s.y);ctx.closePath();ctx.stroke();
+    });
+    ctx.restore();
+  }
+}
+
+// ── Stacked 2D Flat Floor Plan View ──
+function drawStackedFloors() {
+  const totalFloors = floors.length;
+  const CELL_2D = 80; // px per grid cell (2D top-down)
+  const COLS = 7, ROWS = 4;
+  const floorW = COLS * CELL_2D;
+  const floorH = ROWS * CELL_2D;
+  const stackGap = floorH + 50; // gap between floors
+  const centerY = canvas.clientHeight / 2;
+  const centerX = canvas.clientWidth / 2 - 100; // offset for sidebar
+
+  // Draw inactive first, active last
+  const drawOrder = [];
+  for (let fi = 0; fi < totalFloors; fi++) { if (fi !== currentFloor) drawOrder.push(fi); }
+  drawOrder.push(currentFloor);
+
+  for (const fi of drawOrder) {
+    const floor = floors[fi];
+    const isActive = fi === currentFloor;
+    const dist = Math.abs(fi - currentFloor);
+
+    // Position: active centered, others above/below
+    const floorY = centerY - floorH / 2 + (currentFloor - fi) * stackGap;
+    const floorX = centerX - floorW / 2;
+
+    ctx.save();
+    const baseAlpha = isActive ? 1.0 : 0.15;
+    ctx.globalAlpha = baseAlpha;
+
+    // Scale inactive floors smaller
+    if (!isActive) {
+      const scale = 0.7 - dist * 0.05;
+      const cx = floorX + floorW / 2, cy = floorY + floorH / 2;
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+      ctx.translate(-cx, -cy);
+    }
+
+    // Floor background
+    ctx.fillStyle = isActive ? '#1a1d27' : '#13151d';
+    ctx.beginPath();
+    ctx.roundRect(floorX - 8, floorY - 8, floorW + 16, floorH + 16, 12);
+    ctx.fill();
+
+    // Active glow border
+    if (isActive) {
+      ctx.save();
+      ctx.shadowColor = '#6c5ce7';
+      ctx.shadowBlur = 20;
+      ctx.strokeStyle = 'rgba(108,92,231,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(floorX - 8, floorY - 8, floorW + 16, floorH + 16, 12);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Floor label above
+    ctx.fillStyle = isActive ? '#a29bfe' : 'rgba(148,152,176,0.7)';
+    ctx.font = isActive ? 'bold 14px sans-serif' : '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = isActive ? 1 : 0.5;
+    ctx.fillText(floor.icon + ' ' + floor.name + (isActive ? ' — ' + floor.description : ''), floorX + floorW / 2, floorY - 18);
+    ctx.globalAlpha = baseAlpha;
+
+    // Wall grid (all cells that are not rooms = walls)
+    const occupiedCells = new Set();
+    floor.rooms.forEach(room => {
+      getRoomCells(room).forEach(c => occupiedCells.add(c.x + ',' + c.y));
+    });
+
+    for (let gx = 0; gx < COLS; gx++) {
+      for (let gy = 0; gy < ROWS; gy++) {
+        const x = floorX + gx * CELL_2D;
+        const y = floorY + gy * CELL_2D;
+        if (!occupiedCells.has(gx + ',' + gy)) {
+          // Wall / hallway cell
+          ctx.fillStyle = isActive ? '#0f1117' : '#0c0e14';
+          ctx.fillRect(x, y, CELL_2D, CELL_2D);
+          ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, CELL_2D, CELL_2D);
+        }
+      }
+    }
+
+    // Draw rooms
+    floor.rooms.forEach(room => {
+      const visible = isRoomVisible(room);
+      const { color, colorLight, name: rName, nameEn, status } = room;
+      const cells = getRoomCells(room);
+      if (cells.length === 0) return;
+
+      // Find bounding rect
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      cells.forEach(c => {
+        minX = Math.min(minX, c.x); minY = Math.min(minY, c.y);
+        maxX = Math.max(maxX, c.x + 1); maxY = Math.max(maxY, c.y + 1);
+      });
+      const rx = floorX + minX * CELL_2D;
+      const ry = floorY + minY * CELL_2D;
+      const rw = (maxX - minX) * CELL_2D;
+      const rh = (maxY - minY) * CELL_2D;
+
+      const alpha2 = visible ? 0.85 : 0.2;
+
+      // Draw each cell of the room
+      cells.forEach(c => {
+        const cx = floorX + c.x * CELL_2D;
+        const cy = floorY + c.y * CELL_2D;
+
+        // Fill
+        ctx.fillStyle = color;
+        ctx.globalAlpha = baseAlpha * alpha2;
+        ctx.fillRect(cx + 1, cy + 1, CELL_2D - 2, CELL_2D - 2);
+
+        // Border between cells
+        ctx.strokeStyle = isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = baseAlpha;
+        ctx.strokeRect(cx + 1, cy + 1, CELL_2D - 2, CELL_2D - 2);
+      });
+
+      // Outer wall: thick border on edges not shared with other cells of this room
+      if (isActive) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = alpha2;
+        cells.forEach(c => {
+          const cx = floorX + c.x * CELL_2D;
+          const cy = floorY + c.y * CELL_2D;
+          // Top wall
+          if (!hasNeighborCell(cells, c.x, c.y, 0, -1)) {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + CELL_2D, cy); ctx.stroke();
+          }
+          // Bottom wall
+          if (!hasNeighborCell(cells, c.x, c.y, 0, 1)) {
+            ctx.beginPath(); ctx.moveTo(cx, cy + CELL_2D); ctx.lineTo(cx + CELL_2D, cy + CELL_2D); ctx.stroke();
+          }
+          // Left wall
+          if (!hasNeighborCell(cells, c.x, c.y, -1, 0)) {
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + CELL_2D); ctx.stroke();
+          }
+          // Right wall
+          if (!hasNeighborCell(cells, c.x, c.y, 1, 0)) {
+            ctx.beginPath(); ctx.moveTo(cx + CELL_2D, cy); ctx.lineTo(cx + CELL_2D, cy + CELL_2D); ctx.stroke();
+          }
+        });
+      }
+
+      ctx.globalAlpha = baseAlpha;
+
+      // Room label (centered in bounding rect)
+      const labelX = rx + rw / 2;
+      const labelY = ry + rh / 2;
+
+      // Store poly for click detection
+      room._polys = cells.map(c => {
+        const cx = floorX + c.x * CELL_2D, cy = floorY + c.y * CELL_2D;
+        return [{x:cx,y:cy},{x:cx+CELL_2D,y:cy},{x:cx+CELL_2D,y:cy+CELL_2D},{x:cx,y:cy+CELL_2D}];
+      });
+
+      if (isActive) {
+        // Room name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = visible ? 0.95 : 0.3;
+        ctx.fillText(rName, labelX, labelY - 6);
+
+        // English name
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '9px sans-serif';
+        ctx.fillText(nameEn, labelX, labelY + 7);
+
+        // Status dot + text
+        const statusColors = { available: '#00b894', occupied: '#e17055', cleaning: '#fdcb6e' };
+        const statusLabels = { available: 'Available', occupied: 'Occupied', cleaning: 'Cleaning' };
+        const sc = statusColors[status] || '#6b7280';
+        ctx.globalAlpha = visible ? 0.8 : 0.3;
+
+        // Dot
+        ctx.beginPath();
+        ctx.arc(labelX - 25, labelY + 20, 4, 0, Math.PI * 2);
+        ctx.fillStyle = sc; ctx.fill();
+
+        // Status text
+        ctx.fillStyle = sc;
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(statusLabels[status] || status, labelX - 18, labelY + 23);
+        ctx.textAlign = 'center';
+
+        // Pet count badge
+        if (status === 'occupied' && room.pets.length > 0) {
+          const bx = rx + rw - 14, by = ry + 14;
+          ctx.beginPath(); ctx.arc(bx, by, 11, 0, Math.PI * 2);
+          ctx.fillStyle = '#e17055'; ctx.globalAlpha = 0.9; ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif';
+          ctx.fillText(room.pets.length, bx, by + 4);
+        }
+
+        // Price
+        if (room.price > 0 && visible) {
+          ctx.fillStyle = 'rgba(253,121,168,0.65)';
+          ctx.font = '9px sans-serif';
+          ctx.globalAlpha = 0.7;
+          ctx.fillText(formatVND(room.price), labelX, labelY + 36);
+        }
+
+        // Schedule badge
+        if (room.schedule) {
+          room.schedule.forEach(s => {
+            const badgeText = s.when === 'today' ? 'HÔM NAY' : s.when === 'tomorrow' ? 'NGÀY MAI' : '';
+            const badgeColor = s.when === 'today' ? '#e17055' : '#fdcb6e';
+            if (badgeText) {
+              ctx.globalAlpha = 0.85;
+              ctx.font = 'bold 8px sans-serif';
+              const tw = ctx.measureText(badgeText).width;
+              ctx.fillStyle = badgeColor;
+              ctx.beginPath(); ctx.roundRect(rx + 4, ry + 4, tw + 10, 15, 3); ctx.fill();
+              ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+              ctx.fillText(badgeText, rx + 9, ry + 14);
+              ctx.textAlign = 'center';
+            }
+          });
+        }
+      } else {
+        // Inactive: minimal label
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(rName, labelX, labelY);
+        if (status === 'occupied' && room.pets.length > 0) {
+          const bx = rx + rw - 10, by = ry + 10;
+          ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2);
+          ctx.fillStyle = '#e17055'; ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 8px sans-serif';
+          ctx.fillText(room.pets.length, bx, by + 3);
+        }
+      }
+    });
+
+    ctx.restore();
+  }
+}
+
+function draw2D() {
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+
+  // ── Stacked multi-floor view ──
+  if (stackedView && !editMode && floors.length > 1) {
+    drawStackedFloors();
+    animFrame2d=requestAnimationFrame(draw2D);
+    return;
+  }
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.03)'; ctx.lineWidth=1;
+  for(let i=0;i<=7;i++){const a=isoProject(i,0),b=isoProject(i,4);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  for(let j=0;j<=4;j++){const a=isoProject(0,j),b=isoProject(7,j);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+
+  // Edit mode: grid cell overlay
+  if (editMode) {
+    const floor = floors[currentFloor];
+    for(let gx=0;gx<7;gx++){
+      for(let gy=0;gy<4;gy++){
+        const tl=isoProject(gx,gy), tr=isoProject(gx+1,gy);
+        const br=isoProject(gx+1,gy+1), bl=isoProject(gx,gy+1);
+        ctx.beginPath();
+        ctx.moveTo(tl.x,tl.y); ctx.lineTo(tr.x,tr.y); ctx.lineTo(br.x,br.y); ctx.lineTo(bl.x,bl.y);
+        ctx.closePath();
+        const occ = isGridCellOccupied(floor, gx, gy, null);
+        ctx.fillStyle = occ ? 'rgba(225,112,85,0.03)' : 'rgba(108,92,231,0.06)';
+        ctx.fill();
+        ctx.strokeStyle = occ ? 'rgba(225,112,85,0.12)' : 'rgba(108,92,231,0.2)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        if(!occ) {
+          const cx=(tl.x+tr.x+br.x+bl.x)/4, cy=(tl.y+tr.y+br.y+bl.y)/4;
+          ctx.fillStyle='rgba(108,92,231,0.25)'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+          ctx.fillText('+',cx,cy+5);
+        }
+      }
+    }
+  }
+
+  // Room shadows (visual polish)
+  activeRooms().forEach(r => {
+    getRoomCells(r).forEach(c => {
+      const tl=isoProject(c.x,c.y), tr=isoProject(c.x+1,c.y);
+      const br=isoProject(c.x+1,c.y+1), bl=isoProject(c.x,c.y+1);
+      ctx.beginPath();
+      ctx.moveTo(tl.x+3,tl.y+4); ctx.lineTo(tr.x+3,tr.y+4); ctx.lineTo(br.x+3,br.y+4); ctx.lineTo(bl.x+3,bl.y+4);
+      ctx.closePath();
+      ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.fill();
+    });
+  });
+
+  // Rooms
+  activeRooms().forEach(r => drawRoom(r, r===hoveredRoom));
+
+  // Ghost room during drag in edit mode
+  if (editMode && editDragRoom && editGhostPos) {
+    const {gx,gy} = editGhostPos;
+    const gw = editDragRoom.gridW, gh = editDragRoom.gridH;
+    const valid = canPlaceRoom(floors[currentFloor], gx, gy, gw, gh, editDragRoom);
+    const tl=isoProject(gx,gy), tr=isoProject(gx+gw,gy);
+    const br=isoProject(gx+gw,gy+gh), bl=isoProject(gx,gy+gh);
+    ctx.beginPath();
+    ctx.moveTo(tl.x,tl.y); ctx.lineTo(tr.x,tr.y); ctx.lineTo(br.x,br.y); ctx.lineTo(bl.x,bl.y);
+    ctx.closePath();
+    ctx.fillStyle = valid ? 'rgba(0,184,148,0.2)' : 'rgba(225,112,85,0.2)';
+    ctx.fill();
+    ctx.strokeStyle = valid ? '#00b894' : '#e17055';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+    // Room name on ghost
+    const cx=(tl.x+br.x)/2, cy=(tl.y+br.y)/2;
+    ctx.fillStyle = valid ? 'rgba(0,184,148,0.7)' : 'rgba(225,112,85,0.7)';
+    ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(editDragRoom.name, cx, cy+4);
+  }
+
+  // Cell expand/shrink buttons for selected room in edit mode
+  if (editMode && editSelectedRoom && !editDragRoom) {
+    const rm = editSelectedRoom;
+    // Show "+" on adjacent empty cells (expand)
+    const expandable = getExpandableCells(floors[currentFloor], rm);
+    expandable.forEach(({x,y}) => {
+      const tl=isoProject(x,y), tr=isoProject(x+1,y), br=isoProject(x+1,y+1), bl=isoProject(x,y+1);
+      const cx2=(tl.x+br.x)/2, cy2=(tl.y+br.y)/2;
+      // Highlight cell
+      ctx.beginPath();
+      ctx.moveTo(tl.x,tl.y);ctx.lineTo(tr.x,tr.y);ctx.lineTo(br.x,br.y);ctx.lineTo(bl.x,bl.y);
+      ctx.closePath();
+      ctx.fillStyle='rgba(108,92,231,0.12)'; ctx.fill();
+      ctx.strokeStyle='rgba(108,92,231,0.4)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+      // "+" button
+      ctx.beginPath(); ctx.arc(cx2,cy2,9,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,184,148,0.8)'; ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('+',cx2,cy2+4);
+    });
+    // Show "−" on edge cells that can be removed (shrink)
+    const cells = getRoomCells(rm);
+    if(cells.length > 1) {
+      cells.forEach(c => {
+        if(canRemoveCell(rm, c.x, c.y)) {
+          const tl=isoProject(c.x,c.y), br=isoProject(c.x+1,c.y+1);
+          const cx2=(tl.x+br.x)/2, cy2=(tl.y+br.y)/2;
+          ctx.beginPath(); ctx.arc(cx2+12,cy2-12,7,0,Math.PI*2);
+          ctx.fillStyle='rgba(225,112,85,0.8)'; ctx.fill();
+          ctx.fillStyle='#fff'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+          ctx.fillText('\u2212',cx2+12,cy2-9);
+        }
+      });
+    }
+  }
+
+  // Floor label banner
+  const flr = floors[currentFloor];
+  const bannerY = 20;
+  ctx.fillStyle='rgba(26,29,39,0.7)'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`${flr.icon} ${flr.name} — ${flr.description}`, canvas.clientWidth/2, bannerY);
+
+  // Hallway
+  ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  const cp=isoProject(3.5,2);
+  ctx.fillText('HALLWAY',cp.x,cp.y-5);
+
+  // Elevator
+  const epos=isoProject(7.3,1.8);
+  ctx.save(); ctx.globalAlpha=0.5;
+  ctx.beginPath();
+  const ew=28,eh=36;
+  ctx.roundRect(epos.x-ew/2,epos.y-eh/2,ew,eh,4);
+  ctx.fillStyle='#1a1d27'; ctx.fill();
+  ctx.strokeStyle='#6c5ce7'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.globalAlpha=0.8; ctx.fillStyle='#a29bfe'; ctx.font='12px sans-serif';
+  ctx.fillText('\u{1F6D7}',epos.x,epos.y+1);
+  ctx.font='bold 8px sans-serif'; ctx.fillText('F'+floors[currentFloor].id,epos.x,epos.y+14);
+  ctx.restore();
+
+  animFrame2d=requestAnimationFrame(draw2D);
+}
+
+// ── Mouse / Touch ──
+function getEventPos(e){const r=canvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+
+canvas.addEventListener('mousemove', e => {
+  if(currentView!=='2d'||floorTransitioning) return;
+  const p=getEventPos(e);
+
+  // Edit mode drag
+  if (editMode && editMouseDown && editDragRoom) {
+    editDragMoved = true;
+    tooltip.style.display='none';
+    const grid = screenToGrid(p.x, p.y);
+    editGhostPos = { gx: grid.gx, gy: grid.gy };
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  // Hide tooltip near expand buttons in edit mode
+  if(editMode && editSelectedRoom && !editMouseDown) {
+    const grid2 = screenToGrid(p.x, p.y);
+    const expandable = getExpandableCells(floors[currentFloor], editSelectedRoom);
+    if(expandable.some(c => c.x===grid2.gx && c.y===grid2.gy)) {
+      canvas.style.cursor = 'pointer';
+      tooltip.style.display='none';
+      hoveredRoom=null;
+      return;
+    }
+  }
+
+  let found=null;
+  const rooms=activeRooms();
+  for(let i=rooms.length-1;i>=0;i--){
+    if(pointInRoom(p.x,p.y,rooms[i])){
+      if(editMode || isRoomVisible(rooms[i])){found=rooms[i];break;}
+    }
+  }
+  hoveredRoom=found;
+  if(editMode) {
+    canvas.style.cursor = found ? 'grab' : 'cell';
+  } else {
+    canvas.style.cursor=found?'pointer':'default';
+  }
+  if(found){
+    tooltip.style.display='block';
+    tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY+14)+'px';
+    const sl={available:'Available',occupied:'Occupied',cleaning:'Cleaning'};
+    tooltip.innerHTML=`<strong>${found.name}</strong><br><span style="color:var(--text2)">${found.nameEn}</span><br><span style="font-size:11px">${sl[found.status]}${found.pets.length?' \u00B7 '+found.pets.length+' pet(s)':''}</span><br><span style="font-size:10px;color:var(--accent2)">${floors[currentFloor].name}</span>`;
+  } else tooltip.style.display='none';
+});
+
+canvas.addEventListener('mouseleave', ()=>{hoveredRoom=null;tooltip.style.display='none';});
+
+// (Resize handles replaced by cell expand/shrink buttons)
+
+// Edit mode: mousedown to start drag or resize
+canvas.addEventListener('mousedown', e => {
+  if(!editMode || currentView!=='2d') return;
+  const p=getEventPos(e);
+
+  // Check room drag
+  const rooms=activeRooms();
+  for(let i=rooms.length-1;i>=0;i--){
+    if(pointInRoom(p.x,p.y,rooms[i])){
+      editDragRoom=rooms[i];
+      editDragStart={gx:rooms[i].gridX,gy:rooms[i].gridY};
+      editGhostPos={gx:rooms[i].gridX,gy:rooms[i].gridY};
+      editMouseDown=true;
+      editDragMoved=false;
+      e.preventDefault();
+      return;
+    }
+  }
+  editMouseDown=true;
+  editDragMoved=false;
+});
+
+// Edit mode: mouseup to finish drag or resize
+canvas.addEventListener('mouseup', e => {
+  if(!editMode) { editMouseDown=false; return; }
+  const p=getEventPos(e);
+
+  // Finish drag
+  if(editDragRoom && editDragMoved && editGhostPos) {
+    const {gx,gy} = editGhostPos;
+    if(canPlaceRoom(floors[currentFloor], gx, gy, editDragRoom.gridW, editDragRoom.gridH, editDragRoom)) {
+      editDragRoom.gridX = gx;
+      editDragRoom.gridY = gy;
+      showToast('info','Di chuyển phòng',`${editDragRoom.name} \u2192 (${gx},${gy})`);
+      refreshAfterAction(editDragRoom);
+    }
+  } else if(!editDragMoved) {
+    handleSelect(p);
+  }
+
+  editDragRoom=null; editDragStart=null; editGhostPos=null;
+  editMouseDown=false; editDragMoved=false;
+  canvas.style.cursor='cell';
+});
+
+canvas.addEventListener('click', e => {
+  if(editMode) return; // handled by mouseup in edit mode
+  if(panDragMoved) { panDragMoved = false; return; } // ignore click after drag
+  handleSelect(getEventPos(e));
+});
+canvas.addEventListener('touchend', e=>{
+  e.preventDefault();
+  if(e.changedTouches.length){const r=canvas.getBoundingClientRect(),t=e.changedTouches[0];handleSelect({x:t.clientX-r.left,y:t.clientY-r.top});}
+});
+
+function handleSelect(p){
+  if(currentView!=='2d'||floorTransitioning) return;
+
+  if(editMode) {
+    const grid=screenToGrid(p.x,p.y);
+    const floor=floors[currentFloor];
+
+    // If a room is selected, check expand/shrink first
+    if(editSelectedRoom) {
+      // Check "+" expand: click on adjacent empty cell
+      const expandable = getExpandableCells(floor, editSelectedRoom);
+      const expandHit = expandable.find(({x,y}) => {
+        const tl=isoProject(x,y),tr=isoProject(x+1,y),br=isoProject(x+1,y+1),bl=isoProject(x,y+1);
+        return pointInPoly(p.x,p.y,[tl,tr,br,bl]);
+      });
+      if(expandHit) {
+        // Add cell to room
+        if(!editSelectedRoom.cells) editSelectedRoom.cells = getRoomCells(editSelectedRoom);
+        editSelectedRoom.cells.push({x:expandHit.x, y:expandHit.y});
+        showToast('info','Mở rộng',`${editSelectedRoom.name} +1 ô`);
+        refreshAfterAction(editSelectedRoom);
+        // Re-open edit panel
+        showEditPanel(editSelectedRoom);
+        return;
+      }
+
+      // Check "−" shrink: click on removable cell of selected room
+      const cells = getRoomCells(editSelectedRoom);
+      if(cells.length > 1) {
+        const shrinkHit = cells.find(c => {
+          if(!canRemoveCell(editSelectedRoom, c.x, c.y)) return false;
+          // Check click near the "−" button position (top-right of cell)
+          const tl=isoProject(c.x,c.y),br=isoProject(c.x+1,c.y+1);
+          const bx=(tl.x+br.x)/2+12, by=(tl.y+br.y)/2-12;
+          const dx=p.x-bx, dy=p.y-by;
+          return dx*dx+dy*dy < 10*10;
+        });
+        if(shrinkHit) {
+          if(!editSelectedRoom.cells) editSelectedRoom.cells = getRoomCells(editSelectedRoom);
+          editSelectedRoom.cells = editSelectedRoom.cells.filter(c => !(c.x===shrinkHit.x && c.y===shrinkHit.y));
+          showToast('info','Thu nhỏ',`${editSelectedRoom.name} -1 ô`);
+          refreshAfterAction(editSelectedRoom);
+          showEditPanel(editSelectedRoom);
+          return;
+        }
+      }
+    }
+
+    // Check room click
+    const rooms=activeRooms();
+    for(let i=rooms.length-1;i>=0;i--){
+      if(pointInRoom(p.x,p.y,rooms[i])){
+        showEditPanel(rooms[i]); return;
+      }
+    }
+    // Empty cell click → add room
+    if(grid.gx>=0 && grid.gx<7 && grid.gy>=0 && grid.gy<4){
+      if(!isGridCellOccupied(floor,grid.gx,grid.gy,null)){
+        showAddRoomPanel(grid.gx,grid.gy);
+      }
+    }
+    return;
+  }
+
+  const rooms=activeRooms();
+  for(let i=rooms.length-1;i>=0;i--){
+    if(pointInRoom(p.x,p.y,rooms[i])&&isRoomVisible(rooms[i])){selectRoom(rooms[i]);return;}
+  }
+}
+
+// ══════════════════════════════════
+// ── ROOM SELECT & 3D ──
+// ══════════════════════════════════
+function selectRoom(room){
+  selectedRoom=room; tooltip.style.display='none';
+  showInfoPanel(room);
+}
+
+function getRoomCapacity(room) {
+  // Infer capacity from furniture
+  const f = room.furniture.join(' ');
+  const match = f.match(/x(\d+)/);
+  if (match) return parseInt(match[1]);
+  if (room.id.includes('dog_large')) return 4;
+  if (room.id.includes('dog_small')) return 3;
+  if (room.id.includes('cat')) return 3;
+  if (room.id.includes('exotic')) return 2;
+  if (room.id.includes('recovery')) return 4;
+  if (room.id.includes('surg') || room.id.includes('groom') || room.id.includes('exam') || room.id.includes('emergency')) return 1;
+  return 0; // rooms like pharmacy, staff, food, lab, reception
+}
+
+function getCapacityColor(ratio) {
+  if (ratio <= 0.5) return 'var(--green)';
+  if (ratio <= 0.8) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function showInfoPanel(room){
+  const sl={available:'Available',occupied:'Occupied',cleaning:'Cleaning'};
+  const sc='status-'+room.status;
+  const cap = getRoomCapacity(room);
+  const used = room.pets.length;
+  const capRatio = cap > 0 ? used / cap : 0;
+
+  let html=`
+    <div class="panel-room-name">${room.name}</div>
+    <div class="panel-room-sub">${room.nameEn} \u00B7 ${floors[currentFloor].name}</div>
+    <div class="panel-room-status ${sc}">${sl[room.status]}</div>`;
+  if(room.price > 0) {
+    html += `<div class="panel-price">\u{1F4B0} ${formatVNDFull(room.price)} <span class="price-unit">/ đêm</span></div>`;
+  }
+
+  // Capacity bar
+  if (cap > 0) {
+    html += `<div class="capacity-bar">
+      <div class="capacity-bar-label">
+        <span>Capacity</span>
+        <span style="color:${getCapacityColor(capRatio)};font-weight:600">${used}/${cap}</span>
+      </div>
+      <div class="capacity-bar-track">
+        <div class="capacity-bar-fill" style="width:${capRatio*100}%;background:${getCapacityColor(capRatio)}"></div>
+      </div>
+    </div>`;
+  }
+
+  // Quick action buttons
+  html += `<div class="quick-actions">`;
+  if (room.status === 'available' && cap > 0) {
+    html += `<button class="qa-btn checkin" data-action="checkin" data-room="${room.id}">\u{1F43E} Check-in</button>`;
+  }
+  if (room.pets.length > 0) {
+    html += `<button class="qa-btn checkout" data-action="checkout" data-room="${room.id}">\u{1F4E4} Check-out</button>`;
+  }
+  if (room.status === 'occupied' && room.pets.length === 0) {
+    html += `<button class="qa-btn clean" data-action="clean" data-room="${room.id}">\u{1F9F9} Clean</button>`;
+  }
+  if (room.status === 'cleaning') {
+    html += `<button class="qa-btn checkin" data-action="markready" data-room="${room.id}">\u2705 Mark Ready</button>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="panel-section"><h3>Furniture & Equipment</h3>
+    <div class="furniture-list">${room.furniture.map(f=>`<span class="furniture-tag">${f}</span>`).join('')}</div>
+  </div>`;
+
+  // Empty state for available rooms with capacity
+  if(room.pets.length === 0 && cap > 0) {
+    const emojis = {dog:'\u{1F436}',cat:'\u{1F431}',exotic:'\u{1F98E}',medical:'\u{1FA7A}'};
+    const types = (room.tags||[]).filter(t=>['dog','cat','exotic'].includes(t));
+    const icon = types.length ? emojis[types[0]] : '\u{1F3E0}';
+    html += `<div class="panel-section">
+      <div class="empty-state">
+        <div class="es-icon">${icon}</div>
+        <div class="es-title">Phòng trống</div>
+        <div class="es-sub">Sẵn sàng nhận ${cap} thú cưng.<br>Nhấn <b>Check-in</b> để thêm pet mới.</div>
+      </div>
+    </div>`;
+  }
+
+  if(room.pets.length>0){
+    html+=`<div class="panel-section"><h3>Current Pets (${room.pets.length})</h3>`;
+    room.pets.forEach((p,pi)=>{
+      const days=Math.max(1,Math.floor((Date.now()-new Date(p.checkin).getTime())/(86400000)));
+      const bill = (room.price||0) * days;
+      html+=`<div class="pet-card">
+        <div class="name">${p.type==='cat'?'\u{1F431}':p.type==='exotic'?'\u{1F98E}':'\u{1F436}'} ${p.name}</div>
+        <div class="breed">${p.breed}</div>
+        ${p.owner ? `<div class="pet-owner">\u{1F464} ${p.owner}</div>` : ''}
+        <div class="date">Check-in: ${p.checkin}</div>
+        ${p.checkout ? `<div class="pet-checkout">\u{1F4C5} Check-out: ${p.checkout}</div>` : ''}
+        <div class="pet-timer">${days} ngày${bill > 0 ? ' · <span style="color:var(--green);font-weight:600">'+formatVNDFull(bill)+'</span>' : ''}</div>
+        ${p.phone ? `<div class="pet-contact">
+          <a href="tel:${p.phone}" class="contact-btn call">\u{1F4DE} Gọi ${p.phone}</a>
+          <a href="sms:${p.phone}" class="contact-btn sms">\u{1F4AC} Nhắn tin</a>
+        </div>` : ''}
+        <button class="qa-btn checkout" style="margin-top:8px;padding:6px" data-action="checkout-single" data-room="${room.id}" data-pet="${pi}">\u{1F4E4} Check-out ${p.name}</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  infoPanel.innerHTML=html;
+  setTimeout(()=>infoPanel.classList.add('open'),50);
+
+  // Bind quick action events
+  infoPanel.querySelectorAll('.qa-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleQuickAction(btn.dataset.action, room, btn.dataset.pet));
+  });
+}
+
+// ══════════════════════════════════
+// ── EDIT PANEL (Simplified) ──
+// ══════════════════════════════════
+const ROOM_ICONS = {exam:'\u{1FA7A}',boarding_dog:'\u{1F436}',boarding_cat:'\u{1F431}',exotic:'\u{1F98E}',surgery:'\u{1F52A}',grooming:'\u{1F6C1}',recovery:'\u{1F3E5}',reception:'\u{1F4CB}',play_area:'\u{1F3BE}',lab:'\u{1F52C}',pharmacy:'\u{1F48A}',staff:'\u{2615}',empty:'\u{1F4E6}'};
+
+// Find empty space on current floor for a room of given size
+function findEmptySpace(floor, gw, gh) {
+  for(let gy=0; gy<=4-gh; gy++){
+    for(let gx=0; gx<=7-gw; gx++){
+      if(canPlaceRoom(floor, gx, gy, gw, gh, null)) return {gx,gy};
+    }
+  }
+  return null;
+}
+
+// ── Simple Edit Panel (click existing room) ──
+function showEditPanel(room) {
+  editSelectedRoom = room;
+  const tOpts = Object.entries(ROOM_TEMPLATES).map(([k,t])=>`<option value="${k}" ${room.name===t.name?'selected':''}>${t.name}</option>`).join('');
+  infoPanel.innerHTML = `
+    <div class="edit-panel-header">
+      <div class="edit-panel-title">\u270F\uFE0F ${room.name}</div>
+      <button class="edit-close-btn" id="ep-close">\u2715</button>
+    </div>
+    <div class="edit-form-group">
+      <label>Loại phòng</label>
+      <select id="ep-template" class="edit-select"><option value="">-- Tùy chỉnh --</option>${tOpts}</select>
+    </div>
+    <div class="edit-form-group">
+      <label>Tên phòng</label>
+      <input id="ep-name" class="edit-input" value="${room.name}">
+    </div>
+    <div class="edit-form-group">
+      <label>Giá (VND/đêm)</label>
+      <input id="ep-price" class="edit-input" type="number" min="0" step="50000" value="${room.price||0}">
+    </div>
+    <div class="edit-form-group">
+      <label>Kích thước</label>
+      <div class="edit-grid-2col">
+        <select id="ep-size" class="edit-select">
+          <option value="2,2" ${room.gridW===2&&room.gridH===2?'selected':''}>Nhỏ (2x2)</option>
+          <option value="3,2" ${room.gridW===3&&room.gridH===2?'selected':''}>Vừa (3x2)</option>
+          <option value="2,1" ${room.gridW===2&&room.gridH===1?'selected':''}>Hẹp (2x1)</option>
+          <option value="3,1" ${room.gridW===3&&room.gridH===1?'selected':''}>Dài (3x1)</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="margin:0;font-size:10px;color:var(--text2)">Màu</label>
+          <input id="ep-color" type="color" value="${room.color}" class="edit-color-swatch">
+        </div>
+      </div>
+    </div>
+    <div class="edit-btn-row">
+      <button class="edit-btn primary" id="ep-save">\u2714 Lưu</button>
+      <button class="edit-btn danger" id="ep-delete">\u{1F5D1} Xóa</button>
+    </div>`;
+  infoPanel.classList.add('open');
+
+  document.getElementById('ep-close').onclick = () => { infoPanel.classList.remove('open'); };
+  document.getElementById('ep-template').onchange = e => {
+    const t = ROOM_TEMPLATES[e.target.value];
+    if(!t) return;
+    document.getElementById('ep-name').value = t.name;
+    document.getElementById('ep-price').value = t.price;
+    document.getElementById('ep-color').value = t.color;
+  };
+  document.getElementById('ep-save').onclick = () => {
+    const tplKey = document.getElementById('ep-template').value;
+    const tpl = ROOM_TEMPLATES[tplKey];
+    room.name = document.getElementById('ep-name').value;
+    room.nameEn = tpl ? tpl.nameEn : room.nameEn;
+    room.price = parseInt(document.getElementById('ep-price').value)||0;
+    room.color = document.getElementById('ep-color').value;
+    room.colorLight = shadeColor(room.color, 40);
+    const [gw,gh] = document.getElementById('ep-size').value.split(',').map(Number);
+    if(gw!==room.gridW || gh!==room.gridH) {
+      if(canPlaceRoom(floors[currentFloor], room.gridX, room.gridY, gw, gh, room)){
+        room.gridW=gw; room.gridH=gh;
+      } else { showToast('info','Không thể đổi kích thước','Không đủ chỗ'); }
+    }
+    if(tpl) {
+      room.tags=[...tpl.tags]; room.furniture=[...tpl.furniture];
+      room.furnitureItems=JSON.parse(JSON.stringify(tpl.furnitureItems));
+    }
+    showToast('info','Đã cập nhật',room.name);
+    refreshAfterAction(room); infoPanel.classList.remove('open');
+  };
+  document.getElementById('ep-delete').onclick = () => {
+    if(!confirm(`Xóa "${room.name}"?`)) return;
+    const rooms=floors[currentFloor].rooms;
+    const idx=rooms.indexOf(room);
+    if(idx!==-1) rooms.splice(idx,1);
+    showToast('info','Đã xóa',room.name);
+    infoPanel.classList.remove('open'); refreshAfterAction(null);
+  };
+}
+
+// ── Room Palette (click empty cell → show palette of room types) ──
+function showAddRoomPanel(gx, gy) {
+  const paletteItems = Object.entries(ROOM_TEMPLATES).filter(([k])=>k!=='empty').map(([k,t])=>{
+    const icon = ROOM_ICONS[k]||'\u{1F3E0}';
+    const priceLabel = t.price>0 ? formatVND(t.price)+'đ' : 'Miễn phí';
+    return `<div class="rp-card" data-tpl="${k}" data-gx="${gx}" data-gy="${gy}">
+      <div class="rp-icon">${icon}</div>
+      <div class="rp-name"><span class="rp-dot" style="background:${t.color}"></span>${t.name}</div>
+      <div class="rp-price">${priceLabel}</div>
+    </div>`;
+  }).join('');
+
+  infoPanel.innerHTML = `
+    <div class="edit-panel-header">
+      <div class="edit-panel-title">\u2795 Chọn loại phòng</div>
+      <button class="edit-close-btn" id="ep-close">\u2715</button>
+    </div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:10px">Nhấn vào loại phòng để thêm ngay:</p>
+    <div class="room-palette">${paletteItems}</div>
+    <button class="edit-btn secondary" id="ep-close2" style="width:100%">Hủy</button>`;
+  infoPanel.classList.add('open');
+
+  document.getElementById('ep-close').onclick = () => infoPanel.classList.remove('open');
+  document.getElementById('ep-close2').onclick = () => infoPanel.classList.remove('open');
+
+  infoPanel.querySelectorAll('.rp-card').forEach(card => {
+    card.onclick = () => {
+      const tplKey = card.dataset.tpl;
+      const clickGx = parseInt(card.dataset.gx);
+      const clickGy = parseInt(card.dataset.gy);
+      addRoomFromTemplate(tplKey, clickGx, clickGy);
+      infoPanel.classList.remove('open');
+    };
+  });
+}
+
+function addRoomFromTemplate(tplKey, preferGx, preferGy) {
+  const tpl = ROOM_TEMPLATES[tplKey];
+  if(!tpl) return;
+  const floor = floors[currentFloor];
+  // Try preferred position first (2x2), then find any empty space
+  let gx=preferGx, gy=preferGy, gw=2, gh=2;
+  if(!canPlaceRoom(floor, gx, gy, gw, gh, null)) {
+    // Try 2x2 elsewhere
+    const spot = findEmptySpace(floor, 2, 2);
+    if(!spot) {
+      // Try 3x2
+      gw=3; gh=2;
+      const spot2 = findEmptySpace(floor, 3, 2);
+      if(!spot2) { showToast('info','Không đủ chỗ','Tầng đã đầy, thêm tầng mới'); return; }
+      gx=spot2.gx; gy=spot2.gy;
+    } else { gx=spot.gx; gy=spot.gy; }
+  }
+  // Auto-number: count existing rooms with same base name across all floors
+  const baseName = tpl.name;
+  const baseNameEn = tpl.nameEn;
+  const existingCount = allRooms().filter(r => r.name.startsWith(baseName)).length;
+  const num = existingCount + 1;
+  const numberedName = `${baseName} ${num}`;
+  const numberedNameEn = `${baseNameEn} ${num}`;
+
+  const newRoom = {
+    id:'room_'+Date.now(), name:numberedName, nameEn:numberedNameEn,
+    color:tpl.color, colorLight:tpl.colorLight||shadeColor(tpl.color,40),
+    gridX:gx, gridY:gy, gridW:gw, gridH:gh,
+    status:'available', tags:[...tpl.tags], price:tpl.price,
+    furniture:[...tpl.furniture], pets:[],
+    furnitureItems:JSON.parse(JSON.stringify(tpl.furnitureItems))
+  };
+  floor.rooms.push(newRoom);
+  showToast('info','Đã thêm',`${tpl.name} \u2192 Tầng ${floors[currentFloor].id}`);
+  refreshAfterAction(newRoom);
+}
+
+// ── Floor Templates (pre-built floors) ──
+const FLOOR_TEMPLATES = {
+  medical: {
+    name:'Tầng Khám bệnh', icon:'\u{1F3E5}', desc:'Lễ tân, 2 phòng khám, nhà thuốc, phòng chờ, cấp cứu',
+    description:'Tiếp đón & Khám bệnh', tags:['medical'],
+    rooms: [
+      {tpl:'reception',gx:0,gy:0,gw:3,gh:2},{tpl:'exam',gx:3,gy:0,gw:2,gh:2},{tpl:'exam',gx:5,gy:0,gw:2,gh:2},
+      {tpl:'pharmacy',gx:0,gy:2,gw:2,gh:2},{tpl:'empty',gx:2,gy:2,gw:3,gh:2,name:'Phòng chờ',nameEn:'Waiting Area'},{tpl:'empty',gx:5,gy:2,gw:2,gh:2,name:'Phòng cấp cứu',nameEn:'Emergency'}
+    ]
+  },
+  boarding: {
+    name:'Tầng Lưu trú', icon:'\u{1F43E}', desc:'Phòng chó lớn, chó nhỏ, mèo, thú lạ, khu vui chơi',
+    description:'Lưu trú thú cưng', tags:['dog','cat','exotic'],
+    rooms: [
+      {tpl:'boarding_dog',gx:0,gy:0,gw:3,gh:2},{tpl:'boarding_dog',gx:3,gy:0,gw:2,gh:2},{tpl:'boarding_cat',gx:5,gy:0,gw:2,gh:2},
+      {tpl:'exotic',gx:0,gy:2,gw:2,gh:2},{tpl:'play_area',gx:2,gy:2,gw:3,gh:2},{tpl:'empty',gx:5,gy:2,gw:2,gh:2,name:'Chuẩn bị thức ăn',nameEn:'Food Prep'}
+    ]
+  },
+  surgery: {
+    name:'Tầng Phẫu thuật', icon:'\u2695\uFE0F', desc:'2 phòng mổ, grooming, hồi phục, xét nghiệm, nhân viên',
+    description:'Phẫu thuật & Chăm sóc', tags:['medical'],
+    rooms: [
+      {tpl:'surgery',gx:0,gy:0,gw:3,gh:2},{tpl:'surgery',gx:3,gy:0,gw:2,gh:2},{tpl:'grooming',gx:5,gy:0,gw:2,gh:2},
+      {tpl:'recovery',gx:0,gy:2,gw:2,gh:2},{tpl:'lab',gx:2,gy:2,gw:3,gh:2},{tpl:'staff',gx:5,gy:2,gw:2,gh:2}
+    ]
+  },
+  hotel: {
+    name:'Tầng Pet Hotel', icon:'\u{1F3E8}', desc:'4 phòng boarding + grooming + khu vui chơi',
+    description:'Pet Hotel Premium', tags:['dog','cat'],
+    rooms: [
+      {tpl:'boarding_dog',gx:0,gy:0,gw:2,gh:2},{tpl:'boarding_dog',gx:2,gy:0,gw:2,gh:2},{tpl:'boarding_cat',gx:4,gy:0,gw:2,gh:2},
+      {tpl:'grooming',gx:0,gy:2,gw:2,gh:2},{tpl:'play_area',gx:2,gy:2,gw:3,gh:2},{tpl:'boarding_cat',gx:5,gy:2,gw:2,gh:2}
+    ]
+  }
+};
+
+function showFloorTemplateModal() {
+  const modal = document.createElement('div');
+  modal.className = 'ft-modal';
+  modal.innerHTML = `<div class="ft-modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="margin:0">\u{1F3D7} Chọn tầng mẫu</h2>
+      <button class="edit-close-btn" id="ftm-close" style="font-size:20px">\u2715</button>
+    </div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Chọn một mẫu để tạo tầng mới với phòng sẵn có:</p>
+    ${Object.entries(FLOOR_TEMPLATES).map(([k,ft])=>`
+      <div class="ft-template-card" data-ft="${k}">
+        <h3>${ft.icon} ${ft.name}</h3>
+        <p>${ft.desc}</p>
+        <div class="ft-rooms">${ft.rooms.map(r=>{
+          const t=ROOM_TEMPLATES[r.tpl];
+          return `<span class="ft-room-tag"><span class="rp-dot" style="background:${t?t.color:'#6b7280'}"></span>${r.name||t?.name||'Phòng'}</span>`;
+        }).join('')}</div>
+      </div>
+    `).join('')}
+    <button class="edit-btn secondary" id="ftm-cancel" style="width:100%;margin-top:8px">Hủy</button>
+  </div>`;
+  document.body.appendChild(modal);
+
+  modal.querySelector('#ftm-close').onclick = () => modal.remove();
+  modal.querySelector('#ftm-cancel').onclick = () => modal.remove();
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+
+  modal.querySelectorAll('.ft-template-card').forEach(card => {
+    card.onclick = () => {
+      createFloorFromTemplate(card.dataset.ft);
+      modal.remove();
+    };
+  });
+}
+
+function createFloorFromTemplate(ftKey) {
+  const ft = FLOOR_TEMPLATES[ftKey];
+  if(!ft) return;
+  const newId = floors.length + 1;
+  const newFloor = {
+    id:newId, name:`Tầng ${newId}`, nameEn:`Floor ${newId}`,
+    description:ft.description, icon:ft.icon, tags:[...ft.tags], rooms:[]
+  };
+  // Track name counts for auto-numbering within this floor
+  const nameCount = {};
+  ft.rooms.forEach((r,i) => {
+    const tpl = ROOM_TEMPLATES[r.tpl];
+    const base = tpl || ROOM_TEMPLATES.empty;
+    const baseName = r.name || base.name;
+    const baseNameEn = r.nameEn || base.nameEn;
+    nameCount[baseName] = (nameCount[baseName]||0) + 1;
+    const count = nameCount[baseName];
+    // Only number if there are duplicates (check total in template)
+    const totalSame = ft.rooms.filter(x => (x.name||ROOM_TEMPLATES[x.tpl]?.name) === baseName).length;
+    const displayName = totalSame > 1 ? `${baseName} ${count}` : baseName;
+    const displayNameEn = totalSame > 1 ? `${baseNameEn} ${count}` : baseNameEn;
+    newFloor.rooms.push({
+      id:'room_'+Date.now()+'_'+i,
+      name: displayName,
+      nameEn: displayNameEn,
+      color: base.color, colorLight: base.colorLight || shadeColor(base.color,40),
+      gridX:r.gx, gridY:r.gy, gridW:r.gw, gridH:r.gh,
+      status:'available', tags:[...(base.tags||[])], price:base.price||0,
+      furniture:[...(base.furniture||[])], pets:[],
+      furnitureItems: JSON.parse(JSON.stringify(base.furnitureItems||[]))
+    });
+  });
+  floors.push(newFloor);
+  currentFloor = floors.length-1;
+  buildFloorSelector(); buildMinimap(); updateStats(); updateDashboard(); resize2D();
+  showToast('info','Đã tạo tầng',`${ft.icon} ${ft.name}`);
+}
+
+// ══════════════════════════════════
+// ── MAP BUILDER WIZARD ──
+// ══════════════════════════════════
+function showBuildWizard() {
+  let numFloors = 2;
+  const ftKeys = Object.keys(FLOOR_TEMPLATES);
+  const ftEntries = Object.entries(FLOOR_TEMPLATES);
+
+  function render() {
+    const floorRows = [];
+    for(let i=0; i<numFloors; i++) {
+      const defaultType = i===0 ? 'medical' : i===1 ? 'boarding' : i===2 ? 'surgery' : 'hotel';
+      const options = ftEntries.map(([k,ft])=>`<option value="${k}" ${k===defaultType?'selected':''}>${ft.icon} ${ft.name}</option>`).join('');
+      floorRows.push(`<div class="wiz-floor-row">
+        <div class="wiz-floor-icon">${i===0?'\u{1F3E2}':i===1?'\u{1F3E8}':i===2?'\u2695\uFE0F':'\u{1F3E0}'}</div>
+        <div class="wiz-floor-label">Tầng ${i+1}</div>
+        <select class="wiz-floor-select" data-floor="${i}">${options}</select>
+      </div>`);
+    }
+
+    const totalRooms = numFloors * 6;
+
+    return `<div class="ft-modal" id="wiz-modal">
+      <div class="ft-modal-content" style="width:460px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <h2 style="margin:0">\u{1F3D7}\uFE0F Xây dựng sơ đồ phòng khám</h2>
+          <button class="edit-close-btn" id="wiz-close">\u2715</button>
+        </div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:16px">Tạo sơ đồ phòng khám thú y / pet hotel của bạn trong vài bước đơn giản.</p>
+
+        <div class="wiz-step">
+          <h3><span class="wiz-step-num">1</span> Phòng khám có bao nhiêu tầng?</h3>
+          <div class="wiz-floor-count">
+            <button id="wiz-minus">\u2212</button>
+            <div class="wiz-num" id="wiz-num">${numFloors}</div>
+            <button id="wiz-plus">+</button>
+          </div>
+        </div>
+
+        <div class="wiz-step">
+          <h3><span class="wiz-step-num">2</span> Mỗi tầng dùng cho mục đích gì?</h3>
+          <div id="wiz-floors">${floorRows.join('')}</div>
+        </div>
+
+        <button class="wiz-generate" id="wiz-go">\u{1F680} Tạo sơ đồ (${numFloors} tầng \u00B7 ~${totalRooms} phòng)</button>
+        <div class="wiz-preview">Bạn có thể chỉnh sửa, thêm/xóa phòng sau khi tạo</div>
+      </div>
+    </div>`;
+  }
+
+  // Insert modal
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = render();
+  document.body.appendChild(wrapper.firstElementChild);
+
+  function rebind() {
+    const modal = document.getElementById('wiz-modal');
+    if(!modal) return;
+    modal.querySelector('#wiz-close').onclick = () => modal.remove();
+    modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+    modal.querySelector('#wiz-minus').onclick = () => {
+      if(numFloors>1) { numFloors--; rerender(); }
+    };
+    modal.querySelector('#wiz-plus').onclick = () => {
+      if(numFloors<6) { numFloors++; rerender(); }
+    };
+    modal.querySelector('#wiz-go').onclick = () => {
+      // Collect selections
+      const selections = [];
+      modal.querySelectorAll('.wiz-floor-select').forEach(sel => {
+        selections.push(sel.value);
+      });
+      modal.remove();
+      generateFullMap(selections);
+    };
+  }
+
+  function rerender() {
+    const old = document.getElementById('wiz-modal');
+    if(old) old.remove();
+    const w2 = document.createElement('div');
+    w2.innerHTML = render();
+    document.body.appendChild(w2.firstElementChild);
+    rebind();
+  }
+
+  rebind();
+}
+
+function generateFullMap(floorSelections) {
+  // Clear existing floors
+  floors.length = 0;
+  currentFloor = 0;
+
+  floorSelections.forEach((ftKey, i) => {
+    const ft = FLOOR_TEMPLATES[ftKey];
+    if(!ft) return;
+    const newFloor = {
+      id:i+1, name:`Tầng ${i+1}`, nameEn:`Floor ${i+1}`,
+      description:ft.description, icon:ft.icon, tags:[...ft.tags], rooms:[]
+    };
+    const nameCount = {};
+    ft.rooms.forEach((r,j) => {
+      const tpl = ROOM_TEMPLATES[r.tpl];
+      const base = tpl || ROOM_TEMPLATES.empty;
+      const baseName = r.name || base.name;
+      const baseNameEn = r.nameEn || base.nameEn;
+      nameCount[baseName] = (nameCount[baseName]||0) + 1;
+      const count = nameCount[baseName];
+      const totalSame = ft.rooms.filter(x => (x.name||ROOM_TEMPLATES[x.tpl]?.name) === baseName).length;
+      const displayName = totalSame > 1 ? `${baseName} ${count}` : baseName;
+      const displayNameEn = totalSame > 1 ? `${baseNameEn} ${count}` : baseNameEn;
+      newFloor.rooms.push({
+        id:'room_'+Date.now()+'_'+i+'_'+j,
+        name:displayName, nameEn:displayNameEn,
+        color:base.color, colorLight:base.colorLight||shadeColor(base.color,40),
+        gridX:r.gx, gridY:r.gy, gridW:r.gw, gridH:r.gh,
+        status:'available', tags:[...(base.tags||[])], price:base.price||0,
+        furniture:[...(base.furniture||[])], pets:[],
+        furnitureItems:JSON.parse(JSON.stringify(base.furnitureItems||[]))
+      });
+    });
+    floors.push(newFloor);
+  });
+
+  currentFloor = 0;
+  buildFloorSelector(); buildMinimap(); updateStats(); updateDashboard(); resize2D();
+  showToast('info','Đã tạo sơ đồ',`${floorSelections.length} tầng \u00B7 ${allRooms().length} phòng`);
+}
+
+// ── Floor Management ──
+function addFloor() {
+  const newId = floors.length + 1;
+  floors.push({
+    id: newId, name: `Tầng ${newId}`, nameEn: `Floor ${newId}`,
+    description: 'Tầng mới', icon: '\u{1F3E2}', tags: [], rooms: []
+  });
+  buildFloorSelector(); buildMinimap(); updateStats(); updateDashboard();
+  showToast('info','Đã thêm tầng',`Tầng ${newId}`);
+}
+
+function removeFloor() {
+  if(floors.length<=1){ showToast('info','Không thể xóa','Cần ít nhất 1 tầng'); return; }
+  const floor = floors[currentFloor];
+  if(floor.rooms.length>0 && !confirm(`Xóa "${floor.name}" với ${floor.rooms.length} phòng?`)) return;
+  floors.splice(currentFloor,1);
+  floors.forEach((f,i)=>f.id=i+1);
+  if(currentFloor>=floors.length) currentFloor=floors.length-1;
+  buildFloorSelector(); buildMinimap(); updateStats(); updateDashboard();
+  showToast('info','Đã xóa tầng',floor.name);
+}
+
+// ── localStorage Persistence ──
+function saveToLocalStorage() {
+  const data = floors.map(f=>({
+    id:f.id, name:f.name, nameEn:f.nameEn, description:f.description, icon:f.icon, tags:f.tags,
+    rooms: f.rooms.map(r=>({
+      id:r.id, name:r.name, nameEn:r.nameEn, color:r.color, colorLight:r.colorLight,
+      gridX:r.gridX, gridY:r.gridY, gridW:r.gridW, gridH:r.gridH,
+      status:r.status, tags:r.tags, price:r.price,
+      furniture:r.furniture, pets:r.pets, furnitureItems:r.furnitureItems
+    }))
+  }));
+  localStorage.setItem('vetgo-floorplan', JSON.stringify(data));
+  showToast('info','Đã lưu','Sơ đồ đã lưu vào trình duyệt');
+}
+
+function loadFromLocalStorage() {
+  const raw = localStorage.getItem('vetgo-floorplan');
+  if(!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    if(!Array.isArray(data)||data.length===0) return false;
+    floors.length = 0;
+    data.forEach(f => floors.push(f));
+    return true;
+  } catch(e) { console.error('Load failed:', e); return false; }
+}
+
+// ── Edit Mode Toggle ──
+const editModeBtn = document.getElementById('edit-mode-btn');
+const editToolbar = document.getElementById('edit-toolbar');
+const appEl = document.getElementById('app');
+
+editModeBtn.addEventListener('click', () => {
+  editMode = !editMode;
+  editModeBtn.classList.toggle('active', editMode);
+  editModeBtn.textContent = editMode ? '\u2714 Editing' : '\u270E Edit';
+  editToolbar.classList.toggle('hidden', !editMode);
+  appEl.classList.toggle('edit-active', editMode);
+  // Hide dashboard in edit mode for more space
+  dashboardEl.classList.toggle('hidden', editMode);
+  infoPanel.classList.remove('open');
+  editSelectedRoom=null; editDragRoom=null;
+  if(currentView==='3d') backTo2D();
+  if(editMode) resize2D(); else resize2D();
+});
+
+// Toolbar buttons
+document.getElementById('btn-wizard').onclick = showBuildWizard;
+document.getElementById('btn-floor-template').onclick = showFloorTemplateModal;
+document.getElementById('btn-remove-floor').onclick = removeFloor;
+document.getElementById('btn-save').onclick = saveToLocalStorage;
+document.getElementById('btn-reset').onclick = () => {
+  if(confirm('Reset về sơ đồ mặc định?')){
+    localStorage.removeItem('vetgo-floorplan');
+    location.reload();
+  }
+};
+
+// ══════════════════════════════════
+// ── QUICK ACTIONS ──
+// ══════════════════════════════════
+const petNames = ['Bông','Gấu','Mochi','Lucky','Bé','Sushi','Pudding','Caramel','Cookie','Tí'];
+const petBreeds = {dog:['Corgi','Poodle','Shiba Inu','Pomeranian','Golden Retriever'],cat:['Persian','British Shorthair','Ragdoll','Bengal','Maine Coon'],exotic:['Iguana','Turtle','Hamster','Parrot']};
+const ownerNames = ['Nguyễn Văn Hòa','Trần Thị Lan','Lê Quốc Bảo','Phạm Thu Hà','Hoàng Minh Đức','Đặng Thị Yến','Bùi Văn Tùng','Mai Thị Hương'];
+const ownerPhones = ['0901111222','0912222333','0923333444','0934444555','0945555666','0956666777','0967777888','0978888999'];
+
+function handleQuickAction(action, room, petIdx) {
+  if (action === 'checkin') {
+    const types = room.tags.filter(t=>['dog','cat','exotic'].includes(t));
+    const type = types.length ? types[Math.floor(Math.random()*types.length)] : 'dog';
+    const breeds = petBreeds[type] || petBreeds.dog;
+    const today = new Date();
+    const coDate = new Date(today); coDate.setDate(coDate.getDate() + Math.floor(Math.random()*5)+2);
+    const newPet = {
+      name: petNames[Math.floor(Math.random()*petNames.length)],
+      breed: breeds[Math.floor(Math.random()*breeds.length)],
+      checkin: today.toISOString().slice(0,10),
+      checkout: coDate.toISOString().slice(0,10),
+      type: type,
+      owner: ownerNames[Math.floor(Math.random()*ownerNames.length)],
+      phone: ownerPhones[Math.floor(Math.random()*ownerPhones.length)]
+    };
+    room.pets.push(newPet);
+    room.status = 'occupied';
+    showToast('checkin', `${newPet.name} đã check-in`, `${newPet.breed} \u2192 ${room.name} · ${formatVNDFull(room.price||0)}/đêm`);
+    refreshAfterAction(room);
+  }
+  else if (action === 'checkout-single') {
+    const idx = parseInt(petIdx);
+    const pet = room.pets[idx];
+    if (pet) {
+      const days = Math.max(1, Math.floor((Date.now()-new Date(pet.checkin).getTime())/86400000));
+      const bill = (room.price||0) * days;
+      room.pets.splice(idx, 1);
+      showToast('checkout', `${pet.name} đã check-out`, `${pet.breed} \u2190 ${room.name}${bill>0?' · Tổng: '+formatVNDFull(bill):''}`);
+      if (room.pets.length === 0) {
+        room.status = 'cleaning';
+        showToast('cleaning', `${room.name} đang dọn dẹp`, 'Sẽ sẵn sàng trong giây lát...');
+        setTimeout(() => {
+          room.status = 'available';
+          showToast('ready', `${room.name} đã sẵn sàng`, 'Phòng đã được dọn xong');
+          refreshAfterAction(room);
+        }, 5000);
+      }
+      refreshAfterAction(room);
+    }
+  }
+  else if (action === 'checkout') {
+    if (room.pets.length > 0) {
+      const pet = room.pets.pop();
+      showToast('checkout', `${pet.name} đã check-out`, `${pet.breed} \u2190 ${room.name}`);
+      if (room.pets.length === 0) {
+        room.status = 'cleaning';
+        showToast('cleaning', `${room.name} đang dọn dẹp`, 'Sẽ sẵn sàng trong giây lát...');
+        setTimeout(() => {
+          room.status = 'available';
+          showToast('ready', `${room.name} đã sẵn sàng`, 'Phòng đã được dọn xong');
+          refreshAfterAction(room);
+        }, 5000);
+      }
+      refreshAfterAction(room);
+    }
+  }
+  else if (action === 'markready') {
+    room.status = 'available';
+    showToast('ready', `${room.name} đã sẵn sàng`, 'Phòng có thể nhận pet mới');
+    refreshAfterAction(room);
+  }
+}
+
+function refreshAfterAction(room) {
+  showInfoPanel(room);
+  updateStats();
+  updateDashboard();
+  buildFloorSelector();
+  buildMinimap();
+  drawAllMinimaps();
+}
+
+// ══════════════════════════════════
+// ── NOTIFICATION TOASTS ──
+// ══════════════════════════════════
+const toastContainer = document.getElementById('toast-container');
+const toastConfig = {
+  checkin:  { icon:'\u{1F43E}', color:'var(--green)' },
+  checkout: { icon:'\u{1F4E4}', color:'var(--red)' },
+  cleaning: { icon:'\u{1F9F9}', color:'var(--orange)' },
+  ready:    { icon:'\u2705', color:'var(--green)' },
+  info:     { icon:'\u{1F514}', color:'var(--blue)' },
+};
+
+function showToast(type, title, detail) {
+  const cfg = toastConfig[type] || toastConfig.info;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.position = 'relative';
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  el.innerHTML = `
+    <div class="toast-accent" style="background:${cfg.color}"></div>
+    <span class="toast-icon">${cfg.icon}</span>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-detail">${detail}</div>
+    </div>
+    <span class="toast-time">${timeStr}</span>
+  `;
+  toastContainer.appendChild(el);
+
+  // Auto remove after 4s
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 300);
+  }, 4000);
+
+  // Max 4 toasts
+  while (toastContainer.children.length > 4) {
+    toastContainer.firstChild.remove();
+  }
+}
+
+// ── Auto-simulate events for demo ──
+const simulationEvents = [
+  { delay:12000, fn:()=> {
+    const room = floors[1].rooms.find(r=>r.id==='play');
+    if(room && room.status==='available'){
+      room.pets.push({name:'Bông',breed:'Poodle',checkin:new Date().toISOString().slice(0,10),type:'dog'});
+      room.status='occupied';
+      showToast('checkin','Bông đã vào khu vui chơi','Poodle \u2192 Khu vui chơi \u00B7 Tầng 2');
+      updateStats(); buildFloorSelector(); buildMinimap(); drawAllMinimaps();
+    }
+  }},
+  { delay:20000, fn:()=> {
+    // Auto-remind based on actual data
+    const rev = calcRevenue();
+    const todayOuts = rev.upcomingCheckouts.filter(c=>c.diffDays===0);
+    const tmrOuts = rev.upcomingCheckouts.filter(c=>c.diffDays===1);
+    if(todayOuts.length > 0) {
+      showToast('info',`\u{1F6A8} ${todayOuts.length} checkout HÔM NAY`, todayOuts.map(c=>`${c.name} (${c.room})`).join(', '));
+    } else if(tmrOuts.length > 0) {
+      showToast('info',`\u{1F514} ${tmrOuts.length} checkout NGÀY MAI`, tmrOuts.map(c=>`${c.name} (${c.room})`).join(', '));
+    }
+  }},
+  { delay:30000, fn:()=> {
+    const room = floors[0].rooms.find(r=>r.id==='emergency');
+    if(room && room.status==='cleaning'){
+      room.status='available';
+      showToast('ready','Phòng cấp cứu đã sẵn sàng','Đã dọn dẹp xong \u00B7 Tầng 1');
+      updateStats(); buildFloorSelector(); buildMinimap(); drawAllMinimaps();
+    }
+  }},
+  { delay:40000, fn:()=> {
+    showToast('info','\u{1F321}\uFE0F Cảnh báo nhiệt độ','Phòng thú lạ: 28°C (khuyến nghị: 25-27°C)');
+  }},
+];
+simulationEvents.forEach(evt => setTimeout(evt.fn, evt.delay));
+
+// ── Three.js ──
+let renderer,scene,camera,controls;
+let threeInited=false;
+
+function initThree(){
+  if(threeInited)return;
+  threeInited=true;
+  const dpr=Math.min(window.devicePixelRatio,1.5);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(view3dEl.clientWidth,view3dEl.clientHeight);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x0f1117);
+  view3dEl.appendChild(renderer.domElement);
+  window.addEventListener('resize',()=>{
+    if(currentView!=='3d')return;
+    const w=view3dEl.clientWidth,h=view3dEl.clientHeight,a=w/h,d=4;
+    camera.left=-d*a;camera.right=d*a;camera.top=d;camera.bottom=-d;
+    camera.updateProjectionMatrix();renderer.setSize(w,h);
+  });
+}
+
+function build3DRoom(room){
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0f1117);
+  scene.fog=new THREE.Fog(0x0f1117,12,20);
+  const w=view3dEl.clientWidth,h=view3dEl.clientHeight,a=w/h,d=4;
+  camera=new THREE.OrthographicCamera(-d*a,d*a,d,-d,0.1,100);
+  camera.position.set(5,5,5);camera.lookAt(0,0,0);
+
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;controls.dampingFactor=0.08;
+  controls.maxPolarAngle=Math.PI/2.2;controls.minPolarAngle=0.3;
+  controls.enablePan=true;controls.target.set(0,0,0);
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const dir=new THREE.DirectionalLight(0xffffff,0.8);
+  dir.position.set(5,8,3);dir.castShadow=true;dir.shadow.mapSize.set(1024,1024);
+  scene.add(dir);
+  const fill=new THREE.DirectionalLight(new THREE.Color(room.color),0.3);
+  fill.position.set(-3,4,-2);scene.add(fill);
+
+  const floorMat=new THREE.MeshStandardMaterial({color:new THREE.Color(room.color).multiplyScalar(0.3),roughness:0.8,metalness:0.1});
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(4,3),floorMat);
+  fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;scene.add(fl);
+
+  const gh=new THREE.GridHelper(4,8,0x333355,0x222244);gh.position.y=0.005;scene.add(gh);
+
+  const wm=new THREE.MeshStandardMaterial({color:0x1a1d27,roughness:0.9,transparent:true,opacity:0.85,side:THREE.DoubleSide});
+  const bw=new THREE.Mesh(new THREE.PlaneGeometry(4,2),wm);bw.position.set(0,1,-1.5);scene.add(bw);
+  const lw=new THREE.Mesh(new THREE.PlaneGeometry(3,2),wm.clone());lw.position.set(-2,1,0);lw.rotation.y=Math.PI/2;scene.add(lw);
+
+  const am=new THREE.MeshStandardMaterial({color:room.color,emissive:room.color,emissiveIntensity:0.3});
+  const s1=new THREE.Mesh(new THREE.BoxGeometry(4,0.05,0.02),am);s1.position.set(0,0.03,-1.49);scene.add(s1);
+  const s2=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.05,3),am);s2.position.set(-1.99,0.03,0);scene.add(s2);
+
+  createWallLabel(room.name);
+
+  room.furnitureItems.forEach(item=>{
+    let mesh;
+    const mat=new THREE.MeshStandardMaterial({color:item.color,roughness:0.6,metalness:0.15});
+    if(item.type==='box'){mesh=new THREE.Mesh(new THREE.BoxGeometry(item.w,item.h,item.d),mat);mesh.position.set(item.x,(item.posY||0)+item.h/2,item.z);}
+    else if(item.type==='cylinder'){mesh=new THREE.Mesh(new THREE.CylinderGeometry(item.r,item.r,item.h,16),mat);mesh.position.set(item.x,(item.posY||0)+item.h/2,item.z);}
+    else if(item.type==='kennel') mesh=createKennel(item,mat);
+    else if(item.type==='catcondo') mesh=createCatCondo(item,mat);
+    else if(item.type==='tub') mesh=createTub(item,mat);
+    if(mesh){mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);}
+  });
+}
+
+function createKennel(item,mat){
+  const g=new THREE.Group();
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(item.w,0.05,item.d),mat),{position:new THREE.Vector3(0,0.025,0)}));
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(item.w,item.h,0.04),mat),{position:new THREE.Vector3(0,item.h/2,-item.d/2)}));
+  const sm=mat.clone();sm.transparent=true;sm.opacity=0.7;
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.04,item.h,item.d),sm),{position:new THREE.Vector3(-item.w/2,item.h/2,0)}));
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.04,item.h,item.d),sm),{position:new THREE.Vector3(item.w/2,item.h/2,0)}));
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(item.w,0.04,item.d),mat),{position:new THREE.Vector3(0,item.h,0)}));
+  const bm=new THREE.MeshStandardMaterial({color:0x888888,metalness:0.8,roughness:0.2});
+  for(let i=-3;i<=3;i++){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,item.h,6),bm);b.position.set(i*0.1,item.h/2,item.d/2);g.add(b);}
+  g.position.set(item.x,0,item.z);return g;
+}
+
+function createCatCondo(item,mat){
+  const g=new THREE.Group(),levels=3;
+  for(let i=0;i<levels;i++){
+    const sh=new THREE.Mesh(new THREE.BoxGeometry(item.w,0.04,item.d),mat);sh.position.y=i*(item.h/levels);g.add(sh);
+    if(i<levels-1){const o=new THREE.Mesh(new THREE.BoxGeometry(item.w-0.06,item.h/levels-0.06,item.d-0.06),new THREE.MeshStandardMaterial({color:0x111122,roughness:1}));o.position.y=i*(item.h/levels)+(item.h/levels)/2;g.add(o);}
+  }
+  const top=new THREE.Mesh(new THREE.BoxGeometry(item.w,0.04,item.d),mat);top.position.y=item.h;g.add(top);
+  const pm=new THREE.MeshStandardMaterial({color:0x8B7355,roughness:0.9});
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sz])=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,item.h,8),pm);p.position.set(sx*(item.w/2-0.02),item.h/2,sz*(item.d/2-0.02));g.add(p);});
+  g.position.set(item.x,0,item.z);return g;
+}
+
+function createTub(item,mat){
+  const g=new THREE.Group();
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(item.w,item.h,item.d),mat),{position:new THREE.Vector3(0,item.h/2,0)}));
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(item.w-0.1,item.h-0.05,item.d-0.1),new THREE.MeshStandardMaterial({color:0x4a90d9,roughness:0.3,metalness:0.1})),{position:new THREE.Vector3(0,item.h/2+0.05,0)}));
+  const w=new THREE.Mesh(new THREE.PlaneGeometry(item.w-0.14,item.d-0.14),new THREE.MeshStandardMaterial({color:0x74b9ff,transparent:true,opacity:0.6,roughness:0.1,metalness:0.3}));
+  w.rotation.x=-Math.PI/2;w.position.y=item.h*0.7;g.add(w);
+  g.position.set(item.x,0,item.z);return g;
+}
+
+function createWallLabel(text){
+  const c2=document.createElement('canvas');c2.width=512;c2.height=128;
+  const c=c2.getContext('2d');
+  c.fillStyle='rgba(0,0,0,0)';c.fillRect(0,0,512,128);
+  c.fillStyle='#ffffff';c.font='bold 42px "Segoe UI",system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.fillText(text,256,64);
+  const tex=new THREE.CanvasTexture(c2);
+  const lm=new THREE.MeshBasicMaterial({map:tex,transparent:true});
+  const label=new THREE.Mesh(new THREE.PlaneGeometry(2.5,0.6),lm);
+  label.position.set(0,1.6,-1.48);scene.add(label);
+}
+
+function animate3D(){
+  if(currentView!=='3d')return;
+  controls.update();renderer.render(scene,camera);requestAnimationFrame(animate3D);
+}
+
+// ── Transitions ──
+function transitionTo3D(room){
+  currentView='3d';cancelAnimationFrame(animFrame2d);
+  backBtn.style.display='inline-block';
+  floorSelectorEl.classList.add('hidden');
+  statsBar.classList.add('hidden');
+  minimapEl.classList.add('hidden');
+  filterBar.classList.add('hidden');
+  dashboardEl.classList.add('hidden');
+
+  overlay.style.opacity='1';
+  setTimeout(()=>{
+    canvas.style.display='none';view3dEl.style.display='block';
+    initThree();renderer.setSize(view3dEl.clientWidth,view3dEl.clientHeight);
+    build3DRoom(room);
+    setTimeout(()=>{view3dEl.style.opacity='1';overlay.style.opacity='0';animate3D();},100);
+  },300);
+}
+
+function backTo2D(){
+  currentView='2d';backBtn.style.display='none';infoPanel.classList.remove('open');
+  floorSelectorEl.classList.remove('hidden');statsBar.classList.remove('hidden');
+  minimapEl.classList.remove('hidden');filterBar.classList.remove('hidden');
+  dashboardEl.classList.remove('hidden');
+
+  overlay.style.opacity='1';
+  setTimeout(()=>{
+    view3dEl.style.display='none';view3dEl.style.opacity='0';canvas.style.display='block';
+    if(scene){scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});}
+    if(controls)controls.dispose();
+    resize2D();draw2D();
+    setTimeout(()=>{overlay.style.opacity='0';},100);
+  },300);
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown',e=>{
+  if(currentView!=='2d')return;
+  if(e.key==='1')switchFloor(0);else if(e.key==='2')switchFloor(1);else if(e.key==='3')switchFloor(2);
+  else if(e.key==='ArrowUp'&&currentFloor<floors.length-1)switchFloor(currentFloor+1);
+  else if(e.key==='ArrowDown'&&currentFloor>0)switchFloor(currentFloor-1);
+  else if(e.key==='/'||e.key==='f'&&e.ctrlKey){e.preventDefault();searchInput.focus();}
+});
+
+// ══════════════════════════════════
+// ── REALTIME CLOCK ──
+// ══════════════════════════════════
+const clockEl = document.getElementById('clock');
+function updateClock() {
+  const now = new Date();
+  const d = now.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const t = now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  clockEl.textContent = `${d} \u00B7 ${t}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ══════════════════════════════════
+// ── DASHBOARD PANEL ──
+// ══════════════════════════════════
+const dashboardEl = document.getElementById('dashboard');
+const donutCanvas = document.getElementById('donut-canvas');
+const donutCtx = donutCanvas.getContext('2d');
+const dashLegend = document.getElementById('dash-legend');
+const dashAlerts = document.getElementById('dash-alerts');
+const dashRevenue = document.getElementById('dash-revenue');
+const dashBookings = document.getElementById('dash-bookings');
+const donutTotal = document.getElementById('donut-total');
+
+function updateDashboard() {
+  const all = allRooms();
+  const avail = all.filter(r=>r.status==='available').length;
+  const occ = all.filter(r=>r.status==='occupied').length;
+  const clean = all.filter(r=>r.status==='cleaning').length;
+  const total = all.length;
+
+  // Revenue data
+  const rev = calcRevenue();
+  const occPct = Math.round(rev.occupancyRate);
+
+  // Donut center: show occupancy rate
+  donutTotal.innerHTML = `${occPct}<span style="font-size:8px;display:block;color:var(--text2)">%</span>`;
+
+  // Draw donut chart
+  const cx=64, cy=64, r=26, lw=10;
+  donutCtx.clearRect(0,0,128,128);
+  const segments = [
+    {val:avail, color:'#00b894', label:'Available'},
+    {val:occ, color:'#e17055', label:'Occupied'},
+    {val:clean, color:'#fdcb6e', label:'Cleaning'},
+  ];
+  let startAngle = -Math.PI/2;
+  segments.forEach(seg => {
+    if(seg.val === 0) return;
+    const sweep = (seg.val/total) * Math.PI * 2;
+    donutCtx.beginPath();
+    donutCtx.arc(cx, cy, r, startAngle, startAngle + sweep);
+    donutCtx.strokeStyle = seg.color;
+    donutCtx.lineWidth = lw;
+    donutCtx.lineCap = 'round';
+    donutCtx.stroke();
+    startAngle += sweep + 0.04;
+  });
+
+  // Legend
+  dashLegend.innerHTML = segments.map(s =>
+    `<div class="dash-legend-item"><div class="dash-legend-dot" style="background:${s.color}"></div>${s.val} ${s.label}</div>`
+  ).join('') + `<div class="dash-legend-item" style="margin-top:2px"><div class="dash-legend-dot" style="background:var(--accent)"></div>Công suất ${occPct}%</div>`;
+
+  // Revenue section
+  const occColor = occPct >= 80 ? 'var(--red)' : occPct >= 50 ? 'var(--orange)' : 'var(--green)';
+  dashRevenue.innerHTML = `
+    <div class="revenue-grid">
+      <div class="rev-card">
+        <div class="rev-label">Doanh thu hôm nay</div>
+        <div class="rev-value">${formatVND(rev.dailyRevenue)}</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-label">Doanh thu tháng</div>
+        <div class="rev-value orange">${formatVND(rev.monthlyRevenue)}</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-label">Công suất phòng</div>
+        <div class="rev-value blue">${rev.totalOccupied}/${rev.totalCapacity}</div>
+      </div>
+      <div class="rev-card">
+        <div class="rev-label">Tỷ lệ lấp đầy</div>
+        <div class="rev-value pink">${occPct}%</div>
+      </div>
+    </div>
+    <div class="occupancy-bar-wrap">
+      <div class="occupancy-bar-track">
+        <div class="occupancy-bar-fill" style="width:${occPct}%;background:${occColor}"></div>
+      </div>
+    </div>`;
+
+  // Upcoming checkouts
+  let bookingsHtml = '';
+  if(rev.upcomingCheckouts.length === 0) {
+    bookingsHtml = '<div style="text-align:center;padding:8px;color:var(--text2);font-size:11px">\u2705 Không có checkout sắp tới</div>';
+  } else {
+    rev.upcomingCheckouts.forEach(b => {
+      const emoji = b.type==='cat'?'\u{1F431}':b.type==='exotic'?'\u{1F98E}':'\u{1F436}';
+      let dateClass = 'later', dateLabel = b.checkout;
+      if(b.diffDays === 0) { dateClass='today'; dateLabel='Hôm nay'; }
+      else if(b.diffDays === 1) { dateClass='tomorrow'; dateLabel='Ngày mai'; }
+      else { dateLabel = b.diffDays + ' ngày nữa'; }
+      bookingsHtml += `<div class="booking-item">
+        <div class="booking-icon">${emoji}</div>
+        <div class="booking-info">
+          <div class="booking-name">${b.name} · ${b.breed || ''}</div>
+          <div class="booking-detail">${b.room}${b.owner ? ' · '+b.owner : ''}</div>
+        </div>
+        <div class="booking-date ${dateClass}">${dateLabel}</div>
+      </div>`;
+    });
+  }
+  dashBookings.innerHTML = bookingsHtml;
+
+  // Weekly revenue chart
+  const weekly = getWeeklyRevenue();
+  const maxVal = Math.max(...weekly.map(w=>w.value), 1);
+  const dashWeekly = document.getElementById('dash-weekly-chart');
+  let weekHtml = '<div style="font-size:8px;color:var(--text2);margin-top:6px">7 ngày gần nhất</div><div class="weekly-chart">';
+  weekly.forEach(w => {
+    const h = Math.max(2, (w.value / maxVal) * 38);
+    const barColor = w.isToday ? 'var(--green)' : 'var(--accent)';
+    weekHtml += `<div class="weekly-bar-wrap">
+      <div class="weekly-bar-val">${formatVND(w.value)}</div>
+      <div class="weekly-bar" style="height:${h}px;background:${barColor}"></div>
+      <div class="weekly-bar-label"${w.isToday?' style="color:var(--green);font-weight:700"':''}>${w.label}</div>
+    </div>`;
+  });
+  weekHtml += '</div>';
+  dashWeekly.innerHTML = weekHtml;
+
+  // Alerts
+  let alertsHtml = '';
+  all.forEach(rr => {
+    const cap = getRoomCapacity(rr);
+    if(cap > 0 && rr.pets.length >= cap) {
+      alertsHtml += `<div class="dash-alert"><span class="da-icon">\u{1F534}</span><span class="da-text">${rr.name} <b>đầy</b></span><span class="da-badge" style="background:rgba(225,112,85,.15);color:var(--red)">${rr.pets.length}/${cap}</span></div>`;
+    } else if(cap > 0 && rr.pets.length/cap >= 0.75) {
+      alertsHtml += `<div class="dash-alert"><span class="da-icon">\u{1F7E0}</span><span class="da-text">${rr.name} gần đầy</span><span class="da-badge" style="background:rgba(253,203,110,.15);color:var(--orange)">${rr.pets.length}/${cap}</span></div>`;
+    }
+  });
+  const pets = allPets();
+  pets.forEach(p => {
+    const days = Math.max(1, Math.floor((Date.now()-new Date(p.checkin).getTime())/86400000));
+    if(days >= 3) {
+      alertsHtml += `<div class="dash-alert"><span class="da-icon">\u{1F4C5}</span><span class="da-text">${p.name} - ${days} ngày</span><span class="da-badge" style="background:rgba(116,185,255,.15);color:var(--blue)">Review</span></div>`;
+    }
+  });
+  if(!alertsHtml) alertsHtml = '<div class="dash-alert"><span class="da-icon">\u2705</span><span class="da-text">Không có cảnh báo</span></div>';
+  dashAlerts.innerHTML = alertsHtml;
+}
+
+// Show/hide dashboard
+function toggleDashboardVisibility(show) {
+  dashboardEl.classList.toggle('hidden', !show);
+}
+
+// ── Init ──
+backBtn.addEventListener('click',()=>backTo2D());
+backBtn.addEventListener('touchend',e=>{e.preventDefault();backTo2D();});
+window.addEventListener('resize',()=>{if(currentView==='2d')resize2D();});
+
+// Redraw minimaps when filter changes
+const origFilter = document.querySelectorAll('.filter-btn');
+origFilter.forEach(b => b.addEventListener('click', () => setTimeout(()=>{drawAllMinimaps();updateDashboard();}, 50)));
+
+// Try loading saved floor plan
+loadFromLocalStorage();
+
+buildFloorSelector();
+buildMinimap();
+updateStats();
+updateDashboard();
+toggleDashboardVisibility(true);
+resize2D();
+draw2D();
+
+</script>
+</body>
+</html>

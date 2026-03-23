@@ -136,6 +136,42 @@
         </button>
       </div>
 
+      <!-- ── Floating Toolbar ── -->
+      <div class="floating-toolbar">
+        <div class="toolbar-group">
+          <button class="tb-btn" id="undo-btn" onclick="undo()" title="Undo (Z / Ctrl+Z)" disabled>
+            <span class="ms-icon">undo</span>
+          </button>
+          <button class="tb-btn" id="redo-btn" onclick="redo()" title="Redo (Shift+Z / Ctrl+Y)" disabled>
+            <span class="ms-icon">redo</span>
+          </button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn" id="fill-btn" onclick="toggleFill()" title="Fill Tool (F)">
+            <span class="ms-icon">format_color_fill</span>
+          </button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn" onclick="zoomOut()" title="Thu nhỏ (-)">
+            <span class="ms-icon">zoom_out</span>
+          </button>
+          <button class="tb-btn zoom-label-btn" onclick="zoomReset()" title="Reset zoom (0)">
+            <span id="zoom-label">100%</span>
+          </button>
+          <button class="tb-btn" onclick="zoomIn()" title="Phóng to (+)">
+            <span class="ms-icon">zoom_in</span>
+          </button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn" onclick="exportPNG()" title="Export PNG">
+            <span class="ms-icon">image</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Room name bar (shown when a room tile is selected) -->
       <div class="room-name-bar" id="room-name-bar" style="display:none;">
         <span class="ms-icon">label</span>
@@ -152,9 +188,12 @@
         <canvas id="editor-canvas"></canvas>
       </div>
       <div class="canvas-hint">
-        <span class="ms-icon">mouse</span> Nhấn &amp; kéo để vẽ ·
-        <kbd>Shift</kbd> + vẽ để xóa nhanh ·
-        Tile hiện tại: <strong id="current-tile-label">Tường</strong>
+        <span class="ms-icon">mouse</span> Vẽ ·
+        <kbd>Shift</kbd>+vẽ xóa ·
+        <kbd>Z</kbd> undo ·
+        <kbd>F</kbd> fill ·
+        <kbd>+/-</kbd> zoom ·
+        Tile: <strong id="current-tile-label">Tường</strong>
       </div>
     </div>
 

@@ -63,9 +63,106 @@
   let rooms   = [];
   let props   = [];
 
-  // Rooms: user defines name+color per room tile they paint
-  // roomMap[row][col] = roomId (string) or null
-  // rooms = [{id, name, color}]
+  // ── UNDO / REDO ────────────────────────────────────────────
+  const HISTORY_MAX = 50;
+  let undoStack = [];  // array of serialized floors snapshots
+  let redoStack = [];
+  let isUndoRedo = false; // flag to prevent saving during undo/redo
+
+  function snapshotFloors() {
+    return JSON.parse(JSON.stringify(floors));
+  }
+
+  function saveHistory() {
+    if (isUndoRedo) return;
+    undoStack.push(snapshotFloors());
+    if (undoStack.length > HISTORY_MAX) undoStack.shift();
+    redoStack = []; // clear redo on new action
+    updateUndoRedoBtns();
+  }
+
+  function undo() {
+    if (undoStack.length === 0) return;
+    isUndoRedo = true;
+    redoStack.push(snapshotFloors());
+    floors = undoStack.pop();
+    switchToFloor(Math.min(currentFloorIdx, floors.length - 1));
+    isUndoRedo = false;
+    updateUndoRedoBtns();
+    showToast('↩ Undo');
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return;
+    isUndoRedo = true;
+    undoStack.push(snapshotFloors());
+    floors = redoStack.pop();
+    switchToFloor(Math.min(currentFloorIdx, floors.length - 1));
+    isUndoRedo = false;
+    updateUndoRedoBtns();
+    showToast('↪ Redo');
+  }
+
+  function updateUndoRedoBtns() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+  }
+
+  window.undo = undo;
+  window.redo = redo;
+
+  // ── ZOOM ───────────────────────────────────────────────────
+  let zoomLevel = 1.0; // 0.1 to 4.0
+  const ZOOM_MIN = 0.25, ZOOM_MAX = 4.0;
+
+  function setZoom(z) {
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+    const pct = Math.round(zoomLevel * 100);
+    canvas.style.width  = (canvas.width  * zoomLevel) + 'px';
+    canvas.style.height = (canvas.height * zoomLevel) + 'px';
+    const zoomLabel = document.getElementById('zoom-label');
+    if (zoomLabel) zoomLabel.textContent = pct + '%';
+  }
+
+  function zoomIn()  { setZoom(zoomLevel * 1.25); }
+  function zoomOut() { setZoom(zoomLevel / 1.25); }
+  function zoomReset() { setZoom(1.0); }
+
+  window.zoomIn    = zoomIn;
+  window.zoomOut   = zoomOut;
+  window.zoomReset = zoomReset;
+
+  // ── FILL TOOL ──────────────────────────────────────────────
+  let fillMode = false;
+
+  window.toggleFill = function() {
+    fillMode = !fillMode;
+    const btn = document.getElementById('fill-btn');
+    if (btn) btn.classList.toggle('active', fillMode);
+    canvas.style.cursor = fillMode ? 'cell' : 'crosshair';
+    showToast(fillMode ? '🪣 Fill mode ON' : 'Fill mode OFF');
+  };
+
+  function floodFill(startCol, startRow, fillValue) {
+    const targetValue = grid[startRow][startCol];
+    if (targetValue === fillValue) return;
+    saveHistory();
+    const stack = [[startRow, startCol]];
+    const visited = new Set();
+    while (stack.length > 0) {
+      const [r, c] = stack.pop();
+      if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
+      const key = r * 1000 + c;
+      if (visited.has(key)) continue;
+      if (grid[r][c] !== targetValue) continue;
+      visited.add(key);
+      grid[r][c] = fillValue;
+      stack.push([r-1,c],[r+1,c],[r,c-1],[r,c+1]);
+    }
+    updateStats(); validate(); markDirty();
+  }
 
   // Drawing state
   let currentTileId = 1;   // default: wall
@@ -412,11 +509,58 @@
     canvas.addEventListener('mousedown',  onMouseDown);
     canvas.addEventListener('mousemove',  onMouseMove);
     canvas.addEventListener('mouseleave', () => { hoverCol = -1; hoverRow = -1; markDirty(); });
-    window.addEventListener('mouseup',    () => { isPainting = false; });
+    window.addEventListener('mouseup',    () => {
+      if (isPainting) { isPainting = false; }
+    });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
     canvas.addEventListener('touchend',   () => { isPainting = false; });
+
+    // Zoom with scroll wheel
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn(); else zoomOut();
+    }, { passive: false });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', e => {
+      // Don't fire when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Undo: Ctrl+Z or Z
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
+      if (!e.ctrlKey && !e.metaKey && e.key === 'z') { undo(); return; }
+
+      // Redo: Ctrl+Shift+Z or Ctrl+Y or Shift+Z
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Z') { e.preventDefault(); redo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); return; }
+      if (!e.ctrlKey && !e.metaKey && e.key === 'Z') { redo(); return; }
+
+      // Zoom: + / -
+      if (e.key === '=' || e.key === '+') { zoomIn(); return; }
+      if (e.key === '-' || e.key === '_') { zoomOut(); return; }
+      if (e.key === '0') { zoomReset(); return; }
+
+      // Brush size: [ and ]
+      if (e.key === '[') { const s = Math.max(1, brushSize - 1); window.setBrush(s); return; }
+      if (e.key === ']') { const s = Math.min(3, brushSize + 1); window.setBrush(s); return; }
+
+      // Fill mode: F
+      if (e.key === 'f' || e.key === 'F') { window.toggleFill(); return; }
+
+      // Quick tile select: 1-9
+      const num = parseInt(e.key);
+      if (!isNaN(num) && num >= 1 && num <= 9) {
+        const quickTiles = [1, 0, 2, 3, 4, 5, 6, 7, 8];
+        const tid = quickTiles[num - 1];
+        if (tid !== undefined) selectTile(tid);
+        return;
+      }
+
+      // Escape: exit fill mode
+      if (e.key === 'Escape' && fillMode) { window.toggleFill(); return; }
+    });
   }
 
   function cellAt(e) {
@@ -436,9 +580,18 @@
       previewClickMove(col, row);
       return;
     }
+    // Fill mode
+    if (fillMode) {
+      const { col, row } = cellAt(e);
+      if (col >= 0 && col < mapWidth && row >= 0 && row < mapHeight) {
+        floodFill(col, row, currentTileId);
+      }
+      return;
+    }
     isPainting = true;
     paintValue = (e.button === 2 || e.shiftKey) ? 0 : currentTileId;
     const { col, row } = cellAt(e);
+    saveHistory();
     paintAt(col, row, paintValue);
   }
 

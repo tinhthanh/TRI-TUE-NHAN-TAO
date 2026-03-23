@@ -158,7 +158,22 @@
     OUTDOOR:     6,
     WC:          7,
     KITCHEN:     8,
-    BEDROOM:     9
+    BEDROOM:     9,
+    // Floor tile variants
+    FLOOR_CLINIC:   27,
+    FLOOR_GROOMING: 28,
+    FLOOR_RETRO:    29,
+    FLOOR_SURGERY:  30,
+    FLOOR_WOOD:     31,
+  };
+
+  // Tile ID → floor image key mapping (for editor-placed floor variants)
+  const TILE_FLOOR_IMAGE_MAP = {
+    27: 'floorClinic',
+    28: 'floorGrooming',
+    29: 'floorRetro',
+    30: 'floorSurgery',
+    31: 'floorWood',
   };
 
   // ============================================
@@ -1659,9 +1674,15 @@
         return;
       }
       default: {
-        // Generic indoor floor (with room color overlay)
-        if (baseFloorImg) ctx.drawImage(baseFloorImg, x, y, CELL_SIZE, CELL_SIZE);
-        else { ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); }
+        // Check if this tile ID has a specific floor image (editor-placed variants 27-31)
+        const tileFloorKey = TILE_FLOOR_IMAGE_MAP[tileType];
+        if (tileFloorKey && images[tileFloorKey]) {
+          ctx.drawImage(images[tileFloorKey], x, y, CELL_SIZE, CELL_SIZE);
+        } else if (baseFloorImg) {
+          ctx.drawImage(baseFloorImg, x, y, CELL_SIZE, CELL_SIZE);
+        } else {
+          ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+        }
         // Room color overlay
         if (roomId && floorRooms) {
           const room = floorRooms.find(r => r.id === roomId);

@@ -33,7 +33,13 @@
     { id: 24, name: 'Bồn rửa tay',   emoji: '🧼', color: 'rgba(0,0,0,0)', paint: 24, propType: 'surgical_sink' },
     { id: 25, name: 'Siêu âm',       emoji: '📡', color: 'rgba(0,0,0,0)', paint: 25, propType: 'ultrasound' },
     { id: 26, name: 'Tủ vaccine',    emoji: '🧊', color: 'rgba(0,0,0,0)', paint: 26, propType: 'vaccine_fridge' },
-    { id: 18, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' }
+    { id: 18, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' },
+    // Floor tile variants
+    { id: 27, name: 'Gạch Phòng khám', emoji: '🏥', color: '#c4d4d0', paint: 27, floorImage: 'floorClinic' },
+    { id: 28, name: 'Gạch Grooming',   emoji: '🐕', color: '#d4c8a8', paint: 28, floorImage: 'floorGrooming' },
+    { id: 29, name: 'Gạch Retro',      emoji: '🎨', color: '#b8a090', paint: 29, floorImage: 'floorRetro' },
+    { id: 30, name: 'Gạch Phẫu thuật', emoji: '🏨', color: '#b0c8c0', paint: 30, floorImage: 'floorSurgery' },
+    { id: 31, name: 'Sàn gỗ',         emoji: '🪵', color: '#a0784c', paint: 31, floorImage: 'floorWood' },
   ];
 
   // Walkable tile IDs (anything except WALL=1)
@@ -88,6 +94,29 @@
     { key: 'stairsUp',  src: 'stairs_up.png'  },
     { key: 'door',      src: 'door.png'        },
     { key: 'balcony',   src: 'balcony.png'     },
+    // Floor tile variants
+    { key: 'floorClinic',   src: 'floor_clinic.png' },
+    { key: 'floorGrooming', src: 'floor_grooming.png' },
+    { key: 'floorRetro',    src: 'floor_retro.png' },
+    { key: 'floorSurgery',  src: 'floor_surgery.png' },
+    { key: 'floorWood',     src: 'floor_wood.png' },
+    // Prop images
+    { key: 'prop_bed',            src: 'prop_bed.png' },
+    { key: 'prop_sofa',           src: 'prop_sofa.png' },
+    { key: 'prop_plant',          src: 'prop_plant.png' },
+    { key: 'prop_table',          src: 'prop_table.png' },
+    { key: 'prop_vet_table',      src: 'prop_vet_table.png' },
+    { key: 'prop_vet_cage',       src: 'prop_vet_cage.png' },
+    { key: 'prop_vet_xray',       src: 'prop_vet_xray.png' },
+    { key: 'prop_vet_cabinet',    src: 'prop_vet_cabinet.png' },
+    { key: 'prop_reception_desk', src: 'prop_reception_desk.png' },
+    { key: 'prop_waiting_chair',  src: 'prop_waiting_chair.png' },
+    { key: 'prop_microscope',     src: 'prop_microscope.png' },
+    { key: 'prop_iv_stand',       src: 'prop_iv_stand.png' },
+    { key: 'prop_grooming_table', src: 'prop_grooming_table.png' },
+    { key: 'prop_surgical_sink',  src: 'prop_surgical_sink.png' },
+    { key: 'prop_ultrasound',     src: 'prop_ultrasound.png' },
+    { key: 'prop_vaccine_fridge', src: 'prop_vaccine_fridge.png' },
   ];
 
   function loadAssets() {
@@ -113,6 +142,7 @@
     bindEvents();
     updateFloorTabs();
     switchToFloor(0);
+    resizeCanvas();
     requestAnimationFrame(rafLoop);
   }
 
@@ -193,18 +223,58 @@
   }
 
   // ── TILE PALETTE ──────────────────────────────────────────
+  const TILE_GROUPS = [
+    { label: '🧱 Nền', ids: [1, 2, 3, 4, 5, 6], collapsed: false },
+    { label: '🧱 Gạch nền', ids: [0, 27, 28, 29, 30, 31], collapsed: false },
+    { label: '🏠 Phòng', ids: [7, 8, 9], collapsed: false },
+    { label: '🪑 Đồ vật', ids: [10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 18], collapsed: true },
+  ];
+
   function buildTilePalette() {
     const container = document.getElementById('tile-palette');
     container.innerHTML = '';
-    TILE_DEFS.forEach(td => {
-      const btn = document.createElement('button');
-      btn.className = 'tile-btn' + (td.id === currentTileId ? ' active' : '');
-      btn.id = 'tile-btn-' + td.id;
-      btn.title = td.name;
-      btn.innerHTML = `<span class="tile-emoji">${td.emoji}</span><span class="tile-name">${td.name}</span>`;
-      btn.style.setProperty('--tile-color', td.color);
-      btn.onclick = () => selectTile(td.id);
-      container.appendChild(btn);
+    TILE_GROUPS.forEach((group, gi) => {
+      // Group header
+      const header = document.createElement('button');
+      header.className = 'tile-group-header' + (group.collapsed ? ' collapsed' : '');
+      header.innerHTML = `<span class="group-arrow">▼</span> ${group.label}`;
+      const itemsDiv = document.createElement('div');
+      itemsDiv.className = 'tile-group-items' + (group.collapsed ? ' collapsed' : '');
+      header.onclick = () => {
+        group.collapsed = !group.collapsed;
+        header.classList.toggle('collapsed', group.collapsed);
+        itemsDiv.classList.toggle('collapsed', group.collapsed);
+      };
+      container.appendChild(header);
+
+      // Tile buttons in this group
+      group.ids.forEach(id => {
+        const td = TILE_DEFS.find(t => t.id === id);
+        if (!td) return;
+        const btn = document.createElement('button');
+        btn.className = 'tile-btn' + (td.id === currentTileId ? ' active' : '');
+        btn.id = 'tile-btn-' + td.id;
+        btn.title = td.name;
+        btn.innerHTML = `<span class="tile-emoji">${td.emoji}</span><span class="tile-name">${td.name}</span>`;
+        // For floor tile variants, replace emoji with actual texture preview
+        if (td.floorImage && images[td.floorImage]) {
+          const emojiSpan = btn.querySelector('.tile-emoji');
+          const img = document.createElement('img');
+          img.src = images[td.floorImage].src;
+          img.style.cssText = 'width:24px;height:24px;border-radius:4px;image-rendering:pixelated;flex-shrink:0;';
+          emojiSpan.replaceWith(img);
+        } else if (td.id === 0 && images.floorTile) {
+          const emojiSpan = btn.querySelector('.tile-emoji');
+          const img = document.createElement('img');
+          img.src = images.floorTile.src;
+          img.style.cssText = 'width:24px;height:24px;border-radius:4px;image-rendering:pixelated;flex-shrink:0;';
+          emojiSpan.replaceWith(img);
+        }
+        btn.style.setProperty('--tile-color', td.color);
+        btn.onclick = () => selectTile(td.id);
+        itemsDiv.appendChild(btn);
+      });
+      container.appendChild(itemsDiv);
     });
   }
 
@@ -216,7 +286,8 @@
     // Show room name bar for room tiles
     const isRoomTile = [5, 7, 8, 9].includes(id);
     document.getElementById('room-name-bar').style.display = isRoomTile ? 'flex' : 'none';
-    document.getElementById('current-tile-label').textContent = TILE_DEFS[id]?.name || '?';
+    const td = TILE_DEFS.find(t => t.id === id);
+    document.getElementById('current-tile-label').textContent = td ? td.name : '?';
     markDirty();
   };
 
@@ -403,9 +474,13 @@
         const r = row + dr, c = col + dc;
         if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
 
-        if (value >= 10) {
+        // Check if this is a floor tile variant (has floorImage) — paint on ground layer
+        const tdCheck = TILE_DEFS.find(t => t.id === value);
+        const isFloorVariant = tdCheck && tdCheck.floorImage;
+
+        if (value >= 10 && !isFloorVariant) {
           // Props layer — use find by ID since IDs may have gaps
-          const td = TILE_DEFS.find(t => t.id === value);
+          const td = tdCheck;
           if (!td || !td.propType) continue;
           const floorProps = floors[currentFloorIdx].props;
           const exIdx = floorProps.findIndex(p => p.r === r && p.c === c);
@@ -468,35 +543,41 @@
       }
     }
 
-    // Pass 1.5: Props layer (rendered as Emojis for simplicity in editor)
+    // Pass 1.5: Props layer (rendered as PNG images with transparency)
     if (props) {
       props.forEach(p => {
         const x = p.c * CELL;
         const y = p.r * CELL;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-        ctx.fillRect(x + 2, y + 2, CELL - 4, CELL - 4);
-        ctx.fillStyle = '#fff';
-        ctx.font = '20px sans-serif';
-        ctx.textAlign = 'center';
-        let emj = '📦';
-        if (p.type === 'bed') emj = '🛌';
-        if (p.type === 'sofa') emj = '🛋';
-        if (p.type === 'plant') emj = '🪴';
-        if (p.type === 'table') emj = '🪑';
-        if (p.type === 'vet_table') emj = '🩺';
-        if (p.type === 'vet_cage') emj = '🐾';
-        if (p.type === 'vet_xray') emj = '🩻';
-        if (p.type === 'vet_cabinet') emj = '💊';
-        if (p.type === 'reception_desk') emj = '🖥';
-        if (p.type === 'waiting_chair') emj = '💺';
-        if (p.type === 'microscope') emj = '🔬';
-        if (p.type === 'iv_stand') emj = '💉';
-        if (p.type === 'grooming_table') emj = '🪥';
-        if (p.type === 'surgical_sink') emj = '🧼';
-        if (p.type === 'ultrasound') emj = '📡';
-        if (p.type === 'vaccine_fridge') emj = '🧊';
-        ctx.fillText(emj, x + CELL / 2, y + CELL / 2 + 7);
-        ctx.textAlign = 'left';
+        const imgKey = 'prop_' + p.type;
+        const propImg = images[imgKey];
+        if (propImg && propImg.complete && propImg.naturalWidth > 0) {
+          // Draw PNG with transparency — no black background
+          ctx.drawImage(propImg, x + 1, y + 1, CELL - 2, CELL - 2);
+        } else {
+          // Fallback: emoji (no black background)
+          ctx.fillStyle = '#fff';
+          ctx.font = '20px sans-serif';
+          ctx.textAlign = 'center';
+          let emj = '📦';
+          if (p.type === 'bed') emj = '🛌';
+          if (p.type === 'sofa') emj = '🛋';
+          if (p.type === 'plant') emj = '🪴';
+          if (p.type === 'table') emj = '🪑';
+          if (p.type === 'vet_table') emj = '🩺';
+          if (p.type === 'vet_cage') emj = '🐾';
+          if (p.type === 'vet_xray') emj = '🩻';
+          if (p.type === 'vet_cabinet') emj = '💊';
+          if (p.type === 'reception_desk') emj = '🖥';
+          if (p.type === 'waiting_chair') emj = '💺';
+          if (p.type === 'microscope') emj = '🔬';
+          if (p.type === 'iv_stand') emj = '💉';
+          if (p.type === 'grooming_table') emj = '🪥';
+          if (p.type === 'surgical_sink') emj = '🧼';
+          if (p.type === 'ultrasound') emj = '📡';
+          if (p.type === 'vaccine_fridge') emj = '🧊';
+          ctx.fillText(emj, x + CELL / 2, y + CELL / 2 + 7);
+          ctx.textAlign = 'left';
+        }
       });
     }
 
@@ -599,9 +680,15 @@
         return;
       }
       default: {
-        // Floor tiles (0, 7, 8, 9 = room types)
-        if (images.floorTile) ctx.drawImage(images.floorTile, x, y, CELL, CELL);
-        else { ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL, CELL); }
+        // Check if this tile has a custom floor image (variants 27-31)
+        const tileDef = TILE_DEFS.find(t => t.id === tileId);
+        if (tileDef && tileDef.floorImage && images[tileDef.floorImage]) {
+          ctx.drawImage(images[tileDef.floorImage], x, y, CELL, CELL);
+        } else if (images.floorTile) {
+          ctx.drawImage(images.floorTile, x, y, CELL, CELL);
+        } else {
+          ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y, CELL, CELL);
+        }
         // Room color overlay
         if (roomId) {
           const room = rooms.find(r => r.id === roomId);
@@ -722,9 +809,62 @@
     return n;
   }
 
+  // ── CUSTOM CONFIRM MODAL ─────────────────────────────────
+  function showConfirm(message) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.65);
+        backdrop-filter:blur(6px); display:flex; align-items:center;
+        justify-content:center; z-index:200;
+      `;
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background:var(--bg-secondary); border:1px solid var(--glass-border);
+        border-radius:20px; padding:28px 32px; max-width:400px; width:90%;
+        box-shadow:0 20px 60px rgba(0,0,0,0.5);
+        animation:modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        text-align:center;
+      `;
+      dialog.innerHTML = `
+        <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+        <p style="font-size:14px; color:var(--text-primary); margin-bottom:20px; line-height:1.6;">${message}</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button id="confirm-cancel" style="
+            padding:10px 24px; border-radius:10px; border:2px solid var(--glass-border);
+            background:var(--glass); color:var(--text-secondary);
+            font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+            cursor:pointer; transition:all 0.2s;
+          ">Hủy</button>
+          <button id="confirm-ok" style="
+            padding:10px 24px; border-radius:10px; border:2px solid transparent;
+            background:linear-gradient(135deg, var(--accent-green), #059669);
+            color:white; font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
+            cursor:pointer; transition:all 0.2s;
+            box-shadow:0 4px 16px rgba(16,185,129,0.3);
+          ">Đồng ý</button>
+        </div>
+      `;
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      function close(result) {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => overlay.remove(), 200);
+        resolve(result);
+      }
+
+      dialog.querySelector('#confirm-ok').onclick = () => close(true);
+      dialog.querySelector('#confirm-cancel').onclick = () => close(false);
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(false); });
+    });
+  }
+
   // ── ACTIONS ───────────────────────────────────────────────
-  window.clearMap = function () {
-    if (!confirm('Xóa toàn bộ tầng ' + floors[currentFloorIdx].name + '?')) return;
+  window.clearMap = async function () {
+    const ok = await showConfirm('Xóa toàn bộ tầng <strong>' + floors[currentFloorIdx].name + '</strong>?');
+    if (!ok) return;
     for (let r = 0; r < mapHeight; r++)
       for (let c = 0; c < mapWidth; c++) { grid[r][c] = 0; roomMap[r][c] = null; }
     updateStats(); validate(); markDirty();
@@ -834,7 +974,8 @@
 
   // ── LOAD SAMPLE MAP ───────────────────────────────────────
   window.loadSampleMap = async function(filename) {
-    if (!confirm('Tải map mẫu sẽ xóa dữ liệu hiện tại đang vẽ. Bạn có chắc chắn?')) return;
+    const ok = await showConfirm('Tải map mẫu sẽ <strong>xóa dữ liệu</strong> hiện tại đang vẽ.<br>Bạn có chắc chắn?');
+    if (!ok) return;
     try {
       const resp = await fetch(filename);
       if (!resp.ok) throw new Error('Không tìm thấy ' + filename);
@@ -856,7 +997,6 @@
           props: f.props || []
         }));
       } else if (data.data) {
-        // Fallback for single floor maps
         floors = [{
           name: 'Tầng 1',
           grid: data.data,
@@ -867,9 +1007,10 @@
 
       updateFloorTabs();
       switchToFloor(0);
-      showToast('Đã tải ' + (data.name || filename));
+      resizeCanvas();
+      showToast('✅ Đã tải ' + (data.name || filename));
     } catch (e) {
-      alert('Lỗi tải map: ' + e.message);
+      showToast('❌ Lỗi tải map: ' + e.message);
     }
   };
 

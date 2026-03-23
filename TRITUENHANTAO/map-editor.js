@@ -117,6 +117,8 @@
     { key: 'prop_surgical_sink',  src: 'prop_surgical_sink.png' },
     { key: 'prop_ultrasound',     src: 'prop_ultrasound.png' },
     { key: 'prop_vaccine_fridge', src: 'prop_vaccine_fridge.png' },
+    // Player sprite for preview mode
+    { key: 'player', src: 'man2.png' },
   ];
 
   function loadAssets() {
@@ -398,6 +400,12 @@
   }
 
   function onMouseDown(e) {
+    if (previewMode) {
+      // Click-to-move in preview mode
+      const { col, row } = cellAt(e);
+      previewClickMove(col, row);
+      return;
+    }
     isPainting = true;
     paintValue = (e.button === 2 || e.shiftKey) ? 0 : currentTileId;
     const { col, row } = cellAt(e);
@@ -405,6 +413,7 @@
   }
 
   function onMouseMove(e) {
+    if (previewMode) return;
     const { col, row } = cellAt(e);
     if (col !== hoverCol || row !== hoverRow) { hoverCol = col; hoverRow = row; markDirty(); }
     if (isPainting) paintAt(col, row, paintValue);
@@ -526,6 +535,11 @@
   // ── RAF LOOP ──────────────────────────────────────────────
   function rafLoop(now) {
     stairsPulse = now;
+    // In preview mode, continuously redraw for smooth animation
+    if (previewMode) {
+      updatePreviewPlayer(now);
+      needsRedraw = true;
+    }
     if (needsRedraw) { render(now); needsRedraw = false; }
     requestAnimationFrame(rafLoop);
   }
@@ -642,8 +656,11 @@
       ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, mapHeight * CELL); ctx.stroke();
     }
 
-    // Pass 6: Hover preview
-    if (hoverCol >= 0 && hoverRow >= 0) drawHoverPreview();
+    // Pass 6: Hover preview (only in editor mode)
+    if (!previewMode && hoverCol >= 0 && hoverRow >= 0) drawHoverPreview();
+
+    // Pass 7: Preview mode player
+    if (previewMode) drawPreviewPlayer();
   }
 
   // ── GROUND TILE DRAWING ───────────────────────────────────
@@ -1013,6 +1030,212 @@
       showToast('❌ Lỗi tải map: ' + e.message);
     }
   };
+
+  // ── PREVIEW MODE ──────────────────────────────────────────
+  let previewMode = false;
+  let previewPlayer = { col: 1, row: 1, renderX: 1, renderY: 1, dir: 2, frame: 0, lastAnim: 0 };
+  let previewPath = [];
+  let previewMoveAccum = 0;
+  let previewLastTime = 0;
+  let previewBanner = null;
+  const PREVIEW_MOVE_MS = 150;
+  const PREVIEW_SPRITE_COLS = 4;
+  const PREVIEW_SPRITE_ROWS = 4;
+
+  // Directions: 0=up, 1=right, 2=down, 3=left
+  const previewKeysDown = new Set();
+
+  function isPreviewWalkable(r, c) {
+    if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) return false;
+    if (grid[r][c] === 1) return false; // wall
+    // Check props collision
+    if (props && props.some(p => p.r === r && p.c === c)) return false;
+    return true;
+  }
+
+  window.togglePreview = function () {
+    previewMode = !previewMode;
+    const btn = document.getElementById('preview-btn');
+    const container = document.querySelector('.canvas-container');
+
+    if (previewMode) {
+      // Find first walkable cell for player
+      let placed = false;
+      for (let r = 1; r < mapHeight - 1 && !placed; r++) {
+        for (let c = 1; c < mapWidth - 1 && !placed; c++) {
+          if (isPreviewWalkable(r, c)) {
+            previewPlayer.col = c; previewPlayer.row = r;
+            previewPlayer.renderX = c; previewPlayer.renderY = r;
+            previewPlayer.dir = 2; previewPlayer.frame = 0;
+            placed = true;
+          }
+        }
+      }
+      previewPath = [];
+      previewMoveAccum = 0;
+      previewLastTime = performance.now();
+      btn.textContent = '✖ Thoát Preview';
+      btn.classList.add('active');
+      // Add banner
+      if (!previewBanner) {
+        previewBanner = document.createElement('div');
+        previewBanner.className = 'preview-banner';
+        previewBanner.textContent = '👁️ PREVIEW – WASD/Arrow di chuyển · Click để đi · ESC thoát';
+        container.style.position = 'relative';
+        container.appendChild(previewBanner);
+      }
+      // Bind keyboard
+      window.addEventListener('keydown', onPreviewKeyDown);
+      window.addEventListener('keyup', onPreviewKeyUp);
+      showToast('👁️ Chế độ xem trước – di chuyển nhân vật!');
+    } else {
+      btn.textContent = '👁️ Xem trước Map';
+      btn.classList.remove('active');
+      if (previewBanner) { previewBanner.remove(); previewBanner = null; }
+      window.removeEventListener('keydown', onPreviewKeyDown);
+      window.removeEventListener('keyup', onPreviewKeyUp);
+      previewKeysDown.clear();
+      showToast('✏️ Quay lại chế độ vẽ');
+    }
+    markDirty();
+  };
+
+  function onPreviewKeyDown(e) {
+    if (e.key === 'Escape') { togglePreview(); return; }
+    const k = e.key.toLowerCase();
+    if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) {
+      e.preventDefault();
+      previewKeysDown.add(k);
+    }
+  }
+
+  function onPreviewKeyUp(e) {
+    previewKeysDown.delete(e.key.toLowerCase());
+  }
+
+  function updatePreviewPlayer(now) {
+    const dt = now - previewLastTime;
+    previewLastTime = now;
+
+    // Animate sprite
+    if (now - previewPlayer.lastAnim > 200) {
+      previewPlayer.frame = (previewPlayer.frame + 1) % PREVIEW_SPRITE_COLS;
+      previewPlayer.lastAnim = now;
+    }
+
+    // Smooth render position interpolation
+    const speed = 8; // cells per second for smooth lerp
+    const lerpAmt = Math.min(1, (dt / 1000) * speed);
+    previewPlayer.renderX += (previewPlayer.col - previewPlayer.renderX) * lerpAmt;
+    previewPlayer.renderY += (previewPlayer.row - previewPlayer.renderY) * lerpAmt;
+
+    // Keyboard movement
+    previewMoveAccum += dt;
+    if (previewMoveAccum >= PREVIEW_MOVE_MS) {
+      previewMoveAccum = 0;
+      let dc = 0, dr = 0;
+      if (previewKeysDown.has('w') || previewKeysDown.has('arrowup'))    { dr = -1; previewPlayer.dir = 0; }
+      if (previewKeysDown.has('s') || previewKeysDown.has('arrowdown'))  { dr =  1; previewPlayer.dir = 2; }
+      if (previewKeysDown.has('a') || previewKeysDown.has('arrowleft'))  { dc = -1; previewPlayer.dir = 3; }
+      if (previewKeysDown.has('d') || previewKeysDown.has('arrowright')) { dc =  1; previewPlayer.dir = 1; }
+
+      if ((dc !== 0 || dr !== 0) && isPreviewWalkable(previewPlayer.row + dr, previewPlayer.col + dc)) {
+        previewPlayer.col += dc;
+        previewPlayer.row += dr;
+        previewPath = []; // cancel click path
+      }
+    }
+
+    // Click-to-move path following
+    if (previewPath.length > 0 && previewKeysDown.size === 0) {
+      // Check if close enough to current position
+      const distX = Math.abs(previewPlayer.renderX - previewPlayer.col);
+      const distY = Math.abs(previewPlayer.renderY - previewPlayer.row);
+      if (distX < 0.15 && distY < 0.15) {
+        const next = previewPath.shift();
+        if (next) {
+          // Set direction
+          if (next.c > previewPlayer.col) previewPlayer.dir = 1;
+          else if (next.c < previewPlayer.col) previewPlayer.dir = 3;
+          else if (next.r > previewPlayer.row) previewPlayer.dir = 2;
+          else if (next.r < previewPlayer.row) previewPlayer.dir = 0;
+          previewPlayer.col = next.c;
+          previewPlayer.row = next.r;
+        }
+      }
+    }
+  }
+
+  function previewClickMove(col, row) {
+    if (col < 0 || col >= mapWidth || row < 0 || row >= mapHeight) return;
+    if (!isPreviewWalkable(row, col)) return;
+    // Simple BFS pathfinding
+    const path = bfsPath(previewPlayer.row, previewPlayer.col, row, col);
+    if (path.length > 0) {
+      previewPath = path;
+    }
+  }
+
+  function bfsPath(sr, sc, er, ec) {
+    if (sr === er && sc === ec) return [];
+    const vis = Array.from({ length: mapHeight }, () => new Array(mapWidth).fill(false));
+    const parent = Array.from({ length: mapHeight }, () => new Array(mapWidth).fill(null));
+    const q = [[sr, sc]];
+    vis[sr][sc] = true;
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    while (q.length) {
+      const [r, c] = q.shift();
+      if (r === er && c === ec) {
+        // Reconstruct
+        const path = [];
+        let cr = er, cc = ec;
+        while (cr !== sr || cc !== sc) {
+          path.unshift({ r: cr, c: cc });
+          const p = parent[cr][cc];
+          cr = p[0]; cc = p[1];
+        }
+        return path;
+      }
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < mapHeight && nc >= 0 && nc < mapWidth && !vis[nr][nc] && isPreviewWalkable(nr, nc)) {
+          vis[nr][nc] = true;
+          parent[nr][nc] = [r, c];
+          q.push([nr, nc]);
+        }
+      }
+    }
+    return []; // no path
+  }
+
+  function drawPreviewPlayer() {
+    const img = images.player;
+    if (!img || !img.complete) return;
+
+    const frameW = img.width / PREVIEW_SPRITE_COLS;
+    const frameH = img.height / PREVIEW_SPRITE_ROWS;
+    const sx = previewPlayer.frame * frameW;
+    const sy = previewPlayer.dir * frameH;
+    const px = previewPlayer.renderX * CELL;
+    const py = previewPlayer.renderY * CELL;
+
+    // Draw player slightly larger than cell for visibility
+    const size = CELL + 4;
+    ctx.drawImage(img, sx, sy, frameW, frameH, px - 2, py - 2, size, size);
+
+    // Draw path preview dots
+    if (previewPath.length > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#06b6d4';
+      previewPath.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.c * CELL + CELL / 2, p.r * CELL + CELL / 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+  }
 
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer;

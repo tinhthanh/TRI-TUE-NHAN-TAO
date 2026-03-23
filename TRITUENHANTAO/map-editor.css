@@ -771,3 +771,44 @@ kbd {
   color: var(--accent-teal);
 }
 
+/* ── Preview Mode ──────────────────────────── */
+.btn-preview {
+  background: rgba(6, 182, 212, 0.12);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: var(--accent-teal);
+}
+
+.btn-preview:hover {
+  background: rgba(6, 182, 212, 0.22);
+  transform: translateY(-2px);
+}
+
+.btn-preview.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--accent-red);
+}
+
+.btn-preview.active:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.preview-banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(6, 182, 212, 0.18);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  border-radius: 50px;
+  padding: 6px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #06b6d4;
+  font-family: 'Inter', sans-serif;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+}

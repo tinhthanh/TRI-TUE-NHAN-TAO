@@ -405,7 +405,7 @@
 
   // ── TILE PALETTE ──────────────────────────────────────────
   const TILE_GROUPS = [
-    { icon: 'wall',       label: 'Nền',      ids: [1, 2, 3, 4, 5, 6], collapsed: false },
+    { icon: 'border_all', label: 'Nền',      ids: [1, 2, 3, 4, 5, 6], collapsed: false },
     { icon: 'grid_view',  label: 'Gạch nền', ids: [0, 27, 28, 29, 30, 31], collapsed: false },
     { icon: 'home',       label: 'Phòng',    ids: [7, 8, 9], collapsed: false },
     { icon: 'chair',      label: 'Đồ vật',   ids: [10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 18], collapsed: true },

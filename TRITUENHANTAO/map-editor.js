@@ -164,6 +164,86 @@
     updateStats(); validate(); markDirty();
   }
 
+  // ── COPY / PASTE REGION ──────────────────────────────────
+  let selectMode = false;   // Ctrl held = selection drag
+  let selStart = null;      // {col, row}
+  let selEnd   = null;      // {col, row}
+  let clipboard = null;     // { grid[][], roomMap[][], w, h }
+  let pasteMode = false;    // waiting for click to place
+  let pasteCursor = null;   // {col, row} current paste ghost position
+
+  function getSelRect() {
+    if (!selStart || !selEnd) return null;
+    const c1 = Math.max(0, Math.min(selStart.col, selEnd.col));
+    const r1 = Math.max(0, Math.min(selStart.row, selEnd.row));
+    const c2 = Math.min(mapWidth  - 1, Math.max(selStart.col, selEnd.col));
+    const r2 = Math.min(mapHeight - 1, Math.max(selStart.row, selEnd.row));
+    return { c1, r1, c2, r2, w: c2 - c1 + 1, h: r2 - r1 + 1 };
+  }
+
+  function copySelection() {
+    const sel = getSelRect();
+    if (!sel) { showToast('Chọn vùng trước (Ctrl+drag)'); return; }
+    const g = [], rm = [];
+    for (let r = sel.r1; r <= sel.r2; r++) {
+      const gr = [], rr = [];
+      for (let c = sel.c1; c <= sel.c2; c++) {
+        gr.push(grid[r][c]);
+        rr.push(roomMap[r][c]);
+      }
+      g.push(gr); rm.push(rr);
+    }
+    clipboard = { grid: g, roomMap: rm, w: sel.w, h: sel.h };
+    showToast('📋 Đã copy ' + sel.w + '×' + sel.h + ' tiles');
+  }
+
+  function cutSelection() {
+    const sel = getSelRect();
+    if (!sel) return;
+    copySelection();
+    saveHistory();
+    for (let r = sel.r1; r <= sel.r2; r++)
+      for (let c = sel.c1; c <= sel.c2; c++) { grid[r][c] = 0; roomMap[r][c] = null; }
+    selStart = selEnd = null;
+    updateStats(); validate(); markDirty();
+    showToast('✂️ Cut ' + sel.w + '×' + sel.h + ' tiles');
+  }
+
+  function startPaste() {
+    if (!clipboard) { showToast('Chưa copy vùng nào'); return; }
+    pasteMode = true;
+    selStart = selEnd = null;
+    canvas.style.cursor = 'copy';
+    showToast('📋 Click để dán · Esc để hủy');
+    markDirty();
+  }
+
+  function doStampPaste(col, row) {
+    if (!clipboard) return;
+    saveHistory();
+    for (let dr = 0; dr < clipboard.h; dr++) {
+      for (let dc = 0; dc < clipboard.w; dc++) {
+        const r = row + dr, c = col + dc;
+        if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
+        grid[r][c] = clipboard.grid[dr][dc];
+        roomMap[r][c] = clipboard.roomMap[dr][dc];
+      }
+    }
+    updateStats(); validate(); markDirty();
+    showToast('✅ Đã dán!');
+  }
+
+  function cancelPaste() {
+    pasteMode = false;
+    pasteCursor = null;
+    canvas.style.cursor = 'crosshair';
+    markDirty();
+  }
+
+  window.copyRegion = copySelection;
+  window.pasteRegion = startPaste;
+  window.cutRegion = cutSelection;
+
   // Drawing state
   let currentTileId = 1;   // default: wall
   let brushSize = 1;
@@ -513,6 +593,7 @@
     canvas.addEventListener('mouseleave', () => { hoverCol = -1; hoverRow = -1; markDirty(); });
     window.addEventListener('mouseup',    () => {
       if (isPainting) { isPainting = false; }
+      if (selectMode) { selectMode = false; }
     });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -567,9 +648,16 @@
       // Grid toggle: G
       if (e.key === 'g' || e.key === 'G') { window.toggleGrid(); return; }
 
-      // Escape: exit fill/eyedropper mode
+      // Copy/Cut/Paste: Ctrl+C, Ctrl+X, Ctrl+V
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copySelection(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'x') { e.preventDefault(); cutSelection(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') { e.preventDefault(); startPaste(); return; }
+
+      // Escape: exit fill/eyedropper/paste mode
       if (e.key === 'Escape' && fillMode) { window.toggleFill(); return; }
       if (e.key === 'Escape' && eyedropperMode) { window.toggleEyedropper(); return; }
+      if (e.key === 'Escape' && pasteMode) { cancelPaste(); return; }
+      if (e.key === 'Escape' && (selStart || selEnd)) { selStart = selEnd = null; markDirty(); return; }
 
     });
   }
@@ -586,9 +674,14 @@
 
   function onMouseDown(e) {
     if (previewMode) {
-      // Click-to-move in preview mode
       const { col, row } = cellAt(e);
       previewClickMove(col, row);
+      return;
+    }
+    // Paste mode: click to stamp
+    if (pasteMode) {
+      const { col, row } = cellAt(e);
+      doStampPaste(col, row);
       return;
     }
     // Eyedropper: Alt+click or eyedropper mode
@@ -601,6 +694,15 @@
         showToast('👁️ ' + (td ? td.name : 'Tile ' + picked));
         if (eyedropperMode) { eyedropperMode = false; const btn = document.getElementById('eyedropper-btn'); if (btn) btn.classList.remove('active'); canvas.style.cursor = 'crosshair'; }
       }
+      return;
+    }
+    // Ctrl+drag: selection mode
+    if (e.ctrlKey || e.metaKey) {
+      const { col, row } = cellAt(e);
+      selectMode = true;
+      selStart = { col, row };
+      selEnd   = { col, row };
+      markDirty();
       return;
     }
     // Fill mode
@@ -622,6 +724,16 @@
     if (previewMode) return;
     const { col, row } = cellAt(e);
     if (col !== hoverCol || row !== hoverRow) { hoverCol = col; hoverRow = row; markDirty(); }
+    // Update selection drag
+    if (selectMode && selStart) {
+      selEnd = { col, row };
+      markDirty();
+    }
+    // Update paste ghost
+    if (pasteMode) {
+      pasteCursor = { col, row };
+      markDirty();
+    }
     if (isPainting) paintAt(col, row, paintValue);
     showHoverTooltip(e, col, row);
   }
@@ -1028,6 +1140,42 @@
 
     // Pass 6: Hover preview (only in editor mode)
     if (!previewMode && hoverCol >= 0 && hoverRow >= 0) drawHoverPreview();
+
+    // Pass 6.5: Selection rectangle
+    const sel = getSelRect();
+    if (sel) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(6,182,212,0.9)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.strokeRect(sel.c1 * CELL, sel.r1 * CELL, sel.w * CELL, sel.h * CELL);
+      ctx.fillStyle = 'rgba(6,182,212,0.08)';
+      ctx.fillRect(sel.c1 * CELL, sel.r1 * CELL, sel.w * CELL, sel.h * CELL);
+      ctx.restore();
+    }
+
+    // Pass 6.6: Paste ghost preview
+    if (pasteMode && pasteCursor && clipboard) {
+      ctx.save();
+      ctx.globalAlpha = 0.45;
+      for (let dr = 0; dr < clipboard.h; dr++) {
+        for (let dc = 0; dc < clipboard.w; dc++) {
+          const r = pasteCursor.row + dr, c = pasteCursor.col + dc;
+          if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
+          const tileId = clipboard.grid[dr][dc];
+          const td = TILE_DEFS[tileId];
+          ctx.fillStyle = td ? td.color : '#555';
+          ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(16,185,129,0.8)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(pasteCursor.col * CELL, pasteCursor.row * CELL,
+                     clipboard.w * CELL, clipboard.h * CELL);
+      ctx.restore();
+    }
 
     // Pass 7: Preview mode player
     if (previewMode) drawPreviewPlayer();

@@ -8,7 +8,7 @@
   // ── TILE DEFINITIONS ───────────────────────────────────────
   const TILE_DEFS = [
     { id: 0, name: 'Sàn (Floor)',      icon: 'crop_square',         color: '#e8dcc8', paint: 0 },
-    { id: 1, name: 'Tường (Wall)',     icon: 'view_agenda',         color: '#7a6a5a', paint: 1 },
+    { id: 1, name: 'Tường (Wall)',     icon: 'border_all',          color: '#7a6a5a', paint: 1 },
     { id: 2, name: 'Cầu thang ↑',     icon: 'arrow_upward',        color: '#06b6d4', paint: 2 },
     { id: 3, name: 'Cầu thang ↓',     icon: 'arrow_downward',      color: '#8b5cf6', paint: 3 },
     { id: 4, name: 'Cửa (Door)',       icon: 'door_front',          color: '#d97706', paint: 4 },

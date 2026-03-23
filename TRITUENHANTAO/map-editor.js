@@ -236,11 +236,13 @@
     showLoadingCanvas();
     await loadAssets();
     buildTilePalette();
-    createInitialFloors();
+    if (!restoreAutoSave()) {
+      createInitialFloors();
+    }
     bindSliders();
     bindEvents();
     updateFloorTabs();
-    switchToFloor(0);
+    switchToFloor(currentFloorIdx);
     resizeCanvas();
     requestAnimationFrame(rafLoop);
   }
@@ -559,7 +561,16 @@
       }
 
       // Escape: exit fill mode
+      // Eyedropper: E
+      if (e.key === 'e' || e.key === 'E') { window.toggleEyedropper(); return; }
+
+      // Grid toggle: G
+      if (e.key === 'g' || e.key === 'G') { window.toggleGrid(); return; }
+
+      // Escape: exit fill/eyedropper mode
       if (e.key === 'Escape' && fillMode) { window.toggleFill(); return; }
+      if (e.key === 'Escape' && eyedropperMode) { window.toggleEyedropper(); return; }
+
     });
   }
 
@@ -578,6 +589,18 @@
       // Click-to-move in preview mode
       const { col, row } = cellAt(e);
       previewClickMove(col, row);
+      return;
+    }
+    // Eyedropper: Alt+click or eyedropper mode
+    if (e.altKey || eyedropperMode) {
+      const { col, row } = cellAt(e);
+      if (col >= 0 && col < mapWidth && row >= 0 && row < mapHeight) {
+        const picked = grid[row][col];
+        selectTile(picked);
+        const td = TILE_DEFS[picked];
+        showToast('👁️ ' + (td ? td.name : 'Tile ' + picked));
+        if (eyedropperMode) { eyedropperMode = false; const btn = document.getElementById('eyedropper-btn'); if (btn) btn.classList.remove('active'); canvas.style.cursor = 'crosshair'; }
+      }
       return;
     }
     // Fill mode
@@ -727,7 +750,169 @@
     requestAnimationFrame(rafLoop);
   }
 
-  function markDirty() { needsRedraw = true; }
+  function markDirty() {
+    needsRedraw = true;
+    scheduleAutoSave();
+  }
+
+  // ── GRID TOGGLE ─────────────────────────────────────────
+  let showGrid = true;
+  window.toggleGrid = function() {
+    showGrid = !showGrid;
+    const btn = document.getElementById('grid-toggle-btn');
+    if (btn) btn.classList.toggle('active', showGrid);
+    markDirty();
+    showToast(showGrid ? 'Lưới: Bật' : 'Lưới: Tắt');
+  };
+
+  // ── AUTO-SAVE ─────────────────────────────────────────
+  const AUTO_SAVE_KEY = 'mapEditor_autosave';
+  let autoSaveTimer = null;
+
+  function scheduleAutoSave() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(doAutoSave, 1500);
+  }
+
+  function doAutoSave() {
+    try {
+      const data = JSON.stringify({
+        floors: JSON.parse(JSON.stringify(floors)),
+        mapWidth, mapHeight, currentFloorIdx,
+        savedAt: Date.now()
+      });
+      localStorage.setItem(AUTO_SAVE_KEY, data);
+      const indicator = document.getElementById('autosave-indicator');
+      if (indicator) {
+        indicator.textContent = '✓ Đã lưu';
+        indicator.style.opacity = '1';
+        clearTimeout(indicator._t);
+        indicator._t = setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+      }
+    } catch(e) { /* storage full or disabled */ }
+  }
+
+  function restoreAutoSave() {
+    try {
+      const raw = localStorage.getItem(AUTO_SAVE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data.floors || !data.floors.length) return false;
+      floors = data.floors;
+      mapWidth = data.mapWidth || mapWidth;
+      mapHeight = data.mapHeight || mapHeight;
+      // Update sliders
+      const wSlider = document.getElementById('grid-w-slider');
+      const hSlider = document.getElementById('grid-h-slider');
+      if (wSlider) { wSlider.value = mapWidth; document.getElementById('grid-width-value').textContent = mapWidth; }
+      if (hSlider) { hSlider.value = mapHeight; document.getElementById('grid-height-value').textContent = mapHeight; }
+      switchToFloor(Math.min(data.currentFloorIdx || 0, floors.length - 1));
+      resizeCanvas();
+      const age = Math.round((Date.now() - data.savedAt) / 60000);
+      showToast('↩ Đã khôi phục bản lưu (' + age + ' phút trước)');
+      return true;
+    } catch(e) { return false; }
+  }
+
+  window.clearAutoSave = function() {
+    localStorage.removeItem(AUTO_SAVE_KEY);
+    showToast('Đã xóa bản lưu tự động');
+  };
+
+  // ── IMPORT JSON ────────────────────────────────────────
+  window.openImport = function() {
+    document.getElementById('import-modal').classList.add('open');
+    document.getElementById('import-textarea').value = '';
+    document.getElementById('import-textarea').focus();
+  };
+  window.closeImport = function() {
+    document.getElementById('import-modal').classList.remove('open');
+  };
+  window.doImport = function() {
+    const raw = document.getElementById('import-textarea').value.trim();
+    if (!raw) return;
+    try {
+      const obj = JSON.parse(raw);
+      if (!obj.floors || !Array.isArray(obj.floors)) throw new Error('Invalid format');
+      saveHistory();
+      mapWidth  = obj.width  || mapWidth;
+      mapHeight = obj.height || mapHeight;
+      floors = obj.floors.map(f => ({
+        name:    f.name    || 'Tầng',
+        grid:    f.grid    || [],
+        roomMap: f.roomMap || f.grid.map(r => r.map(() => null)),
+        rooms:   f.rooms   || [],
+        props:   f.props   || []
+      }));
+      const wSlider = document.getElementById('grid-w-slider');
+      const hSlider = document.getElementById('grid-h-slider');
+      if (wSlider) { wSlider.value = mapWidth; document.getElementById('grid-width-value').textContent = mapWidth; }
+      if (hSlider) { hSlider.value = mapHeight; document.getElementById('grid-height-value').textContent = mapHeight; }
+      switchToFloor(0);
+      resizeCanvas();
+      closeImport();
+      showToast('✅ Import thành công!');
+    } catch(e) {
+      showToast('❌ JSON không hợp lệ: ' + e.message);
+    }
+  };
+  // Close import modal on backdrop click
+  document.addEventListener('click', e => {
+    const modal = document.getElementById('import-modal');
+    if (modal && e.target === modal) closeImport();
+  });
+
+  // ── EYEDROPPER ───────────────────────────────────────────
+  let eyedropperMode = false;
+  window.toggleEyedropper = function() {
+    eyedropperMode = !eyedropperMode;
+    const btn = document.getElementById('eyedropper-btn');
+    if (btn) btn.classList.toggle('active', eyedropperMode);
+    canvas.style.cursor = eyedropperMode ? 'crosshair' : (fillMode ? 'cell' : 'crosshair');
+    showToast(eyedropperMode ? '👁️ Eyedropper ON (Alt+click)' : 'Eyedropper OFF');
+  };
+
+  // ── MINI-MAP ──────────────────────────────────────────────
+  let showMiniMap = true;
+  window.toggleMiniMap = function() {
+    showMiniMap = !showMiniMap;
+    const btn = document.getElementById('minimap-btn');
+    if (btn) btn.classList.toggle('active', showMiniMap);
+    const mm = document.getElementById('mini-map-canvas');
+    if (mm) mm.style.display = showMiniMap ? 'block' : 'none';
+    markDirty();
+  };
+
+  function drawMiniMap() {
+    const mm = document.getElementById('mini-map-canvas');
+    if (!mm || !showMiniMap) return;
+    const mmCtx = mm.getContext('2d');
+    const W = mm.width, H = mm.height;
+    const cellW = W / mapWidth, cellH = H / mapHeight;
+    mmCtx.clearRect(0, 0, W, H);
+    mmCtx.fillStyle = '#0d1120';
+    mmCtx.fillRect(0, 0, W, H);
+    for (let r = 0; r < mapHeight; r++) {
+      for (let c = 0; c < mapWidth; c++) {
+        const t = grid[r][c];
+        const td = TILE_DEFS[t];
+        mmCtx.fillStyle = td ? td.color : '#0d1120';
+        mmCtx.fillRect(Math.floor(c * cellW), Math.floor(r * cellH),
+                       Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
+      }
+    }
+    // Viewport indicator
+    const container = document.querySelector('.canvas-container');
+    if (container) {
+      const vx = container.scrollLeft / (canvas.width * zoomLevel);
+      const vy = container.scrollTop  / (canvas.height * zoomLevel);
+      const vw = container.clientWidth  / (canvas.width * zoomLevel);
+      const vh = container.clientHeight / (canvas.height * zoomLevel);
+      mmCtx.strokeStyle = 'rgba(6,182,212,0.8)';
+      mmCtx.lineWidth = 1;
+      mmCtx.strokeRect(vx * W, vy * H, vw * W, vh * H);
+    }
+  }
 
   // ── RENDER ────────────────────────────────────────────────
   function render(now) {
@@ -831,12 +1016,14 @@
     }
 
     // Pass 5: Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
-    for (let r = 0; r <= mapHeight; r++) {
-      ctx.beginPath(); ctx.moveTo(0, r * CELL); ctx.lineTo(mapWidth * CELL, r * CELL); ctx.stroke();
-    }
-    for (let c = 0; c <= mapWidth; c++) {
-      ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, mapHeight * CELL); ctx.stroke();
+    if (showGrid) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5;
+      for (let r = 0; r <= mapHeight; r++) {
+        ctx.beginPath(); ctx.moveTo(0, r * CELL); ctx.lineTo(mapWidth * CELL, r * CELL); ctx.stroke();
+      }
+      for (let c = 0; c <= mapWidth; c++) {
+        ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, mapHeight * CELL); ctx.stroke();
+      }
     }
 
     // Pass 6: Hover preview (only in editor mode)
@@ -844,6 +1031,9 @@
 
     // Pass 7: Preview mode player
     if (previewMode) drawPreviewPlayer();
+
+    // Pass 8: Mini-map overlay
+    drawMiniMap();
   }
 
   // ── GROUND TILE DRAWING ───────────────────────────────────

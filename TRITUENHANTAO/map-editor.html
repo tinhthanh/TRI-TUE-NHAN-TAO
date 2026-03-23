@@ -50,6 +50,7 @@
       </div>
     </div>
     <div class="header-actions">
+      <span id="autosave-indicator" style="font-size:11px; color:var(--green); opacity:0; transition:opacity 0.4s; margin-right:6px; font-weight:600;"></span>
       <button class="action-btn btn-back" id="back-btn" onclick="goBack()">
         <span class="ms-icon">arrow_back</span> Quay lại Menu
       </button>
@@ -151,6 +152,18 @@
           <button class="tb-btn" id="fill-btn" onclick="toggleFill()" title="Fill Tool (F)">
             <span class="ms-icon">format_color_fill</span>
           </button>
+          <button class="tb-btn" id="eyedropper-btn" onclick="toggleEyedropper()" title="Eyedropper (E / Alt+click)">
+            <span class="ms-icon">colorize</span>
+          </button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn active" id="grid-toggle-btn" onclick="toggleGrid()" title="Bật/Tắt lưới (G)">
+            <span class="ms-icon">grid_on</span>
+          </button>
+          <button class="tb-btn active" id="minimap-btn" onclick="toggleMiniMap()" title="Mini-map">
+            <span class="ms-icon">map</span>
+          </button>
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
@@ -166,6 +179,9 @@
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
+          <button class="tb-btn" onclick="openImport()" title="Import JSON">
+            <span class="ms-icon">upload</span>
+          </button>
           <button class="tb-btn" onclick="exportPNG()" title="Export PNG">
             <span class="ms-icon">image</span>
           </button>
@@ -186,6 +202,11 @@
 
       <div class="canvas-container">
         <canvas id="editor-canvas"></canvas>
+        <!-- Mini-map overlay -->
+        <canvas id="mini-map-canvas" width="160" height="90"
+          style="position:absolute; bottom:12px; right:12px; border-radius:10px;
+                 border:1px solid rgba(6,182,212,0.3); background:rgba(13,17,32,0.85);
+                 pointer-events:none; z-index:5;"></canvas>
       </div>
       <div class="canvas-hint">
         <span class="ms-icon">mouse</span> Vẽ ·
@@ -285,6 +306,23 @@
 
     </div>
   </main>
+
+  <!-- Import Modal -->
+  <div id="import-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:150;">
+    <div class="export-dialog">
+      <h2><span class="ms-icon">upload</span> Import Map JSON</h2>
+      <p>Dán nội dung JSON (từ Export JSON) vào ô bên dưới:</p>
+      <textarea id="import-textarea" style="width:100%;height:150px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;color:#06b6d4;font-family:'Courier New',monospace;font-size:11px;resize:none;outline:none;margin-bottom:16px;" placeholder='{"name":"Custom Map","floors":[...]}'></textarea>
+      <div class="export-actions">
+        <button class="action-btn btn-play" onclick="doImport()" style="width:auto;padding:10px 20px;font-size:14px;">
+          <span class="ms-icon">check</span> Import
+        </button>
+        <button class="action-btn btn-back" onclick="closeImport()" style="width:auto;padding:10px 20px;">
+          <span class="ms-icon">close</span> Đóng
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Export Modal -->
   <div id="export-modal">

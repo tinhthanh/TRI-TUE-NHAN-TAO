@@ -7,39 +7,39 @@
 
   // ── TILE DEFINITIONS ───────────────────────────────────────
   const TILE_DEFS = [
-    { id: 0, name: 'Sàn (Floor)',      emoji: '⬜', color: '#e8dcc8', paint: 0 },
-    { id: 1, name: 'Tường (Wall)',     emoji: '🧱', color: '#7a6a5a', paint: 1 },
-    { id: 2, name: 'Cầu thang ↑',     emoji: '🔼', color: '#06b6d4', paint: 2 },
-    { id: 3, name: 'Cầu thang ↓',     emoji: '🔽', color: '#8b5cf6', paint: 3 },
-    { id: 4, name: 'Cửa (Door)',       emoji: '🚪', color: '#d97706', paint: 4 },
-    { id: 5, name: 'Ban công',         emoji: '🌿', color: '#b0bec5', paint: 5 },
-    { id: 6, name: 'Sân ngoài',       emoji: '🌱', color: '#2d6a1e', paint: 6 },
-    { id: 7, name: 'WC',              emoji: '🚽', color: '#0d9488', paint: 7 },
-    { id: 8, name: 'Bếp/Giặt/Phòng', emoji: '🏠', color: '#f97316', paint: 8 },
-    { id: 9, name: 'Phòng ngủ',       emoji: '🛏',  color: '#a855f7', paint: 9 },
-    { id: 10, name: 'Giường',        emoji: '🛌', color: 'rgba(0,0,0,0)', paint: 10, propType: 'bed' },
-    { id: 11, name: 'Ghế Sofa',      emoji: '🛋', color: 'rgba(0,0,0,0)', paint: 11, propType: 'sofa' },
-    { id: 12, name: 'Chậu cây',      emoji: '🪴', color: 'rgba(0,0,0,0)', paint: 12, propType: 'plant' },
-    { id: 13, name: 'Bàn ăn',        emoji: '🪑', color: 'rgba(0,0,0,0)', paint: 13, propType: 'table' },
-    { id: 14, name: 'Bàn khám Vet',  emoji: '🩺', color: 'rgba(0,0,0,0)', paint: 14, propType: 'vet_table' },
-    { id: 15, name: 'Lồng Pet',      emoji: '🐾', color: 'rgba(0,0,0,0)', paint: 15, propType: 'vet_cage' },
-    { id: 16, name: 'Máy X-Quang',   emoji: '🩻', color: 'rgba(0,0,0,0)', paint: 16, propType: 'vet_xray' },
-    { id: 17, name: 'Tủ thuốc Vet',  emoji: '💊', color: 'rgba(0,0,0,0)', paint: 17, propType: 'vet_cabinet' },
-    { id: 19, name: 'Quầy Lễ Tân',   emoji: '🖥', color: 'rgba(0,0,0,0)', paint: 19, propType: 'reception_desk' },
-    { id: 20, name: 'Ghế chờ',       emoji: '💺', color: 'rgba(0,0,0,0)', paint: 20, propType: 'waiting_chair' },
-    { id: 21, name: 'Kính hiển vi',   emoji: '🔬', color: 'rgba(0,0,0,0)', paint: 21, propType: 'microscope' },
-    { id: 22, name: 'Truyền dịch',   emoji: '💉', color: 'rgba(0,0,0,0)', paint: 22, propType: 'iv_stand' },
-    { id: 23, name: 'Bàn Grooming',  emoji: '🪥', color: 'rgba(0,0,0,0)', paint: 23, propType: 'grooming_table' },
-    { id: 24, name: 'Bồn rửa tay',   emoji: '🧼', color: 'rgba(0,0,0,0)', paint: 24, propType: 'surgical_sink' },
-    { id: 25, name: 'Siêu âm',       emoji: '📡', color: 'rgba(0,0,0,0)', paint: 25, propType: 'ultrasound' },
-    { id: 26, name: 'Tủ vaccine',    emoji: '🧊', color: 'rgba(0,0,0,0)', paint: 26, propType: 'vaccine_fridge' },
-    { id: 18, name: 'Xoá Đồ vật',    emoji: '🧹', color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' },
+    { id: 0, name: 'Sàn (Floor)',      icon: 'square',             color: '#e8dcc8', paint: 0 },
+    { id: 1, name: 'Tường (Wall)',     icon: 'wall',               color: '#7a6a5a', paint: 1 },
+    { id: 2, name: 'Cầu thang ↑',     icon: 'arrow_upward',       color: '#06b6d4', paint: 2 },
+    { id: 3, name: 'Cầu thang ↓',     icon: 'arrow_downward',     color: '#8b5cf6', paint: 3 },
+    { id: 4, name: 'Cửa (Door)',       icon: 'door_front',         color: '#d97706', paint: 4 },
+    { id: 5, name: 'Ban công',         icon: 'balcony',            color: '#b0bec5', paint: 5 },
+    { id: 6, name: 'Sân ngoài',       icon: 'grass',              color: '#2d6a1e', paint: 6 },
+    { id: 7, name: 'WC',              icon: 'wc',                 color: '#0d9488', paint: 7 },
+    { id: 8, name: 'Bếp/Giặt/Phòng', icon: 'kitchen',            color: '#f97316', paint: 8 },
+    { id: 9, name: 'Phòng ngủ',       icon: 'bed',                color: '#a855f7', paint: 9 },
+    { id: 10, name: 'Giường',        icon: 'bed',                color: 'rgba(0,0,0,0)', paint: 10, propType: 'bed' },
+    { id: 11, name: 'Ghế Sofa',      icon: 'chair',              color: 'rgba(0,0,0,0)', paint: 11, propType: 'sofa' },
+    { id: 12, name: 'Chậu cây',      icon: 'potted_plant',       color: 'rgba(0,0,0,0)', paint: 12, propType: 'plant' },
+    { id: 13, name: 'Bàn ăn',        icon: 'table_restaurant',   color: 'rgba(0,0,0,0)', paint: 13, propType: 'table' },
+    { id: 14, name: 'Bàn khám Vet',  icon: 'medical_services',   color: 'rgba(0,0,0,0)', paint: 14, propType: 'vet_table' },
+    { id: 15, name: 'Lồng Pet',      icon: 'pets',               color: 'rgba(0,0,0,0)', paint: 15, propType: 'vet_cage' },
+    { id: 16, name: 'Máy X-Quang',   icon: 'radiology',          color: 'rgba(0,0,0,0)', paint: 16, propType: 'vet_xray' },
+    { id: 17, name: 'Tủ thuốc Vet',  icon: 'medication',         color: 'rgba(0,0,0,0)', paint: 17, propType: 'vet_cabinet' },
+    { id: 19, name: 'Quầy Lễ Tân',   icon: 'desk',               color: 'rgba(0,0,0,0)', paint: 19, propType: 'reception_desk' },
+    { id: 20, name: 'Ghế chờ',       icon: 'chair_alt',          color: 'rgba(0,0,0,0)', paint: 20, propType: 'waiting_chair' },
+    { id: 21, name: 'Kính hiển vi',   icon: 'biotech',            color: 'rgba(0,0,0,0)', paint: 21, propType: 'microscope' },
+    { id: 22, name: 'Truyền dịch',   icon: 'vaccines',           color: 'rgba(0,0,0,0)', paint: 22, propType: 'iv_stand' },
+    { id: 23, name: 'Bàn Grooming',  icon: 'content_cut',        color: 'rgba(0,0,0,0)', paint: 23, propType: 'grooming_table' },
+    { id: 24, name: 'Bồn rửa tay',   icon: 'wash',               color: 'rgba(0,0,0,0)', paint: 24, propType: 'surgical_sink' },
+    { id: 25, name: 'Siêu âm',       icon: 'monitor_heart',      color: 'rgba(0,0,0,0)', paint: 25, propType: 'ultrasound' },
+    { id: 26, name: 'Tủ vaccine',    icon: 'vaccines',           color: 'rgba(0,0,0,0)', paint: 26, propType: 'vaccine_fridge' },
+    { id: 18, name: 'Xoá Đồ vật',    icon: 'delete',             color: 'rgba(0,0,0,0)', paint: 18, propType: 'clear' },
     // Floor tile variants
-    { id: 27, name: 'Gạch Phòng khám', emoji: '🏥', color: '#c4d4d0', paint: 27, floorImage: 'floorClinic' },
-    { id: 28, name: 'Gạch Grooming',   emoji: '🐕', color: '#d4c8a8', paint: 28, floorImage: 'floorGrooming' },
-    { id: 29, name: 'Gạch Retro',      emoji: '🎨', color: '#b8a090', paint: 29, floorImage: 'floorRetro' },
-    { id: 30, name: 'Gạch Phẫu thuật', emoji: '🏨', color: '#b0c8c0', paint: 30, floorImage: 'floorSurgery' },
-    { id: 31, name: 'Sàn gỗ',         emoji: '🪵', color: '#a0784c', paint: 31, floorImage: 'floorWood' },
+    { id: 27, name: 'Gạch Phòng khám', icon: 'local_hospital',     color: '#c4d4d0', paint: 27, floorImage: 'floorClinic' },
+    { id: 28, name: 'Gạch Grooming',   icon: 'content_cut',        color: '#d4c8a8', paint: 28, floorImage: 'floorGrooming' },
+    { id: 29, name: 'Gạch Retro',      icon: 'style',              color: '#b8a090', paint: 29, floorImage: 'floorRetro' },
+    { id: 30, name: 'Gạch Phẫu thuật', icon: 'surgical',           color: '#b0c8c0', paint: 30, floorImage: 'floorSurgery' },
+    { id: 31, name: 'Sàn gỗ',         icon: 'texture',            color: '#a0784c', paint: 31, floorImage: 'floorWood' },
   ];
 
   // Walkable tile IDs (anything except WALL=1)
@@ -226,10 +226,10 @@
 
   // ── TILE PALETTE ──────────────────────────────────────────
   const TILE_GROUPS = [
-    { label: '🧱 Nền', ids: [1, 2, 3, 4, 5, 6], collapsed: false },
-    { label: '🧱 Gạch nền', ids: [0, 27, 28, 29, 30, 31], collapsed: false },
-    { label: '🏠 Phòng', ids: [7, 8, 9], collapsed: false },
-    { label: '🪑 Đồ vật', ids: [10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 18], collapsed: true },
+    { icon: 'wall',       label: 'Nền',      ids: [1, 2, 3, 4, 5, 6], collapsed: false },
+    { icon: 'grid_view',  label: 'Gạch nền', ids: [0, 27, 28, 29, 30, 31], collapsed: false },
+    { icon: 'home',       label: 'Phòng',    ids: [7, 8, 9], collapsed: false },
+    { icon: 'chair',      label: 'Đồ vật',   ids: [10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 18], collapsed: true },
   ];
 
   function buildTilePalette() {
@@ -239,7 +239,21 @@
       // Group header
       const header = document.createElement('button');
       header.className = 'tile-group-header' + (group.collapsed ? ' collapsed' : '');
-      header.innerHTML = `<span class="group-arrow">▼</span> ${group.label}`;
+      // Build header content with proper iconify-icon element
+      const arrowSpan = document.createElement('span');
+      arrowSpan.className = 'group-arrow';
+      arrowSpan.textContent = '▼';
+      header.appendChild(arrowSpan);
+      if (group.icon) {
+        const iconEl = document.createElement('span');
+        iconEl.className = 'ms-icon';
+        iconEl.textContent = group.icon;
+        iconEl.style.marginLeft = '4px';
+        iconEl.style.fontSize = '16px';
+        header.appendChild(iconEl);
+      }
+      const labelText = document.createTextNode(' ' + group.label);
+      header.appendChild(labelText);
       const itemsDiv = document.createElement('div');
       itemsDiv.className = 'tile-group-items' + (group.collapsed ? ' collapsed' : '');
       header.onclick = () => {
@@ -257,21 +271,36 @@
         btn.className = 'tile-btn' + (td.id === currentTileId ? ' active' : '');
         btn.id = 'tile-btn-' + td.id;
         btn.title = td.name;
-        btn.innerHTML = `<span class="tile-emoji">${td.emoji}</span><span class="tile-name">${td.name}</span>`;
-        // For floor tile variants, replace emoji with actual texture preview
+
+        // Build icon element
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'tile-icon';
+
+        // For floor tile variants, show texture preview image
         if (td.floorImage && images[td.floorImage]) {
-          const emojiSpan = btn.querySelector('.tile-emoji');
           const img = document.createElement('img');
           img.src = images[td.floorImage].src;
-          img.style.cssText = 'width:24px;height:24px;border-radius:4px;image-rendering:pixelated;flex-shrink:0;';
-          emojiSpan.replaceWith(img);
+          img.style.cssText = 'width:20px;height:20px;border-radius:3px;image-rendering:pixelated;flex-shrink:0;';
+          iconSpan.appendChild(img);
         } else if (td.id === 0 && images.floorTile) {
-          const emojiSpan = btn.querySelector('.tile-emoji');
           const img = document.createElement('img');
           img.src = images.floorTile.src;
-          img.style.cssText = 'width:24px;height:24px;border-radius:4px;image-rendering:pixelated;flex-shrink:0;';
-          emojiSpan.replaceWith(img);
+          img.style.cssText = 'width:20px;height:20px;border-radius:3px;image-rendering:pixelated;flex-shrink:0;';
+          iconSpan.appendChild(img);
+        } else {
+          // Use Material Symbols font icon
+          const iconEl = document.createElement('span');
+          iconEl.className = 'ms-icon';
+          iconEl.textContent = td.icon;
+          iconSpan.appendChild(iconEl);
         }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'tile-name';
+        nameSpan.textContent = td.name;
+
+        btn.appendChild(iconSpan);
+        btn.appendChild(nameSpan);
         btn.style.setProperty('--tile-color', td.color);
         btn.onclick = () => selectTile(td.id);
         itemsDiv.appendChild(btn);
@@ -279,6 +308,7 @@
       container.appendChild(itemsDiv);
     });
   }
+
 
   window.selectTile = function (id) {
     currentTileId = id;
@@ -1038,8 +1068,10 @@
   let previewMoveAccum = 0;
   let previewLastTime = 0;
   let previewBanner = null;
-  const PREVIEW_MOVE_MS = 150;
-  const PREVIEW_SPRITE_COLS = 4;
+  // Floor transition fade
+  let previewFade = { active: false, alpha: 0, dir: 1, label: '', callback: null };
+  const PREVIEW_MOVE_MS = 80;
+  const PREVIEW_SPRITE_COLS = 5;
   const PREVIEW_SPRITE_ROWS = 4;
 
   // Directions: 0=up, 1=right, 2=down, 3=left
@@ -1117,6 +1149,20 @@
     const dt = now - previewLastTime;
     previewLastTime = now;
 
+    // Advance floor transition fade
+    if (previewFade.active) {
+      previewFade.alpha += previewFade.dir * (dt / 200); // 200ms per phase
+      if (previewFade.dir === 1 && previewFade.alpha >= 1) {
+        previewFade.alpha = 1;
+        if (previewFade.callback) { previewFade.callback(); previewFade.callback = null; }
+        previewFade.dir = -1; // start fade-in
+      } else if (previewFade.dir === -1 && previewFade.alpha <= 0) {
+        previewFade.alpha = 0;
+        previewFade.active = false;
+      }
+      return; // freeze player movement during transition
+    }
+
     // Animate sprite
     if (now - previewPlayer.lastAnim > 200) {
       previewPlayer.frame = (previewPlayer.frame + 1) % PREVIEW_SPRITE_COLS;
@@ -1124,7 +1170,7 @@
     }
 
     // Smooth render position interpolation
-    const speed = 8; // cells per second for smooth lerp
+    const speed = 16; // cells per second for smooth lerp
     const lerpAmt = Math.min(1, (dt / 1000) * speed);
     previewPlayer.renderX += (previewPlayer.col - previewPlayer.renderX) * lerpAmt;
     previewPlayer.renderY += (previewPlayer.row - previewPlayer.renderY) * lerpAmt;
@@ -1143,6 +1189,7 @@
         previewPlayer.col += dc;
         previewPlayer.row += dr;
         previewPath = []; // cancel click path
+        checkPreviewStairs();
       }
     }
 
@@ -1161,9 +1208,33 @@
           else if (next.r < previewPlayer.row) previewPlayer.dir = 0;
           previewPlayer.col = next.c;
           previewPlayer.row = next.r;
+          checkPreviewStairs();
         }
       }
     }
+  }
+
+  function checkPreviewStairs() {
+    if (previewFade.active) return;
+    const tile = grid[previewPlayer.row]?.[previewPlayer.col];
+    let targetFloor = -1, emoji = '';
+    if (tile === 2 && currentFloorIdx < floors.length - 1) {
+      targetFloor = currentFloorIdx + 1; emoji = '⬆️';
+    } else if (tile === 3 && currentFloorIdx > 0) {
+      targetFloor = currentFloorIdx - 1; emoji = '⬇️';
+    }
+    if (targetFloor < 0) return;
+    const floorName = floors[targetFloor].name;
+    previewFade.active = true;
+    previewFade.alpha = 0;
+    previewFade.dir = 1;
+    previewFade.label = emoji + ' ' + floorName;
+    previewFade.callback = () => {
+      switchToFloor(targetFloor);
+      previewPlayer.renderX = previewPlayer.col;
+      previewPlayer.renderY = previewPlayer.row;
+      previewPath = [];
+    };
   }
 
   function previewClickMove(col, row) {
@@ -1233,6 +1304,39 @@
         ctx.arc(p.c * CELL + CELL / 2, p.r * CELL + CELL / 2, 3, 0, Math.PI * 2);
         ctx.fill();
       });
+      ctx.restore();
+    }
+
+    // Floor transition fade overlay
+    if (previewFade.active && previewFade.alpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = previewFade.alpha;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Floor name label
+      if (previewFade.alpha > 0.5) {
+        ctx.globalAlpha = (previewFade.alpha - 0.5) * 2;
+        const cw = canvas.width, ch = canvas.height;
+        // Background pill
+        const label = previewFade.label;
+        ctx.font = `bold ${Math.round(CELL * 0.7)}px 'Baloo 2', cursive`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const tw = ctx.measureText(label).width;
+        const pw = tw + 40, ph = CELL * 1.2;
+        const rx = cw / 2 - pw / 2, ry = ch / 2 - ph / 2;
+        ctx.fillStyle = 'rgba(6,182,212,0.25)';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, pw, ph, ph / 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(6,182,212,0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#06b6d4';
+        ctx.fillText(label, cw / 2, ch / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+      }
       ctx.restore();
     }
   }

@@ -285,28 +285,28 @@
         </button>
       </div>
 
-      <!-- ── Floating Toolbar ── -->
+      <!-- ── Floating Toolbar (compact) ── -->
       <div class="floating-toolbar">
         <div class="toolbar-group">
-          <button class="tb-btn" id="undo-btn" onclick="undo()" title="Undo (Z / Ctrl+Z)" disabled>
+          <button class="tb-btn" id="undo-btn" onclick="undo()" title="Undo (Z)" disabled>
             <span class="ms-icon">undo</span>
           </button>
-          <button class="tb-btn" id="redo-btn" onclick="redo()" title="Redo (Shift+Z / Ctrl+Y)" disabled>
+          <button class="tb-btn" id="redo-btn" onclick="redo()" title="Redo (Shift+Z)" disabled>
             <span class="ms-icon">redo</span>
           </button>
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
-          <button class="tb-btn" id="fill-btn" onclick="toggleFill()" title="Fill Tool (F)">
+          <button class="tb-btn" id="fill-btn" onclick="toggleFill()" title="Fill (F)">
             <span class="ms-icon">format_color_fill</span>
           </button>
-          <button class="tb-btn" id="eyedropper-btn" onclick="toggleEyedropper()" title="Eyedropper (E / Alt+click)">
+          <button class="tb-btn" id="eyedropper-btn" onclick="toggleEyedropper()" title="Eyedropper (E)">
             <span class="ms-icon">colorize</span>
           </button>
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
-          <button class="tb-btn active" id="grid-toggle-btn" onclick="toggleGrid()" title="Bật/Tắt lưới (G)">
+          <button class="tb-btn active" id="grid-toggle-btn" onclick="toggleGrid()" title="Lưới (G)">
             <span class="ms-icon">grid_on</span>
           </button>
           <button class="tb-btn active" id="minimap-btn" onclick="toggleMiniMap()" title="Mini-map">
@@ -326,31 +326,34 @@
           </button>
         </div>
         <div class="toolbar-sep"></div>
-        <div class="toolbar-group">
-          <button class="tb-btn" onclick="rotateClipboard()" title="Xoay clipboard 90° (R)">
+        <!-- Clipboard tools — hidden until clipboard has content -->
+        <div class="toolbar-group" id="clipboard-tools" style="display:none;">
+          <button class="tb-btn" onclick="rotateClipboard()" title="Xoay (R)">
             <span class="ms-icon">rotate_right</span>
           </button>
-          <button class="tb-btn" onclick="flipClipboardH()" title="Lật ngang (H)">
+          <button class="tb-btn" onclick="flipClipboardH()" title="Lật H">
             <span class="ms-icon">flip</span>
           </button>
-          <button class="tb-btn" onclick="flipClipboardV()" title="Lật dọc (V)">
-            <span class="ms-icon" style="transform:rotate(90deg)">flip</span>
-          </button>
-          <button class="tb-btn" id="stamp-btn" onclick="toggleStamp()" title="Stamp tool (S)">
+          <button class="tb-btn" id="stamp-btn" onclick="toggleStamp()" title="Stamp (S)">
             <span class="ms-icon">approval</span>
           </button>
+          <div class="toolbar-sep"></div>
         </div>
-        <div class="toolbar-sep"></div>
+        <!-- More menu -->
         <div class="toolbar-group">
-          <button class="tb-btn" onclick="openImport()" title="Import JSON">
-            <span class="ms-icon">upload</span>
-          </button>
-          <button class="tb-btn" onclick="exportPNG()" title="Export PNG tầng hiện tại">
-            <span class="ms-icon">image</span>
-          </button>
-          <button class="tb-btn" onclick="exportAllFloorsPNG()" title="Export PNG tất cả tầng">
-            <span class="ms-icon">photo_library</span>
-          </button>
+          <div class="tb-more-wrap">
+            <button class="tb-btn" onclick="toggleToolbarMore()" title="Thêm...">
+              <span class="ms-icon">more_horiz</span>
+            </button>
+            <div class="tb-more-menu" id="tb-more-menu" style="display:none"
+              <button onclick="openImport(); toggleToolbarMore()"><span class="ms-icon">upload</span> Import JSON</button>
+              <button onclick="openExport(); toggleToolbarMore()"><span class="ms-icon">content_copy</span> Export JSON</button>
+              <button onclick="exportPNG(); toggleToolbarMore()"><span class="ms-icon">image</span> Export PNG</button>
+              <button onclick="exportAllFloorsPNG(); toggleToolbarMore()"><span class="ms-icon">photo_library</span> Export All PNG</button>
+              <hr>
+              <button onclick="flipClipboardV(); toggleToolbarMore()"><span class="ms-icon" style="transform:rotate(90deg)">flip</span> Lật dọc (V)</button>
+            </div>
+          </div>
         </div>
       </div>
 

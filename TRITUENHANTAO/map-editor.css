@@ -1099,6 +1099,24 @@ kbd {
   pointer-events: none;
 }
 
+/* ── More menu ── */
+.tb-more-wrap { position: relative; }
+.tb-more-menu {
+  display: none; position: absolute; top: 100%; right: 0; margin-top: 6px;
+  background: rgba(13,18,36,0.96); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 6px; min-width: 180px; z-index: 200;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+}
+.tb-more-menu.show { display: block; }
+.tb-more-menu button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px;
+  background: none; border: none; color: #ccc; font-size: 12px; cursor: pointer;
+  border-radius: 6px; text-align: left;
+}
+.tb-more-menu button:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.tb-more-menu button .ms-icon { font-size: 16px; color: var(--teal); }
+.tb-more-menu hr { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 4px 0; }
+
 .zoom-label-btn {
   min-width: 48px;
   font-family: 'Baloo 2', cursive;

@@ -453,6 +453,7 @@
       .filter(p => p.r >= sel.r1 && p.r <= sel.r2 && p.c >= sel.c1 && p.c <= sel.c2)
       .map(p => ({ r: p.r - sel.r1, c: p.c - sel.c1, type: p.type }));
     clipboard = { grid: g, roomMap: rm, props: selProps, w: sel.w, h: sel.h, srcFloor: currentFloorIdx };
+    updateClipboardToolsVis();
     const floorName = floors[currentFloorIdx].name || ('Tầng ' + (currentFloorIdx + 1));
     showToast('📋 Đã copy ' + sel.w + '×' + sel.h + ' tiles (từ ' + floorName + ', ' + selProps.length + ' vật dụng)');
   }
@@ -1833,6 +1834,25 @@
     canvas.style.cursor = eyedropperMode ? 'crosshair' : (fillMode ? 'cell' : 'crosshair');
     showToast(eyedropperMode ? '👁️ Eyedropper ON (Alt+click)' : 'Eyedropper OFF');
   };
+
+  // ── TOOLBAR MORE MENU ──────────────────────────────────────
+  window.toggleToolbarMore = function() {
+    const menu = $('tb-more-menu');
+    if (!menu) return;
+    const isOpen = menu.style.display === 'block';
+    menu.style.display = isOpen ? 'none' : 'block';
+  };
+  // Close more menu on click outside
+  document.addEventListener('click', e => {
+    const menu = $('tb-more-menu');
+    if (!menu || menu.style.display !== 'block') return;
+    if (!e.target.closest('.tb-more-wrap')) menu.style.display = 'none';
+  });
+  // Show/hide clipboard tools based on clipboard content
+  function updateClipboardToolsVis() {
+    const el = $('clipboard-tools');
+    if (el) el.style.display = clipboard ? '' : 'none';
+  }
 
   // ── MINI-MAP ──────────────────────────────────────────────
   let showMiniMap = true;

@@ -132,13 +132,13 @@ body {
 /* ── Main layout ───────────────────────────── */
 .editor-main {
   display: flex;
-  gap: 16px;
-  padding: 20px 20px 32px;
+  gap: 12px;
+  padding: 12px 12px 24px;
   width: 100%;
   max-width: 1400px;
   justify-content: center;
   align-items: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   animation: fadeUp 0.45s ease;
 }
 
@@ -152,20 +152,35 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 188px;
-  max-width: 200px;
+  width: 190px;
+  min-width: 160px;
+  flex-shrink: 0;
   max-height: calc(100vh - 90px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
+.canvas-wrapper {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .panel-right {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 200px;
-  max-width: 220px;
+  width: 210px;
+  min-width: 170px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 90px);
+  position: sticky;
+  top: 90px;
+  align-self: flex-start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
 .panel-card {
@@ -457,12 +472,13 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
 
 /* ── Canvas Area ────────────────────────────── */
 .canvas-wrapper {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .canvas-container {
@@ -1189,4 +1205,222 @@ kbd {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   max-width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE (≤ 768px)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── Layout: stack vertically ── */
+  .editor-main {
+    flex-direction: column;
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 8px;
+  }
+  .canvas-wrapper { width: 100%; overflow: visible; }
+
+  /* ── Header compact ── */
+  .editor-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .header-title .title { font-size: 16px; }
+  .header-title .subtitle { display: none; }
+  .header-title .icon { width: 36px; height: 36px; }
+  .header-title .icon .ms-icon { font-size: 20px !important; }
+
+  /* ── Left panel: horizontal scrollable tile strip ── */
+  .panel-left {
+    flex-direction: row;
+    min-width: unset;
+    max-width: 100%;
+    max-height: unset;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    order: 2; /* below canvas */
+    padding-bottom: 4px;
+  }
+  .panel-left .panel-card {
+    min-width: 160px;
+    flex-shrink: 0;
+    padding: 10px;
+  }
+  .panel-left .panel-card h3 {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Canvas: full width ── */
+  .canvas-container {
+    order: 1;
+    max-height: 50vh;
+    padding: 6px;
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .canvas-hint {
+    order: 3;
+    font-size: 9px;
+    padding: 3px 8px;
+    gap: 3px;
+    display: none; /* hide on mobile — too much text */
+  }
+
+  /* ── Right panel: horizontal strip ── */
+  .panel-right {
+    flex-direction: row;
+    min-width: unset;
+    max-width: 100%;
+    max-height: unset;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    order: 4;
+    position: static;
+    padding-bottom: 4px;
+  }
+  .panel-right .panel-card {
+    min-width: 180px;
+    flex-shrink: 0;
+    padding: 10px;
+  }
+  .panel-right .panel-card h3 {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Floating Toolbar: compact ── */
+  .floating-toolbar {
+    padding: 4px 6px;
+    gap: 2px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .tb-btn {
+    padding: 5px 6px;
+    min-width: 32px;
+  }
+  .tb-btn .ms-icon { font-size: 16px; }
+  .toolbar-sep { margin: 0 2px; height: 18px; }
+  .zoom-label-btn span { font-size: 10px; }
+
+  /* ── Floor tabs: scrollable ── */
+  .floor-tab-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 6px;
+  }
+  .floor-tab { padding: 6px 12px; font-size: 11px; white-space: nowrap; }
+
+  /* ── Tile buttons: smaller grid ── */
+  .tile-palette {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .tile-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+    min-height: 36px;
+  }
+  .tile-icon .ms-icon { font-size: 16px; }
+  .tile-name { font-size: 10px; }
+
+  /* ── Action buttons: compact ── */
+  .action-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  /* ── Brush buttons ── */
+  .brush-btn { padding: 6px; font-size: 11px; }
+
+  /* ── Room name bar: compact ── */
+  .room-name-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* ── Layer panel: horizontal ── */
+  .layer-list { flex-direction: row; flex-wrap: wrap; gap: 2px; }
+  .layer-item { padding: 3px 6px; }
+  .layer-name { font-size: 10px; }
+
+  /* ── Size sliders: compact ── */
+  .size-control { gap: 4px; }
+  .size-label { font-size: 11px; }
+
+  /* ── Recent tiles ── */
+  .recent-tiles { gap: 3px; }
+  .recent-tile-btn { width: 32px; height: 32px; }
+
+  /* ── Wizard modals ── */
+  .wiz-overlay { padding: 10px; }
+  .wiz-modal { max-width: 95vw !important; max-height: 90vh !important; padding: 14px !important; }
+  .wiz-header { font-size: 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SMALL MOBILE (≤ 480px)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .editor-main { padding: 4px; gap: 4px; }
+
+  /* Hide panels by default, show via toggle */
+  .panel-left { display: none !important; }
+  .panel-left.mobile-show { display: flex !important; flex-direction: column; width: 100%; max-width: 100%; }
+  .panel-right { display: none !important; }
+  .panel-right.mobile-show { display: flex !important; flex-direction: column; width: 100%; max-width: 100%; }
+
+  /* Canvas full screen */
+  .canvas-container {
+    max-height: 55vh;
+    border-radius: 8px;
+    padding: 4px;
+    order: 1;
+  }
+
+  /* Mobile toggle buttons */
+  .mobile-panel-toggles {
+    display: flex;
+    gap: 4px;
+    order: 5;
+    width: 100%;
+  }
+  .mobile-panel-toggle {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  .mobile-panel-toggle.active {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: rgba(6,182,212,0.08);
+  }
+  .mobile-panel-toggle .ms-icon { font-size: 16px; }
+
+  .floor-tab-bar { padding: 4px; gap: 4px; order: 0; }
+  .floor-tab { padding: 5px 10px; font-size: 10px; }
+  .floating-toolbar { gap: 1px; padding: 3px 4px; order: 0; }
+  .tb-btn { padding: 4px 5px; }
+
+  /* Ensure canvas-wrapper order */
+  .canvas-container + .canvas-hint { display: none !important; }
+  .panel-left.mobile-show { order: 3; }
+  .panel-right.mobile-show { order: 3; }
 }

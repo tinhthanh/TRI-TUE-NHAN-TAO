@@ -53,6 +53,7 @@
 
 /* ── Reset & Base ──────────────────────────── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+button { -webkit-appearance: none; appearance: none; font-family: inherit; }
 
 body {
   font-family: 'Inter', sans-serif;
@@ -259,6 +260,7 @@ body {
   padding: 7px 8px; border-radius: 8px; font-size: 11px; font-weight: 600;
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
   color: #bbb; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  -webkit-appearance: none; appearance: none; /* fix iOS/Safari default white bg */
 }
 .act-btn .ms-icon { font-size: 15px; }
 .act-btn:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.15); }
@@ -705,6 +707,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
   width: 100%;
   position: relative;
   overflow: hidden;
+  -webkit-appearance: none; appearance: none;
 }
 
 .tile-btn::before {

@@ -372,8 +372,8 @@
 
       <div class="panel-card" style="padding:10px 12px;">
         <h3><span class="ms-icon">bolt</span> Thao tác</h3>
-        <div class="action-grid">
-          <button class="act-btn act-primary" id="save-play-btn" onclick="saveAndPlay()">
+        <div class="action-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+          <button class="act-btn act-primary" id="save-play-btn" onclick="saveAndPlay()" style="grid-column:1/-1">
             <span class="ms-icon">sports_esports</span> Lưu & Chơi
           </button>
           <button class="act-btn" id="preview-btn" onclick="togglePreview()">
@@ -388,11 +388,11 @@
           <button class="act-btn" onclick="generateRandom()">
             <span class="ms-icon">casino</span> Random
           </button>
-          <button class="act-btn" onclick="openHouseWizard()">
-            <span class="ms-icon">home</span> Tạo Nhà
+          <button class="act-btn" onclick="openHouseWizard()" style="grid-column:1/-1">
+            <span class="ms-icon">home</span> Tạo Nhà (Wizard)
           </button>
         </div>
-        <div class="action-grid" style="margin-top:6px;">
+        <div class="action-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
           <button class="act-btn act-sm" onclick="openImport()">
             <span class="ms-icon">upload</span> Import
           </button>

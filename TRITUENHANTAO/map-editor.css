@@ -1327,13 +1327,17 @@ kbd {
     padding-bottom: 4px;
   }
   .panel-right .panel-card {
-    min-width: 180px;
+    min-width: 200px;
     flex-shrink: 0;
     padding: 10px;
   }
   .panel-right .panel-card h3 {
     font-size: 10px;
     margin-bottom: 6px;
+  }
+  .panel-right .action-grid {
+    grid-template-columns: 1fr 1fr;
+    display: grid !important;
   }
 
   /* ── Floating Toolbar: compact ── */

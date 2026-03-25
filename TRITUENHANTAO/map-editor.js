@@ -1540,6 +1540,14 @@
     resizeCanvas();
     setZoom(zoomLevel); // refresh zoom
 
+    // Notify user about expansion
+    const dirs = [];
+    if (expandTop)    dirs.push('↑ trên');
+    if (expandBottom) dirs.push('↓ dưới');
+    if (expandLeft)   dirs.push('← trái');
+    if (expandRight)  dirs.push('→ phải');
+    showToast('📐 Canvas mở rộng ' + dirs.join(', ') + ' (+' + EXPAND_SIZE + ' ô) — ' + newW + '×' + newH);
+
     return { shiftCol: expandLeft, shiftRow: expandTop };
   }
 
@@ -2044,6 +2052,51 @@
             drawGroundTile(ctx, c * CELL, r * CELL, t, roomMap[r][c]);
           }
         }
+      }
+    }
+
+    // Pass 5.9: Edge expand glow — hint user can expand canvas
+    if (!previewMode && hoverCol >= 0 && hoverRow >= 0) {
+      const half = Math.floor(brushSize / 2);
+      const pulse = 0.25 + 0.2 * Math.sin(now / 400);
+      const cw = canvas.width, ch = canvas.height;
+      const nearTop    = (hoverRow - half) <= 0;
+      const nearBottom = (hoverRow + brushSize - half - 1) >= mapHeight - 1;
+      const nearLeft   = (hoverCol - half) <= 0;
+      const nearRight  = (hoverCol + brushSize - half - 1) >= mapWidth - 1;
+      if (nearTop || nearBottom || nearLeft || nearRight) {
+        ctx.save();
+        const glow = 6;
+        if (nearTop) {
+          const g = ctx.createLinearGradient(0, 0, 0, glow * CELL);
+          g.addColorStop(0, `rgba(6,182,212,${pulse})`); g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, cw, glow * CELL);
+        }
+        if (nearBottom) {
+          const g = ctx.createLinearGradient(0, ch, 0, ch - glow * CELL);
+          g.addColorStop(0, `rgba(6,182,212,${pulse})`); g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g; ctx.fillRect(0, ch - glow * CELL, cw, glow * CELL);
+        }
+        if (nearLeft) {
+          const g = ctx.createLinearGradient(0, 0, glow * CELL, 0);
+          g.addColorStop(0, `rgba(6,182,212,${pulse})`); g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, glow * CELL, ch);
+        }
+        if (nearRight) {
+          const g = ctx.createLinearGradient(cw, 0, cw - glow * CELL, 0);
+          g.addColorStop(0, `rgba(6,182,212,${pulse})`); g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g; ctx.fillRect(cw - glow * CELL, 0, glow * CELL, ch);
+        }
+        // Arrow hint text
+        ctx.fillStyle = `rgba(6,182,212,${pulse + 0.15})`;
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        if (nearRight) ctx.fillText('⊕ mở rộng →', cw - 40, ch / 2);
+        if (nearBottom) { ctx.save(); ctx.fillText('⊕ mở rộng ↓', cw / 2, ch - 8); ctx.restore(); }
+        if (nearLeft) ctx.fillText('← ⊕', 30, ch / 2);
+        if (nearTop) ctx.fillText('⊕ ↑', cw / 2, 14);
+        ctx.restore();
+        needsRedraw = true; // keep animating glow
       }
     }
 

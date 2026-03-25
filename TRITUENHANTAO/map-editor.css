@@ -248,6 +248,32 @@ body {
 .action-btn:hover::after { background: rgba(255,255,255,0.04); }
 .action-btn:active { transform: scale(0.97); }
 
+/* ── Compact action grid (right panel) ── */
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.act-btn {
+  display: flex; align-items: center; gap: 5px; justify-content: center;
+  padding: 7px 8px; border-radius: 8px; font-size: 11px; font-weight: 600;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  color: #bbb; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.act-btn .ms-icon { font-size: 15px; }
+.act-btn:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.15); }
+.act-btn:active { transform: scale(0.96); }
+.act-btn.act-primary {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #0ea572, #059669);
+  border: none; color: #fff; padding: 9px 10px; font-size: 12px;
+}
+.act-btn.act-primary:hover { filter: brightness(1.12); }
+.act-btn.act-danger { color: #f87171; border-color: rgba(248,113,113,0.2); }
+.act-btn.act-danger:hover { background: rgba(248,113,113,0.1); }
+.act-btn.act-sm { padding: 5px 6px; font-size: 10px; }
+.act-btn.act-sm .ms-icon { font-size: 13px; }
+
 .btn-play {
   background: linear-gradient(135deg, #0ea572 0%, #059669 50%, #047857 100%);
   border-color: rgba(16,185,129,0.5);

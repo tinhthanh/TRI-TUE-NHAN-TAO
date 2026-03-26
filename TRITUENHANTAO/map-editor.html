@@ -7,7 +7,7 @@
   <title>Map Editor – Người Chăn Cừu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="map-editor.css?v=3">
+  <link rel="stylesheet" href="map-editor.css?v=4">
   <!-- Material Symbols Rounded font -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block">
   <style>
@@ -282,6 +282,26 @@
           </button>
         </div>
         <div class="toolbar-sep"></div>
+        <!-- Tile dropdowns -->
+        <div class="toolbar-group">
+          <div class="tb-dropdown">
+            <button class="tb-btn" id="tb-ground-btn" title="Nền & Gạch">
+              <span class="ms-icon">border_all</span> <span class="tb-dd-arrow">▾</span>
+            </button>
+            <div class="tb-dropdown-panel" id="tb-ground-panel">
+              <div class="tb-dd-grid" id="tb-ground-grid"><!-- filled by JS --></div>
+            </div>
+          </div>
+          <div class="tb-dropdown">
+            <button class="tb-btn" id="tb-props-btn" title="Đồ vật">
+              <span class="ms-icon">chair</span> <span class="tb-dd-arrow">▾</span>
+            </button>
+            <div class="tb-dropdown-panel" id="tb-props-panel">
+              <div class="tb-dd-grid" id="tb-props-grid"><!-- filled by JS --></div>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-sep"></div>
         <div class="toolbar-group">
           <button class="tb-btn tb-preview" id="preview-btn" onclick="togglePreview()" title="Xem trước (P)">
             <span class="ms-icon">play_arrow</span>
@@ -309,6 +329,13 @@
         <canvas id="editor-canvas"></canvas>
       </div>
       <div class="canvas-hint">
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span class="ms-icon" style="font-size:13px;">edit</span>
+          <button class="brush-hint-btn active" id="brush-h1" onclick="setBrush(1)">1</button>
+          <button class="brush-hint-btn" id="brush-h2" onclick="setBrush(2)">2</button>
+          <button class="brush-hint-btn" id="brush-h3" onclick="setBrush(3)">3</button>
+        </span>
+        <span style="opacity:0.3;">·</span>
         Tile: <strong id="current-tile-label">Tường</strong> ·
         <span id="stat-bar-size">22×13</span> ·
         <span id="stat-bar-status">✅ OK</span>
@@ -420,6 +447,6 @@
   <!-- Toast -->
   <div id="toast"></div>
 
-  <script src="map-editor.js?v=3"></script>
+  <script src="map-editor.js?v=4"></script>
 </body>
 </html>

@@ -746,6 +746,7 @@
     showLoadingCanvas();
     await loadAssets();
     buildTilePalette();
+    buildToolbarDropdowns();
     if (!restoreAutoSave()) {
       createInitialFloors();
     }
@@ -937,6 +938,75 @@
     });
   }
 
+
+  // ── TOOLBAR DROPDOWNS (Nền + Đồ vật) ────────────────────
+  const GROUND_TILE_IDS = [1, 0, 2, 3, 4, 5, 6, 27, 28, 29, 30, 31, 7, 8, 9];
+  const PROP_TILE_IDS = [10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 18];
+
+  function buildToolbarDropdowns() {
+    buildDropdown('tb-ground-grid', GROUND_TILE_IDS);
+    buildDropdown('tb-props-grid', PROP_TILE_IDS);
+
+    // Toggle open/close
+    document.querySelectorAll('.tb-dropdown').forEach(dd => {
+      const btn = dd.querySelector('.tb-btn');
+      btn.addEventListener('click', () => {
+        const wasOpen = dd.classList.contains('open');
+        // Close all dropdowns first
+        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+        if (!wasOpen) dd.classList.add('open');
+      });
+    });
+
+    // Close on click outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.tb-dropdown')) {
+        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+      }
+    });
+  }
+
+  function buildDropdown(gridId, tileIds) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    grid.innerHTML = '';
+    tileIds.forEach(id => {
+      const td = getTile(id);
+      if (!td) return;
+      const item = document.createElement('div');
+      item.className = 'tb-dd-item' + (id === currentTileId ? ' active' : '');
+      item.dataset.tileId = id;
+
+      // Icon
+      if (td.floorImage && images[td.floorImage]) {
+        item.innerHTML = `<img src="${images[td.floorImage].src}"><span>${td.name}</span>`;
+      } else if (id === 0 && images.floorTile) {
+        item.innerHTML = `<img src="${images.floorTile.src}"><span>${td.name}</span>`;
+      } else {
+        item.innerHTML = `<span class="ms-icon">${td.icon}</span><span>${td.name}</span>`;
+      }
+
+      item.onclick = (e) => {
+        e.stopPropagation();
+        selectTile(id);
+        // Update active state in all dropdowns
+        document.querySelectorAll('.tb-dd-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        // Close dropdown
+        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+      };
+      grid.appendChild(item);
+    });
+  }
+
+  // Update brush hint buttons
+  const _origSetBrush = window.setBrush;
+  window.setBrush = function(size) {
+    _origSetBrush(size);
+    document.querySelectorAll('.brush-hint-btn').forEach(b => b.classList.remove('active'));
+    const hBtn = document.getElementById('brush-h' + size);
+    if (hBtn) hBtn.classList.add('active');
+  };
 
   // ── RECENT TILES ────────────────────────────────────────
   const MAX_RECENT = 8;

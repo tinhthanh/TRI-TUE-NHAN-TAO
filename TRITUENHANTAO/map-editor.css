@@ -1174,6 +1174,16 @@ kbd {
   color: var(--teal);
   box-shadow: 0 0 12px rgba(6,182,212,0.2);
 }
+.tb-btn.tb-preview {
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.35);
+  color: #10b981;
+}
+.tb-btn.tb-preview:hover {
+  background: rgba(16,185,129,0.25);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(16,185,129,0.3);
+}
 
 .tb-btn:disabled {
   opacity: 0.3;

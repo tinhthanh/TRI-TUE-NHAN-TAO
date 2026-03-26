@@ -271,10 +271,6 @@
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
-          <!-- Grid + Minimap: removed buttons, always visible. Still controllable via Layer panel -->
-        </div>
-        <div class="toolbar-sep"></div>
-        <div class="toolbar-group">
           <button class="tb-btn" onclick="zoomOut()" title="Thu nhỏ (-)">
             <span class="ms-icon">zoom_out</span>
           </button>
@@ -283,6 +279,12 @@
           </button>
           <button class="tb-btn" onclick="zoomIn()" title="Phóng to (+)">
             <span class="ms-icon">zoom_in</span>
+          </button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn tb-preview" id="preview-btn" onclick="togglePreview()" title="Xem trước (P)">
+            <span class="ms-icon">play_arrow</span>
           </button>
         </div>
         <!-- Clipboard tools — hidden until clipboard has content -->
@@ -331,14 +333,8 @@
           <button class="act-btn act-primary" id="save-play-btn" onclick="saveAndPlay()" style="grid-column:1/-1">
             <span class="ms-icon">sports_esports</span> Lưu & Chơi
           </button>
-          <button class="act-btn" id="preview-btn" onclick="togglePreview()">
-            <span class="ms-icon">visibility</span> Xem trước
-          </button>
           <button class="act-btn" onclick="fillBorder()">
             <span class="ms-icon">border_outer</span> Viền Tường
-          </button>
-          <button class="act-btn" onclick="invertMap()">
-            <span class="ms-icon">swap_horiz</span> Đảo Ngược
           </button>
           <button class="act-btn" onclick="generateRandom()">
             <span class="ms-icon">casino</span> Random

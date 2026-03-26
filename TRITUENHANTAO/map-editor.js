@@ -3772,6 +3772,16 @@
     previewMode = !previewMode;
     const btn = $('preview-btn');
     const container = document.querySelector('.canvas-container');
+    const panelLeft = document.querySelector('.panel-left');
+    const panelRight = document.querySelector('.panel-right');
+    const toolbar = document.querySelector('.floating-toolbar');
+    const floorTabs = document.querySelector('.floor-tab-bar');
+    const header = document.querySelector('.editor-header');
+    const canvasHint = document.querySelector('.canvas-hint');
+    const roomBar = $('room-name-bar');
+    const editorMain = document.querySelector('.editor-main');
+    const mobileToggles = document.querySelector('.mobile-panel-toggles');
+    const miniMap = document.querySelector('.mini-map-fixed');
 
     if (previewMode) {
       // Find first walkable cell for player
@@ -3789,25 +3799,48 @@
       previewPath = [];
       previewMoveAccum = 0;
       previewLastTime = performance.now();
-      btn.textContent = '✖ Thoát Preview';
-      btn.classList.add('active');
-      // Add banner
+
+      // ── Hide all UI, canvas fullscreen via CSS class ──
+      document.body.classList.add('preview-active');
+
+      // Auto-fit zoom to fill viewport
+      window._previewSavedZoom = zoomLevel;
+      const vw = window.innerWidth, vh = window.innerHeight - 50; // 50px for banner
+      const fitZoom = Math.min(vw / canvas.width, vh / canvas.height, 3);
+      setZoom(Math.max(0.25, fitZoom));
+
+      // Center scroll
+      if (container) {
+        setTimeout(() => {
+          container.scrollLeft = (canvas.width * zoomLevel - container.clientWidth) / 2;
+          container.scrollTop = (canvas.height * zoomLevel - container.clientHeight) / 2;
+        }, 50);
+      }
+
+      // Add banner with exit button
       if (!previewBanner) {
         previewBanner = document.createElement('div');
         previewBanner.className = 'preview-banner';
-        previewBanner.textContent = '👁️ PREVIEW – WASD/Arrow di chuyển (8 hướng) · Click A* pathfinding · ESC thoát';
-        container.style.position = 'relative';
+        previewBanner.innerHTML = `
+          <span>👁️ WASD di chuyển · Click pathfind · ESC thoát</span>
+          <button class="preview-exit-btn" onclick="togglePreview()">✖ Thoát</button>
+        `;
+        container.style.position = container.style.position || 'relative';
         container.appendChild(previewBanner);
       }
-      // Bind keyboard (remove first to prevent duplicate listeners)
+
+      // Bind keyboard
       window.removeEventListener('keydown', onPreviewKeyDown);
       window.removeEventListener('keyup', onPreviewKeyUp);
       window.addEventListener('keydown', onPreviewKeyDown);
       window.addEventListener('keyup', onPreviewKeyUp);
       showToast('👁️ Chế độ xem trước – di chuyển nhân vật!');
     } else {
-      btn.textContent = '👁️ Xem trước Map';
-      btn.classList.remove('active');
+      // ── Restore all UI ──
+      document.body.classList.remove('preview-active');
+      // Restore zoom
+      if (window._previewSavedZoom) { setZoom(window._previewSavedZoom); window._previewSavedZoom = null; }
+
       if (previewBanner) { previewBanner.remove(); previewBanner = null; }
       window.removeEventListener('keydown', onPreviewKeyDown);
       window.removeEventListener('keyup', onPreviewKeyUp);

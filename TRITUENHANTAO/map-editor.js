@@ -964,6 +964,13 @@
         document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
       }
     });
+
+    // Close "more" menu on item click
+    document.querySelectorAll('.tb-dropdown-right .tb-dd-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+      });
+    });
   }
 
   function buildDropdown(gridId, tileIds) {

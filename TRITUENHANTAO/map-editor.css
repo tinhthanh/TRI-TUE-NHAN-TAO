@@ -1205,6 +1205,14 @@ kbd {
 }
 .tb-dd-item:hover { border-color: rgba(6,182,212,0.4); background: rgba(6,182,212,0.08); }
 .tb-dd-item.active { border-color: var(--teal); background: rgba(6,182,212,0.15); }
+/* More menu: list-style items (not grid) */
+.tb-dropdown-right { left: auto; right: 0; width: auto; }
+.tb-dropdown-right .tb-dd-item {
+  flex-direction: row; padding: 7px 12px; gap: 8px; font-size: 12px; font-weight: 500;
+  color: #ccc; border: none; border-radius: 6px; background: none; justify-content: flex-start;
+}
+.tb-dropdown-right .tb-dd-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.tb-dropdown-right .tb-dd-item .ms-icon { font-size: 16px; }
 .tb-dd-item img { width: 24px; height: 24px; border-radius: 4px; image-rendering: pixelated; }
 .tb-dd-item .ms-icon { font-size: 20px; }
 .tb-dd-item span:last-child { font-size: 8px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42px; }

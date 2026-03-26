@@ -242,6 +242,29 @@
             <span class="ms-icon">play_arrow</span>
           </button>
         </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button class="tb-btn tb-save" id="save-play-btn" onclick="saveAndPlay()" title="Lưu & Chơi" style="background:linear-gradient(135deg,#0ea572,#059669);color:#fff;border:none;">
+            <span class="ms-icon">sports_esports</span>
+          </button>
+          <div class="tb-dropdown">
+            <button class="tb-btn" id="tb-more-btn" title="Thêm">
+              <span class="ms-icon">more_horiz</span> <span class="tb-dd-arrow">▾</span>
+            </button>
+            <div class="tb-dropdown-panel tb-dropdown-right" id="tb-more-panel">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:140px;">
+                <button class="tb-dd-item" onclick="fillBorder()"><span class="ms-icon">border_outer</span> Viền Tường</button>
+                <button class="tb-dd-item" onclick="generateRandom()"><span class="ms-icon">casino</span> Random Map</button>
+                <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+                <button class="tb-dd-item" onclick="openImport()"><span class="ms-icon">upload</span> Import JSON</button>
+                <button class="tb-dd-item" onclick="openExport()"><span class="ms-icon">content_copy</span> Export JSON</button>
+                <button class="tb-dd-item" onclick="exportPNG()"><span class="ms-icon">image</span> Export PNG</button>
+                <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+                <button class="tb-dd-item" onclick="clearMap()" style="color:#f87171;"><span class="ms-icon">delete</span> Xóa Tầng</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Clipboard tools — hidden until clipboard has content -->
         <div class="toolbar-sep" id="clipboard-sep" style="display:none;"></div>
         <div class="toolbar-group" id="clipboard-tools" style="display:none;">
@@ -273,34 +296,7 @@
     <!-- Right Panel: Actions -->
     <div class="panel-right">
 
-      <div class="panel-card" style="padding:10px 12px;">
-        <h3><span class="ms-icon">bolt</span> Thao tác</h3>
-        <div class="action-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
-          <button class="act-btn act-primary" id="save-play-btn" onclick="saveAndPlay()" style="grid-column:1/-1">
-            <span class="ms-icon">sports_esports</span> Lưu & Chơi
-          </button>
-          <button class="act-btn" onclick="fillBorder()">
-            <span class="ms-icon">border_outer</span> Viền Tường
-          </button>
-          <button class="act-btn" onclick="generateRandom()">
-            <span class="ms-icon">casino</span> Random
-          </button>
-        </div>
-        <div class="action-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
-          <button class="act-btn act-sm" onclick="openImport()">
-            <span class="ms-icon">upload</span> Import
-          </button>
-          <button class="act-btn act-sm" onclick="openExport()">
-            <span class="ms-icon">content_copy</span> Export
-          </button>
-          <button class="act-btn act-sm" onclick="exportPNG()">
-            <span class="ms-icon">image</span> PNG
-          </button>
-          <button class="act-btn act-danger act-sm" onclick="clearMap()">
-            <span class="ms-icon">delete</span> Xóa
-          </button>
-        </div>
-      </div>
+      <!-- Thao tác moved to toolbar dropdown -->
 
       <!-- Rooms on this floor -->
       <div class="panel-card">

@@ -1117,11 +1117,21 @@
         }
       }
     }
+    // Remove props in the area
+    if (pendingCommand) recordPropsBefore(pendingCommand, currentFloorIdx);
+    const floorProps = floors[currentFloorIdx].props;
+    for (let i = floorProps.length - 1; i >= 0; i--) {
+      const p = floorProps[i];
+      if (p.r >= er1 && p.r <= er2 && p.c >= ec1 && p.c <= ec2) {
+        floorProps.splice(i, 1);
+      }
+    }
     // Remove from rooms array
     const idx = rooms.findIndex(r => r.id === roomId);
     if (idx >= 0) rooms.splice(idx, 1);
     if (currentRoomId === roomId) currentRoomId = null;
     commitHistory();
+    switchToFloor(currentFloorIdx); // refresh props ref
     updateRoomList(); updateStats(); validate(); markDirty();
     showToast(`🗑 Đã xóa phòng: ${room.name}`);
   };

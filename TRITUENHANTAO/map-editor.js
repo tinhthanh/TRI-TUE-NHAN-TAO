@@ -1067,16 +1067,31 @@
   }
 
   // Select a room for painting
+  let highlightedRoomId = null;
+  let highlightedRoomTimer = null;
+
   window.selectRoom = function(roomId) {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
     currentRoomId = roomId;
-    // Auto-select a room tile if not already
-    if (![5, 7, 8, 9].includes(currentTileId)) {
-      window.selectTile(7); // default to Lobby tile
+    // Highlight room on canvas (flash for 3 seconds)
+    highlightedRoomId = roomId;
+    clearTimeout(highlightedRoomTimer);
+    highlightedRoomTimer = setTimeout(() => { highlightedRoomId = null; markOverlayDirty(); }, 3000);
+    // Scroll canvas to room center
+    const bounds = calcRoomBounds(roomId);
+    if (bounds) {
+      const container = document.querySelector('.canvas-container');
+      if (container) {
+        const cx = ((bounds.c1 + bounds.c2 + 1) / 2) * CELL * zoomLevel;
+        const cy = ((bounds.r1 + bounds.r2 + 1) / 2) * CELL * zoomLevel;
+        container.scrollLeft = cx - container.clientWidth / 2;
+        container.scrollTop = cy - container.clientHeight / 2;
+      }
     }
     updateRoomList();
-    showToast(`🎨 Đang vẽ: ${room.name}`);
+    markOverlayDirty();
+    showToast(`📍 ${room.name} — ${bounds ? bounds.cells + ' ô' : ''}`);
   };
 
 
@@ -2257,6 +2272,48 @@
 
     // Pass 6: Hover preview (only in editor mode)
     if (!previewMode && hoverCol >= 0 && hoverRow >= 0) drawHoverPreview();
+
+    // Pass 6.3: Highlighted room overlay (when clicking room in list)
+    if (highlightedRoomId) {
+      ctx.save();
+      const pulse = 0.15 + 0.1 * Math.sin(Date.now() / 200); // pulsing effect
+      ctx.fillStyle = `rgba(6,182,212,${pulse})`;
+      ctx.strokeStyle = 'rgba(6,182,212,0.8)';
+      ctx.lineWidth = 2;
+      let hrMinR = mapHeight, hrMaxR = 0, hrMinC = mapWidth, hrMaxC = 0;
+      for (let r = 0; r < mapHeight; r++) {
+        for (let c = 0; c < mapWidth; c++) {
+          if (roomMap[r][c] === highlightedRoomId) {
+            ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+            if (r < hrMinR) hrMinR = r;
+            if (r > hrMaxR) hrMaxR = r;
+            if (c < hrMinC) hrMinC = c;
+            if (c > hrMaxC) hrMaxC = c;
+          }
+        }
+      }
+      // Border around bounding box (expanded by 1 for walls)
+      if (hrMinR <= hrMaxR) {
+        const bx = Math.max(0, hrMinC - 1) * CELL;
+        const by = Math.max(0, hrMinR - 1) * CELL;
+        const bw = (Math.min(mapWidth, hrMaxC + 2) - Math.max(0, hrMinC - 1)) * CELL;
+        const bh = (Math.min(mapHeight, hrMaxR + 2) - Math.max(0, hrMinR - 1)) * CELL;
+        ctx.setLineDash([6, 3]);
+        ctx.strokeRect(bx, by, bw, bh);
+        ctx.setLineDash([]);
+        // Room name label
+        const room = rooms.find(rm => rm.id === highlightedRoomId);
+        if (room) {
+          const lx = bx + bw / 2, ly = by - 8;
+          ctx.fillStyle = 'rgba(6,182,212,0.9)';
+          ctx.font = 'bold 12px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(room.name, lx, ly);
+        }
+      }
+      ctx.restore();
+      needsRedraw = true; // keep animating pulse
+    }
 
     // Pass 6.4: Draw room rectangle preview
     if (drawRoomMode && drawRoomStart && drawRoomEnd) {

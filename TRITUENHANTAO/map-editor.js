@@ -1134,22 +1134,150 @@
   };
 
   // Add room directly (without needing to select a room tile first)
+  // ── DRAW ROOM MODE ──────────────────────────────────────
+  let drawRoomMode = false;
+  let drawRoomStart = null;
+  let drawRoomEnd = null;
+
   window.addRoomDirect = function() {
-    const name  = prompt('Tên phòng mới:', 'Phòng ' + (rooms.length + 1));
-    if (!name || !name.trim()) return;
-    currentRoomId = 'room_' + Date.now();
-    floors[currentFloorIdx].rooms.push({
-      id: currentRoomId,
-      name: name.trim(),
-      color: hexToRgba(ROOM_COLORS[rooms.length % ROOM_COLORS.length], 0.22)
-    });
-    // Auto-select room tile
-    if (![5, 7, 8, 9].includes(currentTileId)) {
-      window.selectTile(7);
+    // Enter draw-room mode
+    drawRoomMode = true;
+    drawRoomStart = drawRoomEnd = null;
+    canvas.style.cursor = 'crosshair';
+    showToast('🏠 Kéo chuột trên canvas để vẽ vùng phòng');
+  };
+
+  function finishDrawRoom() {
+    if (!drawRoomStart || !drawRoomEnd) { drawRoomMode = false; return; }
+    const r1 = Math.min(drawRoomStart.row, drawRoomEnd.row);
+    const c1 = Math.min(drawRoomStart.col, drawRoomEnd.col);
+    const r2 = Math.max(drawRoomStart.row, drawRoomEnd.row);
+    const c2 = Math.max(drawRoomStart.col, drawRoomEnd.col);
+    const w = c2 - c1 + 1, h = r2 - r1 + 1;
+    if (w < 2 || h < 2) {
+      drawRoomStart = drawRoomEnd = null;
+      showToast('⚠️ Phòng phải ít nhất 2×2');
+      return;
     }
-    updateRoomList();
-    markDirty();
-    showToast(`✓ Đã tạo phòng: ${name.trim()} — Bắt đầu vẽ!`);
+    // Show room popup
+    showDrawRoomPopup(r1, c1, r2, c2);
+  }
+
+  function showDrawRoomPopup(r1, c1, r2, c2) {
+    if (wizardRoomPopup) wizardRoomPopup.remove();
+    const w = c2 - c1 + 1, h = r2 - r1 + 1;
+    const interior = Math.max(0, w - 2) * Math.max(0, h - 2);
+    const container = document.querySelector('.canvas-container');
+    const rect = canvas.getBoundingClientRect();
+
+    const popup = document.createElement('div');
+    popup.className = 'wiz-room-popup';
+    popup.style.left = Math.min(rect.right - 260, rect.left + (c2 + 1) * CELL * zoomLevel + 10 - container.getBoundingClientRect().left) + 'px';
+    popup.style.top = Math.max(50, r1 * CELL * zoomLevel - container.scrollTop + 10) + 'px';
+
+    const defaultName = 'Phòng ' + (rooms.length + 1);
+    const colorIdx = rooms.length % ROOM_COLORS.length;
+
+    popup.innerHTML = `
+      <div class="wrp-header"><span class="ms-icon" style="color:var(--accent-teal);">home</span> Phòng mới <span style="color:#888;font-size:11px;margin-left:auto;">${w}×${h} · ${interior}m²</span></div>
+      <label>Tên phòng:</label>
+      <input type="text" id="drp-name" value="${defaultName}" autofocus>
+      <label>Nền sàn:</label>
+      <div class="floor-picker" id="drp-floor-picker"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="wiz-btn" onclick="cancelDrawRoom()" style="flex:1;">✕ Hủy</button>
+        <button class="wiz-btn primary" onclick="confirmDrawRoom(${r1},${c1},${r2},${c2})" style="flex:1;">✓ Tạo phòng</button>
+      </div>
+    `;
+
+    container.style.position = 'relative';
+    container.appendChild(popup);
+    wizardRoomPopup = popup;
+
+    // Build floor picker
+    const FLOOR_OPTIONS = [
+      { id: 0, name: 'Sàn', key: 'floorTile' },
+      { id: 27, name: 'Y tế', key: 'floorClinic' },
+      { id: 28, name: 'Grooming', key: 'floorGrooming' },
+      { id: 29, name: 'Retro', key: 'floorRetro' },
+      { id: 30, name: 'Phẫu thuật', key: 'floorSurgery' },
+      { id: 31, name: 'Sàn gỗ', key: 'floorWood' },
+      { id: 6, name: 'Sân cỏ', key: 'grass' },
+      { id: 5, name: 'Ban công', key: 'balcony' },
+    ];
+    const picker = popup.querySelector('#drp-floor-picker');
+    FLOOR_OPTIONS.forEach((opt, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'floor-pick' + (i === 0 ? ' active' : '');
+      btn.dataset.floorId = opt.id;
+      const img = images[opt.key];
+      if (img && img.complete && img.naturalWidth > 0) {
+        btn.innerHTML = `<img src="${img.src}" style="width:24px;height:24px;border-radius:4px;image-rendering:pixelated;"><span style="font-size:8px;margin-top:1px;">${opt.name}</span>`;
+      } else {
+        btn.innerHTML = `<span class="ms-icon" style="font-size:20px;">crop_square</span><span style="font-size:8px;">${opt.name}</span>`;
+      }
+      btn.onclick = () => {
+        picker.querySelectorAll('.floor-pick').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      };
+      picker.appendChild(btn);
+    });
+
+    // Focus name input
+    setTimeout(() => popup.querySelector('#drp-name')?.select(), 100);
+  }
+
+  window.cancelDrawRoom = function() {
+    if (wizardRoomPopup) { wizardRoomPopup.remove(); wizardRoomPopup = null; }
+    drawRoomStart = drawRoomEnd = null;
+    drawRoomMode = false;
+    canvas.style.cursor = 'crosshair';
+    markOverlayDirty();
+  };
+
+  window.confirmDrawRoom = function(r1, c1, r2, c2) {
+    const nameInput = document.getElementById('drp-name');
+    const name = nameInput ? nameInput.value.trim() : 'Phòng';
+    const activePick = wizardRoomPopup?.querySelector('.floor-pick.active');
+    const floorTileId = activePick ? parseInt(activePick.dataset.floorId) : 0;
+    const colorIdx = rooms.length % ROOM_COLORS.length;
+    const roomId = 'room_' + Date.now();
+    const color = hexToRgba(ROOM_COLORS[colorIdx], 0.22);
+
+    // Create room
+    floors[currentFloorIdx].rooms.push({ id: roomId, name, color });
+
+    // Paint walls on border, floor inside, assign roomMap
+    saveHistoryAtomic();
+    for (let r = r1; r <= r2; r++) {
+      for (let c = c1; c <= c2; c++) {
+        const isBorder = r === r1 || r === r2 || c === c1 || c === c2;
+        const newTile = isBorder ? WALL_TILE_ID : floorTileId;
+        if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', grid[r][c], newTile);
+        grid[r][c] = newTile;
+        if (!isBorder) {
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'roomMap', roomMap[r][c], roomId);
+          roomMap[r][c] = roomId;
+        }
+      }
+    }
+    // Auto-place door on bottom wall center
+    const doorC = Math.floor((c1 + c2) / 2);
+    if (doorC > c1 && doorC < c2) {
+      if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r2, doorC, 'grid', grid[r2][doorC], 4);
+      grid[r2][doorC] = 4;
+    }
+    commitHistory();
+
+    // Cleanup
+    if (wizardRoomPopup) { wizardRoomPopup.remove(); wizardRoomPopup = null; }
+    drawRoomStart = drawRoomEnd = null;
+    drawRoomMode = false;
+    canvas.style.cursor = 'crosshair';
+
+    switchToFloor(currentFloorIdx); // refresh refs
+    updateRoomList(); updateStats(); validate(); markDirty();
+    showToast(`✓ Đã tạo phòng: ${name}`);
   };
 
   const ROOM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#f97316'];
@@ -1214,6 +1342,16 @@
     canvas.addEventListener('mousemove',  onMouseMove);
     canvas.addEventListener('mouseleave', () => { hoverCol = -1; hoverRow = -1; markOverlayDirty(); });
     window.addEventListener('mouseup',    (e) => {
+      // Draw room mode: finish rectangle
+      if (drawRoomMode && drawRoomStart && !wizardRoomPopup) {
+        if (e.target === canvas || canvas.contains(e.target)) {
+          finishDrawRoom();
+          return;
+        }
+        drawRoomStart = drawRoomEnd = null;
+        markOverlayDirty();
+        return;
+      }
       // Wizard step 3: finish room/wall drag (skip if popup is open or click was on popup)
       if (wizardActive && wizardStep === 3 && wizardDragStart && !wizardRoomPopup) {
         // Don't trigger if click landed on a UI element (not canvas)
@@ -1318,6 +1456,7 @@
       // Escape: exit fill/eyedropper/paste mode
       if (e.key === 'Escape' && fillMode) { window.toggleFill(); return; }
       if (e.key === 'Escape' && eyedropperMode) { window.toggleEyedropper(); return; }
+      if (e.key === 'Escape' && drawRoomMode) { cancelDrawRoom(); return; }
       if (e.key === 'Escape' && pasteMode) { cancelPaste(); return; }
       if (e.key === 'Escape' && (selStart || selEnd)) { selStart = selEnd = null; markDirty(); return; }
 
@@ -1335,6 +1474,13 @@
   }
 
   function onMouseDown(e) {
+    // Draw room mode: start rectangle drag
+    if (drawRoomMode && !wizardRoomPopup) {
+      const { col, row } = cellAt(e);
+      drawRoomStart = { col, row };
+      drawRoomEnd = { col, row };
+      return;
+    }
     // Design mode tools
     if (wizardActive && wizardStep === 3 && !wizardRoomPopup) {
       const { col, row } = cellAt(e);
@@ -1397,6 +1543,12 @@
   function onMouseMove(e) {
     if (previewMode) return;
     const { col, row } = cellAt(e);
+    // Draw room mode: update drag end
+    if (drawRoomMode && drawRoomStart) {
+      drawRoomEnd = { col, row };
+      markOverlayDirty();
+      return;
+    }
     // Wizard step 3: drag tracking
     if (wizardActive && wizardStep === 3 && wizardDragStart) {
       wizardDragEnd = { col, row };
@@ -2102,6 +2254,38 @@
 
     // Pass 6: Hover preview (only in editor mode)
     if (!previewMode && hoverCol >= 0 && hoverRow >= 0) drawHoverPreview();
+
+    // Pass 6.4: Draw room rectangle preview
+    if (drawRoomMode && drawRoomStart && drawRoomEnd) {
+      const dr1 = Math.min(drawRoomStart.row, drawRoomEnd.row);
+      const dc1 = Math.min(drawRoomStart.col, drawRoomEnd.col);
+      const dr2 = Math.max(drawRoomStart.row, drawRoomEnd.row);
+      const dc2 = Math.max(drawRoomStart.col, drawRoomEnd.col);
+      const dw = dc2 - dc1 + 1, dh = dr2 - dr1 + 1;
+      const ok = dw >= 2 && dh >= 2;
+      ctx.save();
+      ctx.fillStyle = ok ? 'rgba(16,185,129,0.15)' : 'rgba(248,113,113,0.15)';
+      ctx.fillRect(dc1 * CELL, dr1 * CELL, dw * CELL, dh * CELL);
+      ctx.strokeStyle = ok ? 'rgba(16,185,129,0.8)' : 'rgba(248,113,113,0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.strokeRect(dc1 * CELL, dr1 * CELL, dw * CELL, dh * CELL);
+      ctx.setLineDash([]);
+      // Size label
+      const interior = Math.max(0, dw - 2) * Math.max(0, dh - 2);
+      const label = ok ? `${dw}×${dh}  (${interior}m²)` : `${dw}×${dh} — quá nhỏ`;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      const lx = (dc1 + dw / 2) * CELL, ly = (dr1 + dh / 2) * CELL;
+      const tw = ctx.measureText(label).width + 16;
+      ctx.fillRect(lx - tw / 2, ly - 10, tw, 22);
+      ctx.fillStyle = ok ? '#10b981' : '#f87171';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, lx, ly);
+      ctx.textBaseline = 'alphabetic';
+      ctx.restore();
+    }
 
     // Pass 6.5: Selection rectangle
     const sel = getSelRect();

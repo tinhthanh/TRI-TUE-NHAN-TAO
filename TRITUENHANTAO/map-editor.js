@@ -1003,23 +1003,12 @@
     const btn = document.getElementById('tile-btn-' + id);
     if (btn) btn.classList.add('active');
     _activeTileBtn = btn;
-    // Show room name bar for room tiles
-    const isRoomTile = [5, 7, 8, 9].includes(id);
-    $('room-name-bar').style.display = isRoomTile ? 'flex' : 'none';
     const td = getTile(id);
     $('current-tile-label').textContent = td ? td.name : '?';
     markDirty();
   };
 
-  window.applyRoomSettings = function () {
-    const name  = $('room-name-input').value.trim() || 'Phòng';
-    const color = $('room-color-input').value;
-    // Create or update room in current floor
-    currentRoomId = 'room_' + Date.now();
-    floors[currentFloorIdx].rooms.push({ id: currentRoomId, name, color: hexToRgba(color, 0.22) });
-    updateRoomList();
-    showToast('✓ Đã đặt phòng: ' + name);
-  };
+  // applyRoomSettings removed — replaced by draw-room popup
 
   function hexToRgba(hex, alpha) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -4025,7 +4014,6 @@
     const floorTabs = document.querySelector('.floor-tab-bar');
     const header = document.querySelector('.editor-header');
     const canvasHint = document.querySelector('.canvas-hint');
-    const roomBar = $('room-name-bar');
     const editorMain = document.querySelector('.editor-main');
     const mobileToggles = document.querySelector('.mobile-panel-toggles');
     const miniMap = document.querySelector('.mini-map-fixed');

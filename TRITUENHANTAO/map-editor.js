@@ -3704,7 +3704,13 @@
     if (!ok) return;
     for (let r = 0; r < mapHeight; r++)
       for (let c = 0; c < mapWidth; c++) { grid[r][c] = 0; roomMap[r][c] = null; }
-    updateStats(); validate(); markDirty();
+    // Clear rooms + props
+    floors[currentFloorIdx].rooms = [];
+    floors[currentFloorIdx].props = [];
+    rooms = floors[currentFloorIdx].rooms;
+    props = floors[currentFloorIdx].props;
+    currentRoomId = null;
+    updateRoomList(); updateStats(); validate(); markDirty();
     showToast('Đã xóa tầng này');
   };
 

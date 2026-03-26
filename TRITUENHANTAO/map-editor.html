@@ -223,18 +223,7 @@
         </div>
       </div>
 
-      <!-- Brush size (compact) -->
-      <div class="panel-card" style="padding:10px 12px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span class="ms-icon" style="font-size:14px; color:var(--text-muted);">edit</span>
-          <span style="font-size:11px; color:var(--text-muted);">Bút:</span>
-          <button class="brush-btn active" id="brush-1" onclick="setBrush(1)" style="padding:3px 8px; font-size:10px;">1×1</button>
-          <button class="brush-btn" id="brush-2" onclick="setBrush(2)" style="padding:3px 8px; font-size:10px;">2×2</button>
-          <button class="brush-btn" id="brush-3" onclick="setBrush(3)" style="padding:3px 8px; font-size:10px;">3×3</button>
-        </div>
-      </div>
-
-      <!-- Hidden sliders (still needed by JS but not shown) -->
+      <!-- Hidden elements (still needed by JS but not shown) -->
       <div style="display:none;">
         <input type="range" id="grid-w-slider" min="5" max="60" value="22" step="1">
         <span id="grid-width-value">22</span>
@@ -329,13 +318,6 @@
         <canvas id="editor-canvas"></canvas>
       </div>
       <div class="canvas-hint">
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="ms-icon" style="font-size:13px;">edit</span>
-          <button class="brush-hint-btn active" id="brush-h1" onclick="setBrush(1)">1</button>
-          <button class="brush-hint-btn" id="brush-h2" onclick="setBrush(2)">2</button>
-          <button class="brush-hint-btn" id="brush-h3" onclick="setBrush(3)">3</button>
-        </span>
-        <span style="opacity:0.3;">·</span>
         Tile: <strong id="current-tile-label">Tường</strong> ·
         <span id="stat-bar-size">22×13</span> ·
         <span id="stat-bar-status">✅ OK</span>

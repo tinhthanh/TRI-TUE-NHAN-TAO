@@ -350,41 +350,6 @@
         </div>
       </div>
 
-      <!-- Layer Controls (collapsed by default) -->
-      <div class="panel-card">
-        <h3 class="collapsible collapsed" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
-          <span class="group-arrow" style="font-size:10px;">▼</span>
-          <span class="ms-icon">layers</span> Lớp hiển thị
-        </h3>
-        <div class="layer-list collapsed" id="layer-list">
-          <div class="layer-item" data-layer="walls">
-            <button class="layer-vis active" onclick="toggleLayerVis('walls')" title="Ẩn/Hiện"><span class="ms-icon">visibility</span></button>
-            <span class="layer-name">🧱 Tường</span>
-            <button class="layer-lock" onclick="toggleLayerLock('walls')" title="Khóa"><span class="ms-icon">lock_open</span></button>
-          </div>
-          <div class="layer-item" data-layer="ground">
-            <button class="layer-vis active" onclick="toggleLayerVis('ground')" title="Ẩn/Hiện"><span class="ms-icon">visibility</span></button>
-            <span class="layer-name">🏠 Sàn</span>
-            <button class="layer-lock" onclick="toggleLayerLock('ground')" title="Khóa"><span class="ms-icon">lock_open</span></button>
-          </div>
-          <div class="layer-item" data-layer="props">
-            <button class="layer-vis active" onclick="toggleLayerVis('props')" title="Ẩn/Hiện"><span class="ms-icon">visibility</span></button>
-            <span class="layer-name">🪑 Vật dụng</span>
-            <button class="layer-lock" onclick="toggleLayerLock('props')" title="Khóa"><span class="ms-icon">lock_open</span></button>
-          </div>
-          <div class="layer-item" data-layer="rooms">
-            <button class="layer-vis active" onclick="toggleLayerVis('rooms')" title="Ẩn/Hiện"><span class="ms-icon">visibility</span></button>
-            <span class="layer-name">🎨 Phòng</span>
-            <button class="layer-lock" onclick="toggleLayerLock('rooms')" title="Khóa"><span class="ms-icon">lock_open</span></button>
-          </div>
-          <div class="layer-item" data-layer="grid">
-            <button class="layer-vis active" onclick="toggleLayerVis('grid')" title="Ẩn/Hiện"><span class="ms-icon">visibility</span></button>
-            <span class="layer-name">📐 Lưới</span>
-            <button class="layer-lock" onclick="toggleLayerLock('grid')" title="Khóa"><span class="ms-icon">lock_open</span></button>
-          </div>
-        </div>
-      </div>
-
       <!-- Rooms on this floor -->
       <div class="panel-card">
         <h3><span class="ms-icon">home</span> Phòng tầng này</h3>

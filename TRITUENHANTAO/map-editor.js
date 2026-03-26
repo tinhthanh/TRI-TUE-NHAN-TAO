@@ -1080,17 +1080,38 @@
   };
 
 
-  // Delete room — reset area to default floor tile
+  // Delete room — reset area + surrounding walls to default floor tile
   window.deleteRoom = function(roomId) {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
     saveHistoryAtomic();
-    // Reset grid cells to default floor (0) and clear roomMap
+    // Find bounding box of room cells
+    let minR = mapHeight, maxR = 0, minC = mapWidth, maxC = 0;
     for (let r = 0; r < mapHeight; r++) {
       for (let c = 0; c < mapWidth; c++) {
         if (roomMap[r][c] === roomId) {
+          if (r < minR) minR = r;
+          if (r > maxR) maxR = r;
+          if (c < minC) minC = c;
+          if (c > maxC) maxC = c;
+        }
+      }
+    }
+    // Expand bbox by 1 to include surrounding walls
+    const er1 = Math.max(0, minR - 1);
+    const ec1 = Math.max(0, minC - 1);
+    const er2 = Math.min(mapHeight - 1, maxR + 1);
+    const ec2 = Math.min(mapWidth - 1, maxC + 1);
+    // Reset all cells in expanded bbox to floor (walls + room interior + doors)
+    for (let r = er1; r <= er2; r++) {
+      for (let c = ec1; c <= ec2; c++) {
+        const isRoomCell = roomMap[r][c] === roomId;
+        const isWallOrDoor = grid[r][c] === WALL_TILE_ID || grid[r][c] === 4;
+        if (isRoomCell || isWallOrDoor) {
           if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', grid[r][c], 0);
           grid[r][c] = 0;
+        }
+        if (roomMap[r][c] === roomId) {
           if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'roomMap', roomId, null);
           roomMap[r][c] = null;
         }
@@ -1102,7 +1123,7 @@
     if (currentRoomId === roomId) currentRoomId = null;
     commitHistory();
     updateRoomList(); updateStats(); validate(); markDirty();
-    showToast(`🗑 Đã xóa phòng: ${room.name} — khu vực đã reset về sàn mặc định`);
+    showToast(`🗑 Đã xóa phòng: ${room.name}`);
   };
 
   // Add room directly (without needing to select a room tile first)

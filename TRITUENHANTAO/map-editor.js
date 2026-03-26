@@ -1336,24 +1336,50 @@
     floors[currentFloorIdx].rooms.push({ id: roomId, name, color });
 
     // Paint walls on border, floor inside, assign roomMap
+    // Smart walls: skip if adjacent cell already has a wall (avoid double walls)
     saveHistoryAtomic();
     for (let r = r1; r <= r2; r++) {
       for (let c = c1; c <= c2; c++) {
         const isBorder = r === r1 || r === r2 || c === c1 || c === c2;
-        const newTile = isBorder ? WALL_TILE_ID : floorTileId;
-        if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', grid[r][c], newTile);
-        grid[r][c] = newTile;
-        if (!isBorder) {
+        if (isBorder) {
+          const existing = grid[r][c];
+          // Skip if already a wall or door — reuse existing wall
+          if (existing === WALL_TILE_ID || existing === 4) continue;
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', existing, WALL_TILE_ID);
+          grid[r][c] = WALL_TILE_ID;
+        } else {
+          // Interior: set floor + room
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', grid[r][c], floorTileId);
+          grid[r][c] = floorTileId;
           if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'roomMap', roomMap[r][c], roomId);
           roomMap[r][c] = roomId;
         }
       }
     }
-    // Auto-place door on bottom wall center
+    // Auto-place door: find best spot on border (prefer shared wall, else bottom center)
+    let doorPlaced = false;
+    // Try bottom wall center first
     const doorC = Math.floor((c1 + c2) / 2);
-    if (doorC > c1 && doorC < c2) {
-      if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r2, doorC, 'grid', grid[r2][doorC], 4);
+    if (doorC > c1 && doorC < c2 && grid[r2][doorC] === WALL_TILE_ID) {
+      if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r2, doorC, 'grid', WALL_TILE_ID, 4);
       grid[r2][doorC] = 4;
+      doorPlaced = true;
+    }
+    // If bottom center already a door or couldn't place, try other spots
+    if (!doorPlaced) {
+      const trySpots = [
+        [r1, Math.floor((c1+c2)/2)], // top center
+        [Math.floor((r1+r2)/2), c2],  // right center
+        [Math.floor((r1+r2)/2), c1],  // left center
+      ];
+      for (const [tr, tc] of trySpots) {
+        if (tr > r1 && tr < r2 && tc > c1 && tc < c2) continue; // skip interior
+        if (grid[tr][tc] === WALL_TILE_ID) {
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, tr, tc, 'grid', WALL_TILE_ID, 4);
+          grid[tr][tc] = 4;
+          break;
+        }
+      }
     }
     commitHistory();
 

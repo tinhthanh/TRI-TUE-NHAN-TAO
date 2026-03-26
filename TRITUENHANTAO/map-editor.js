@@ -184,7 +184,7 @@
   const STAIR_PULSE_DIV  = 600;      // stair pulse animation speed divisor
   const RANDOM_WALL_PROB = 0.28;     // probability of wall in random gen
   const ZOOM_MIN         = 0.25;
-  const ZOOM_MAX         = 4.0;
+  const ZOOM_MAX         = 2.0;
   const EXPORT_SCALE     = 2;        // PNG export scale factor
   const AUTOSAVE_DELAY   = 1500;     // ms before auto-save triggers
 

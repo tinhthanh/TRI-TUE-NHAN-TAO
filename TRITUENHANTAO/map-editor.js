@@ -1047,21 +1047,14 @@
     el.innerHTML = rs.map(r => {
       const count = countRoomTiles(r.id);
       const isActive = currentRoomId === r.id;
-      // Extract a solid color for swatch from rgba
       const swatchColor = r.color.replace(/[\d.]+\)$/, '1)');
-      return `<div class="room-item${isActive ? ' active' : ''}" onclick="selectRoom('${r.id}')" title="Click để chọn phòng này để vẽ">
-        <input type="color" class="room-swatch" value="${rgbaToHex(r.color)}"
-               onclick="event.stopPropagation()"
-               onchange="recolorRoom('${r.id}', this.value)"
-               style="background:${swatchColor};" title="Đổi màu">
+      return `<div class="room-item${isActive ? ' active' : ''}" onclick="selectRoom('${r.id}')">
+        <span class="room-swatch-dot" style="background:${swatchColor};"></span>
         <div class="room-info">
           <div class="room-name">${r.name}</div>
           <div class="room-meta">${count} ô · ${(count * CELL * CELL / 10000).toFixed(1)}m²</div>
         </div>
-        <div class="room-actions">
-          <button onclick="event.stopPropagation(); renameRoom('${r.id}')" title="Đổi tên"><span class="ms-icon">edit</span></button>
-          <button class="btn-del" onclick="event.stopPropagation(); deleteRoom('${r.id}')" title="Xóa phòng"><span class="ms-icon">delete</span></button>
-        </div>
+        <button class="btn-del" onclick="event.stopPropagation(); deleteRoom('${r.id}')" title="Xóa phòng"><span class="ms-icon">delete</span></button>
       </div>`;
     }).join('');
   }
@@ -1086,39 +1079,19 @@
     showToast(`🎨 Đang vẽ: ${room.name}`);
   };
 
-  // Rename room
-  window.renameRoom = function(roomId) {
-    const room = rooms.find(r => r.id === roomId);
-    if (!room) return;
-    const newName = prompt('Đổi tên phòng:', room.name);
-    if (newName && newName.trim()) {
-      room.name = newName.trim();
-      updateRoomList();
-      markDirty();
-      showToast(`✓ Đã đổi tên: ${room.name}`);
-    }
-  };
 
-  // Recolor room
-  window.recolorRoom = function(roomId, hexColor) {
-    const room = rooms.find(r => r.id === roomId);
-    if (!room) return;
-    room.color = hexToRgba(hexColor, 0.22);
-    updateRoomList();
-    markDirty();
-  };
-
-  // Delete room (clear from roomMap too)
+  // Delete room — reset area to default floor tile
   window.deleteRoom = function(roomId) {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return;
-    if (!confirm(`Xóa phòng "${room.name}"?\nCác ô đã gán sẽ bỏ gán phòng.`)) return;
     saveHistoryAtomic();
-    // Clear roomMap cells
+    // Reset grid cells to default floor (0) and clear roomMap
     for (let r = 0; r < mapHeight; r++) {
       for (let c = 0; c < mapWidth; c++) {
         if (roomMap[r][c] === roomId) {
-          recordCell(pendingCommand, currentFloorIdx, r, c, 'roomMap', roomId, null);
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'grid', grid[r][c], 0);
+          grid[r][c] = 0;
+          if (pendingCommand) recordCell(pendingCommand, currentFloorIdx, r, c, 'roomMap', roomId, null);
           roomMap[r][c] = null;
         }
       }
@@ -1128,9 +1101,8 @@
     if (idx >= 0) rooms.splice(idx, 1);
     if (currentRoomId === roomId) currentRoomId = null;
     commitHistory();
-    updateRoomList();
-    markDirty();
-    showToast(`🗑 Đã xóa phòng: ${room.name}`);
+    updateRoomList(); updateStats(); validate(); markDirty();
+    showToast(`🗑 Đã xóa phòng: ${room.name} — khu vực đã reset về sàn mặc định`);
   };
 
   // Add room directly (without needing to select a room tile first)

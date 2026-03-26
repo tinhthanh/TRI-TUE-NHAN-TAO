@@ -73,21 +73,21 @@
     }
     .room-item:hover { background:rgba(255,255,255,0.07); }
     .room-item.active { border-color:var(--accent-teal); background:rgba(6,182,212,0.1); }
-    .room-swatch {
-      width:14px; height:14px; border-radius:4px; flex-shrink:0;
-      border:1px solid rgba(255,255,255,0.15); cursor:pointer;
+    .room-swatch-dot {
+      width:12px; height:12px; border-radius:50%; flex-shrink:0;
+      border:1px solid rgba(255,255,255,0.15);
     }
     .room-info { flex:1; min-width:0; }
     .room-name { font-size:12px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .room-meta { font-size:10px; color:var(--text-muted); }
-    .room-actions { display:flex; gap:2px; }
-    .room-actions button {
-      background:none; border:none; cursor:pointer; padding:2px;
-      color:var(--text-muted); border-radius:3px; display:flex; align-items:center;
+    .room-item .btn-del {
+      background:none; border:none; cursor:pointer; padding:3px;
+      color:var(--text-muted); border-radius:4px; display:flex; align-items:center;
+      opacity:0; transition: all 0.15s;
     }
-    .room-actions button:hover { background:rgba(255,255,255,0.1); color:var(--text-primary); }
-    .room-actions button.btn-del:hover { color:#ef4444; }
-    .room-actions .ms-icon { font-size:14px; }
+    .room-item:hover .btn-del { opacity:1; }
+    .room-item .btn-del:hover { background:rgba(239,68,68,0.15); color:#ef4444; }
+    .room-item .btn-del .ms-icon { font-size:14px; }
 
     /* ── Recent Tiles ── */
     .recent-tiles-card { padding:10px 12px !important; }

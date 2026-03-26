@@ -1147,8 +1147,9 @@
   let drawRoomEnd = null;
 
   window.addRoomDirect = function() {
-    // Enter draw-room mode
+    // Enter draw-room mode — disable painting
     drawRoomMode = true;
+    isPainting = false;
     drawRoomStart = drawRoomEnd = null;
     canvas.style.cursor = 'crosshair';
     showToast('🏠 Kéo chuột trên canvas để vẽ vùng phòng');

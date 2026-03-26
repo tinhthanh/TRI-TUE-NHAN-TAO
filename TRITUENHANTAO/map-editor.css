@@ -519,6 +519,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
   box-shadow: var(--shadow-lg), var(--shadow-glow-green);
   overflow: auto;
   max-height: calc(100vh - 180px);
+  max-width: 100%;
   transition: border-color var(--transition), box-shadow var(--transition);
   position: relative;
 }

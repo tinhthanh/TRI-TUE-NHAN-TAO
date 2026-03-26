@@ -2350,10 +2350,12 @@
   function updateStats() {
     scanGrid();
     const total = mapWidth * mapHeight;
-    $('stat-size').textContent = `${mapWidth}×${mapHeight}`;
-    $('stat-walk').textContent = _lastScanWalkable;
-    $('stat-wall').textContent = _lastScanWalls;
-    $('stat-pct').textContent  = Math.round((_lastScanWalls / total) * 100) + '%';
+    const sizeEl = $('stat-size'); if (sizeEl) sizeEl.textContent = `${mapWidth}×${mapHeight}`;
+    const walkEl = $('stat-walk'); if (walkEl) walkEl.textContent = _lastScanWalkable;
+    const wallEl = $('stat-wall'); if (wallEl) wallEl.textContent = _lastScanWalls;
+    const pctEl  = $('stat-pct');  if (pctEl)  pctEl.textContent  = Math.round((_lastScanWalls / total) * 100) + '%';
+    // Status bar compact
+    const barSize = $('stat-bar-size'); if (barSize) barSize.textContent = `${mapWidth}×${mapHeight}`;
   }
 
   function validate() {
@@ -2370,12 +2372,13 @@
       if (reach < 4) issues.push(`Chỉ ${reach} ô liên thông.`);
     }
 
+    const barStatus = $('stat-bar-status');
     if (issues.length === 0) {
-      validationBox.className = 'validation-box ok';
-      validationBox.textContent = `✅ Tầng hợp lệ! ${walkable} ô walkable.`;
+      if (validationBox) { validationBox.className = 'validation-box ok'; validationBox.textContent = `✅ Tầng hợp lệ! ${walkable} ô walkable.`; }
+      if (barStatus) barStatus.textContent = `✅ ${walkable} walkable`;
     } else {
-      validationBox.className = 'validation-box warn';
-      validationBox.innerHTML = '⚠️ ' + issues.join('<br>⚠️ ');
+      if (validationBox) { validationBox.className = 'validation-box warn'; validationBox.innerHTML = '⚠️ ' + issues.join('<br>⚠️ '); }
+      if (barStatus) barStatus.textContent = '⚠️ ' + issues[0];
     }
     return issues.length === 0;
   }

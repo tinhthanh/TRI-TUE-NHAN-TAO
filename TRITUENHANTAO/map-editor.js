@@ -2018,7 +2018,7 @@
 
     // Pass 5: Grid lines
     if (showGrid) {
-      cx.strokeStyle = 'rgba(255,255,255,0.06)'; cx.lineWidth = 0.5;
+      cx.strokeStyle = 'rgba(255,255,255,0.15)'; cx.lineWidth = 0.5;
       for (let r = 0; r <= mapHeight; r++) {
         cx.beginPath(); cx.moveTo(0, r * CELL); cx.lineTo(mapWidth * CELL, r * CELL); cx.stroke();
       }

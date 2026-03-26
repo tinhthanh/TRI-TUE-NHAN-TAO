@@ -1374,28 +1374,15 @@ kbd {
   .header-title .icon { width: 36px; height: 36px; }
   .header-title .icon .ms-icon { font-size: 20px !important; }
 
-  /* ── Left panel: horizontal scrollable tile strip ── */
+  /* ── Left panel: hidden on tablet — toolbar dropdowns replace it ── */
   .panel-left {
-    flex-direction: row;
-    min-width: unset;
-    max-width: 100%;
-    max-height: unset;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 6px;
-    order: 2; /* below canvas */
-    padding-bottom: 4px;
+    display: none !important;
   }
   .panel-left .panel-card {
     min-width: 160px;
     flex-shrink: 0;
     padding: 10px;
   }
-  .panel-left .panel-card h3 {
-    font-size: 10px;
-    margin-bottom: 6px;
-  }
-
   /* ── Canvas: full width ── */
   .canvas-container {
     order: 1;

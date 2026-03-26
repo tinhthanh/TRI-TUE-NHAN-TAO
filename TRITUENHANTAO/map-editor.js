@@ -1350,16 +1350,6 @@
     canvas.addEventListener('mousemove',  onMouseMove);
     canvas.addEventListener('mouseleave', () => { hoverCol = -1; hoverRow = -1; markOverlayDirty(); });
     window.addEventListener('mouseup',    (e) => {
-      // Draw room mode: finish rectangle
-      if (drawRoomMode && drawRoomStart && !wizardRoomPopup) {
-        if (e.target === canvas || canvas.contains(e.target)) {
-          finishDrawRoom();
-          return;
-        }
-        drawRoomStart = drawRoomEnd = null;
-        markOverlayDirty();
-        return;
-      }
       // Wizard step 3: finish room/wall drag (skip if popup is open or click was on popup)
       if (wizardActive && wizardStep === 3 && wizardDragStart && !wizardRoomPopup) {
         // Don't trigger if click landed on a UI element (not canvas)
@@ -1482,11 +1472,19 @@
   }
 
   function onMouseDown(e) {
-    // Draw room mode: start rectangle drag
+    // Draw room mode: click-click (not drag)
     if (drawRoomMode && !wizardRoomPopup) {
       const { col, row } = cellAt(e);
-      drawRoomStart = { col, row };
-      drawRoomEnd = { col, row };
+      if (!drawRoomStart) {
+        // First click: set start point
+        drawRoomStart = { col, row };
+        drawRoomEnd = { col, row };
+        showToast('📍 Điểm 1 đã đặt — di chuột rồi click lần nữa');
+      } else {
+        // Second click: finalize rectangle
+        drawRoomEnd = { col, row };
+        finishDrawRoom();
+      }
       return;
     }
     // Design mode tools

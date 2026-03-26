@@ -1175,13 +1175,17 @@
     if (wizardRoomPopup) wizardRoomPopup.remove();
     const w = c2 - c1 + 1, h = r2 - r1 + 1;
     const interior = Math.max(0, w - 2) * Math.max(0, h - 2);
-    const container = document.querySelector('.canvas-container');
     const rect = canvas.getBoundingClientRect();
 
     const popup = document.createElement('div');
     popup.className = 'wiz-room-popup';
-    popup.style.left = Math.min(rect.right - 260, rect.left + (c2 + 1) * CELL * zoomLevel + 10 - container.getBoundingClientRect().left) + 'px';
-    popup.style.top = Math.max(50, r1 * CELL * zoomLevel - container.scrollTop + 10) + 'px';
+    // Position fixed — not clipped by canvas-container overflow
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '10000';
+    const popupLeft = Math.min(window.innerWidth - 280, rect.left + (c2 + 1) * CELL * zoomLevel + 10);
+    const popupTop = Math.max(60, rect.top + r1 * CELL * zoomLevel);
+    popup.style.left = popupLeft + 'px';
+    popup.style.top = popupTop + 'px';
 
     const defaultName = 'Phòng ' + (rooms.length + 1);
     const colorIdx = rooms.length % ROOM_COLORS.length;
@@ -1198,8 +1202,7 @@
       </div>
     `;
 
-    container.style.position = 'relative';
-    container.appendChild(popup);
+    document.body.appendChild(popup);
     wizardRoomPopup = popup;
 
     // Build floor picker

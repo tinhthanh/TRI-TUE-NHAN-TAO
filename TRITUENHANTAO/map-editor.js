@@ -1123,6 +1123,7 @@
         <button class="btn-del" onclick="event.stopPropagation(); deleteRoom('${r.id}')" title="Xóa phòng"><span class="ms-icon">delete</span></button>
       </div>`;
     }).join('');
+    updateMobileRoomCount();
   }
 
   // Convert rgba(r,g,b,a) to hex for color picker
@@ -4576,6 +4577,22 @@
       if (btnL) btnL.classList.remove('active');
     }
   };
+
+  // Mobile room panel toggle (floating button)
+  window.toggleMobileRooms = function() {
+    const right = document.querySelector('.panel-right');
+    const btn = $('mobile-room-toggle');
+    if (!right) return;
+    const isOpen = right.classList.contains('mobile-open');
+    right.classList.toggle('mobile-open', !isOpen);
+    if (btn) btn.classList.toggle('active', !isOpen);
+  };
+
+  // Update mobile room count badge
+  function updateMobileRoomCount() {
+    const badge = $('mobile-room-count');
+    if (badge) badge.textContent = rooms ? rooms.length : 0;
+  }
 
   // Show mobile toggles on small screens
   function checkMobile() {

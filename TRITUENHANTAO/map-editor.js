@@ -947,14 +947,28 @@
     buildDropdown('tb-ground-grid', GROUND_TILE_IDS);
     buildDropdown('tb-props-grid', PROP_TILE_IDS);
 
-    // Toggle open/close
+    // Toggle open/close — position fixed dropdown panel
     document.querySelectorAll('.tb-dropdown').forEach(dd => {
       const btn = dd.querySelector('.tb-btn');
+      const panel = dd.querySelector('.tb-dropdown-panel');
       btn.addEventListener('click', () => {
         const wasOpen = dd.classList.contains('open');
         // Close all dropdowns first
         document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
-        if (!wasOpen) dd.classList.add('open');
+        if (!wasOpen) {
+          // Position panel below button using fixed coords
+          const rect = btn.getBoundingClientRect();
+          const isRight = panel.classList.contains('tb-dropdown-right');
+          panel.style.top = (rect.bottom + 6) + 'px';
+          if (isRight) {
+            panel.style.left = 'auto';
+            panel.style.right = (window.innerWidth - rect.right) + 'px';
+          } else {
+            panel.style.left = Math.max(4, rect.left) + 'px';
+            panel.style.right = 'auto';
+          }
+          dd.classList.add('open');
+        }
       });
     });
 

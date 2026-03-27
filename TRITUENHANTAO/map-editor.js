@@ -1716,8 +1716,10 @@
     if (!text) { if (tooltipEl) tooltipEl.style.opacity = '0'; return; }
     const el = getTooltipEl();
     el.textContent = text;
+    // Hide tooltip on mobile (touch devices don't need hover tooltip)
+    if (window.innerWidth <= 768) { el.style.opacity = '0'; return; }
     el.style.left  = (e.clientX + 14) + 'px';
-    el.style.top   = (e.clientY - 28) + 'px';
+    el.style.top   = (e.clientY + 18) + 'px'; // below cursor, not above
     el.style.opacity = '1';
   }
 

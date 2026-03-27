@@ -607,6 +607,7 @@
 
   // Stamp tool: paste multiple times without exiting paste mode
   let stampMode = false;
+  let eraseMode = false;        // Eraser: click cell → remove prop + reset to floor (tile 0)
 
   // ── HOUSE WIZARD STATE ────────────────────────────────────
   let wizardActive = false;
@@ -1576,6 +1577,8 @@
       // Escape: exit fill mode
       // Eyedropper: E
       if (e.key === 'e' || e.key === 'E') { window.toggleEyedropper(); return; }
+      // Eraser: X
+      if (e.key === 'x' || e.key === 'X') { window.toggleErase(); return; }
 
       // Grid toggle: G
       if (e.key === 'g' || e.key === 'G') { window.toggleGrid(); return; }
@@ -1595,6 +1598,7 @@
       // Escape: exit fill/eyedropper/paste mode
       if (e.key === 'Escape' && fillMode) { window.toggleFill(); return; }
       if (e.key === 'Escape' && eyedropperMode) { window.toggleEyedropper(); return; }
+      if (e.key === 'Escape' && eraseMode) { window.toggleErase(); return; }
       if (e.key === 'Escape' && drawRoomMode) { cancelDrawRoom(); return; }
       if (e.key === 'Escape' && pasteMode) { cancelPaste(); return; }
       if (e.key === 'Escape' && (selStart || selEnd)) { selStart = selEnd = null; markDirty(); return; }
@@ -1672,6 +1676,16 @@
       markDirty();
       return;
     }
+    // Erase mode: click → remove prop + reset tile to floor 0
+    if (eraseMode) {
+      const { col, row } = cellAt(e);
+      if (col >= 0 && col < mapWidth && row >= 0 && row < mapHeight) {
+        isPainting = true;
+        saveHistory();
+        eraseAt(col, row);
+      }
+      return;
+    }
     // Fill mode
     if (fillMode) {
       const { col, row } = cellAt(e);
@@ -1713,7 +1727,10 @@
       pasteCursor = { col, row };
       markDirty();
     }
-    if (isPainting) paintAt(col, row, paintValue);
+    if (isPainting) {
+      if (eraseMode) eraseAt(col, row);
+      else paintAt(col, row, paintValue);
+    }
     showHoverTooltip(e, col, row);
   }
 
@@ -1779,7 +1796,8 @@
 
     isPainting = true; paintValue = currentTileId;
     saveHistory();
-    paintAt(col, row, paintValue);
+    if (eraseMode) eraseAt(col, row);
+    else paintAt(col, row, paintValue);
   }
 
   function onTouchMove(e) {
@@ -1795,7 +1813,8 @@
     }
 
     if (!isPainting) return;
-    paintAt(col, row, paintValue);
+    if (eraseMode) eraseAt(col, row);
+    else paintAt(col, row, paintValue);
   }
 
   // ── AUTO-EXPAND CANVAS ──────────────────────────────────
@@ -1937,6 +1956,43 @@
       autoLinkStairs(col, row, value);
       updateStats(); validate(); markDirty();
     }
+  }
+
+  // ── ERASE AT (remove prop + reset tile to floor 0) ────────
+  function eraseAt(col, row) {
+    const half = Math.floor(brushSize / 2);
+    let changed = false;
+    const cmd = pendingCommand;
+    for (let dr = -half; dr < brushSize - half; dr++) {
+      for (let dc = -half; dc < brushSize - half; dc++) {
+        const r = row + dr, c = col + dc;
+        if (r < 0 || r >= mapHeight || c < 0 || c >= mapWidth) continue;
+
+        // Remove any prop at this cell
+        const floorProps = floors[currentFloorIdx].props;
+        const propIdx = floorProps.findIndex(p => p.r === r && p.c === c);
+        if (propIdx >= 0) {
+          if (cmd) recordPropsBefore(cmd, currentFloorIdx);
+          floorProps.splice(propIdx, 1);
+          changed = true;
+        }
+
+        // Reset grid tile to 0 (default floor)
+        if (grid[r][c] !== 0) {
+          if (cmd) recordCell(cmd, currentFloorIdx, r, c, 'grid', grid[r][c], 0);
+          grid[r][c] = 0;
+          changed = true;
+        }
+
+        // Remove room assignment
+        const oldRoom = roomMap[r][c];
+        if (oldRoom !== null) {
+          if (cmd) recordCell(cmd, currentFloorIdx, r, c, 'roomMap', oldRoom, null);
+          roomMap[r][c] = null;
+        }
+      }
+    }
+    if (changed) { updateStats(); validate(); markDirty(); }
   }
 
   function autoLinkStairs(col, row, value) {
@@ -2166,6 +2222,15 @@
     if (btn) btn.classList.toggle('active', eyedropperMode);
     canvas.style.cursor = eyedropperMode ? 'crosshair' : (fillMode ? 'cell' : 'crosshair');
     showToast(eyedropperMode ? '👁️ Eyedropper ON (Alt+click)' : 'Eyedropper OFF');
+  };
+
+  // ── ERASER MODE ────────────────────────────────────────────
+  window.toggleErase = function() {
+    eraseMode = !eraseMode;
+    const btn = $('erase-btn');
+    if (btn) btn.classList.toggle('active', eraseMode);
+    canvas.style.cursor = eraseMode ? 'cell' : (fillMode ? 'cell' : 'crosshair');
+    showToast(eraseMode ? '🧹 Xóa ON — click để xóa vật thể về nền gạch' : 'Xóa OFF');
   };
 
   // ── TOOLBAR MORE MENU ──────────────────────────────────────

@@ -1177,6 +1177,13 @@ kbd {
   color: var(--teal);
   box-shadow: 0 0 12px rgba(6,182,212,0.2);
 }
+/* Eraser active — red tint to indicate destructive mode */
+#erase-btn.active {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.5);
+  color: #f87171;
+  box-shadow: 0 0 12px rgba(239,68,68,0.25);
+}
 .tb-btn.tb-preview {
   background: rgba(16,185,129,0.12);
   border-color: rgba(16,185,129,0.35);

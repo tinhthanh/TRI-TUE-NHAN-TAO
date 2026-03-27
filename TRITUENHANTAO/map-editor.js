@@ -947,42 +947,62 @@
     buildDropdown('tb-ground-grid', GROUND_TILE_IDS);
     buildDropdown('tb-props-grid', PROP_TILE_IDS);
 
-    // Toggle open/close — position fixed dropdown panel
-    document.querySelectorAll('.tb-dropdown').forEach(dd => {
-      const btn = dd.querySelector('.tb-btn');
-      const panel = dd.querySelector('.tb-dropdown-panel');
-      btn.addEventListener('click', () => {
+    // Collect dropdown info before any DOM moves
+    // NOTE: floating-toolbar has backdrop-filter which breaks position:fixed on children.
+    // Fix: move panels into <body> when opened so fixed positioning works correctly.
+    const ddList = Array.from(document.querySelectorAll('.tb-dropdown')).map(dd => ({
+      dd,
+      btn: dd.querySelector('.tb-btn'),
+      panel: dd.querySelector('.tb-dropdown-panel'),
+      originalParent: dd,
+    }));
+
+    function closeAll() {
+      ddList.forEach(({ dd, panel, originalParent }) => {
+        dd.classList.remove('open');
+        if (panel.parentElement === document.body) {
+          panel.style.display = '';
+          originalParent.appendChild(panel);
+        }
+      });
+    }
+
+    ddList.forEach(({ dd, btn, panel }) => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
         const wasOpen = dd.classList.contains('open');
-        // Close all dropdowns first
-        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+        closeAll();
         if (!wasOpen) {
-          // Position panel below button using fixed coords
           const rect = btn.getBoundingClientRect();
           const isRight = panel.classList.contains('tb-dropdown-right');
+          // Move to <body> — escapes backdrop-filter stacking context
+          document.body.appendChild(panel);
+          panel.style.position = 'fixed';
           panel.style.top = (rect.bottom + 6) + 'px';
           if (isRight) {
             panel.style.left = 'auto';
-            panel.style.right = (window.innerWidth - rect.right) + 'px';
+            panel.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
           } else {
             panel.style.left = Math.max(4, rect.left) + 'px';
             panel.style.right = 'auto';
           }
+          panel.style.display = 'block';
           dd.classList.add('open');
         }
       });
     });
 
-    // Close on click outside
+    // Close on click outside (panel is now in body, so check both)
     document.addEventListener('click', e => {
-      if (!e.target.closest('.tb-dropdown')) {
-        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+      if (!e.target.closest('.tb-dropdown') && !e.target.closest('.tb-dropdown-panel')) {
+        closeAll();
       }
     });
 
-    // Close "more" menu on item click
-    document.querySelectorAll('.tb-dropdown-right .tb-dd-item').forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelectorAll('.tb-dropdown').forEach(d => d.classList.remove('open'));
+    // Close after item click (slight delay to let onclick fire first)
+    ddList.forEach(({ panel }) => {
+      panel.querySelectorAll('.tb-dd-item').forEach(item => {
+        item.addEventListener('click', () => setTimeout(closeAll, 80));
       });
     });
   }

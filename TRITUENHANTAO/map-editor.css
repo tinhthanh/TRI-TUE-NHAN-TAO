@@ -1427,10 +1427,11 @@ kbd {
     animation: none;
   }
 
-  /* ── Hide side panels & floating toggle ── */
+  /* ── Hide side panels, mobile toggles ── */
   .panel-left,
   .panel-right,
-  .mobile-room-toggle { display: none !important; }
+  .mobile-room-toggle,
+  .mobile-panel-toggles { display: none !important; }
 
   /* ── Canvas wrapper: fills space, leaves room for tab bar ── */
   .canvas-wrapper {
@@ -1481,11 +1482,11 @@ kbd {
     min-height: 32px;
   }
 
-  /* ── Canvas container: fills all remaining height ── */
+  /* ── Canvas container: fills remaining space, canvas scrolls inside ── */
   .canvas-container {
     flex: 1;
     min-height: 0;
-    height: 100% !important;
+    height: unset !important;
     max-height: none !important;
     border-radius: 0;
     padding: 0;
@@ -1493,8 +1494,11 @@ kbd {
     background: #0a0e1a;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
-  #editor-canvas { border-radius: 0; }
+  #editor-canvas { border-radius: 0; display: block; flex-shrink: 0; }
   .canvas-hint { display: none !important; }
 
   /* ── Floating Toolbar → iOS Bottom Tab Bar ── */
@@ -1521,9 +1525,9 @@ kbd {
     box-shadow: 0 -0.5px 0 rgba(0,0,0,0.4) !important;
   }
 
-  /* Hide separators & zoom controls */
+  /* Hide separators & zoom group */
   .toolbar-sep { display: none !important; }
-  .zoom-label-btn { display: none !important; }
+  .zoom-group { display: none !important; }
 
   /* iOS tab bar: hide zoom in/out if desired — keep via toolbar-group */
   /* Show all toolbar-groups as flex items, no separators */
@@ -1584,6 +1588,9 @@ kbd {
   /* Hide dropdown arrows, show tab labels */
   .tb-dd-arrow { display: none !important; }
   .tb-label { display: block !important; }
+
+  /* ── Hide mini-map on mobile (overlaps tab bar) ── */
+  #mini-map-canvas { display: none !important; }
 
   /* ── Dropdown panels → iOS bottom sheets ── */
   .tb-dropdown-panel {

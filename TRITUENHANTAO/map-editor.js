@@ -2244,6 +2244,9 @@
     const btn = $('erase-btn');
     if (btn) btn.classList.toggle('active', eraseMode);
     canvas.style.cursor = eraseMode ? 'cell' : (fillMode ? 'cell' : 'crosshair');
+    // Toggle erase-mode class on toolbar — hides all other tools
+    const toolbar = document.querySelector('.floating-toolbar');
+    if (toolbar) toolbar.classList.toggle('erase-mode', eraseMode);
     showToast(eraseMode ? '🧹 Xóa ON — click để xóa vật thể về nền gạch' : 'Xóa OFF');
   };
 

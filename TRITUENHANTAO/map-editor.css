@@ -1184,6 +1184,24 @@ kbd {
   color: #f87171;
   box-shadow: 0 0 12px rgba(239,68,68,0.25);
 }
+
+/* ── Erase mode: hide all other toolbar items, spotlight erase btn ── */
+.floating-toolbar.erase-mode .toolbar-group,
+.floating-toolbar.erase-mode .toolbar-sep {
+  display: none !important;
+}
+.floating-toolbar.erase-mode .toolbar-group:has(#erase-btn) {
+  display: flex !important;
+}
+/* Fallback for browsers without :has() */
+.floating-toolbar.erase-mode #erase-btn {
+  display: flex !important;
+}
+/* Show erase btn's group by targeting it via sibling trick — use JS-added class */
+.floating-toolbar.erase-mode .erase-group {
+  display: flex !important;
+}
+
 .tb-btn.tb-preview {
   background: rgba(16,185,129,0.12);
   border-color: rgba(16,185,129,0.35);

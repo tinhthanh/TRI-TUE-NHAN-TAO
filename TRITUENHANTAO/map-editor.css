@@ -1379,46 +1379,16 @@ kbd {
   /* ── Full-screen base ── */
   html, body { overflow: hidden; height: 100%; }
 
-  /* ── iOS Navigation Bar ── */
-  .editor-header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 300;
-    height: calc(50px + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) 16px 0;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(255,255,255,0.09);
-    background: rgba(13,17,32,0.97);
-    backdrop-filter: blur(28px) saturate(2);
-    -webkit-backdrop-filter: blur(28px) saturate(2);
-    justify-content: space-between;
-    align-items: center;
-    gap: 0;
-  }
-  .header-title { gap: 8px; }
-  .header-title .icon { display: none; }
-  .header-title h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-  .header-subtitle { display: none; }
+  /* ── Hide header entirely on mobile ── */
+  .editor-header { display: none !important; }
 
-  /* Back button — iOS chevron style */
-  .btn-back {
-    padding: 6px 10px;
-    font-size: 15px;
-    font-weight: 500;
-    gap: 2px;
-    background: transparent;
-    border: none;
-    color: #06b6d4;
-  }
-  .btn-back .ms-icon { font-size: 20px; }
-
-  /* ── Main: fills between nav bar and tab bar ── */
+  /* ── Main: fills full screen above tab bar ── */
   .editor-main {
     flex-direction: column;
     padding: 0;
     gap: 0;
-    margin-top: calc(50px + env(safe-area-inset-top));
-    height: calc(100vh - 50px - env(safe-area-inset-top));
+    margin-top: env(safe-area-inset-top);
+    height: calc(100vh - env(safe-area-inset-top));
     overflow: hidden;
     align-items: stretch;
     justify-content: flex-start;

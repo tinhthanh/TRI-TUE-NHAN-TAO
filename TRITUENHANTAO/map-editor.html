@@ -199,9 +199,11 @@
         <div class="toolbar-group">
           <button class="tb-btn" id="undo-btn" onclick="undo()" title="Undo (Z)" disabled>
             <span class="ms-icon">undo</span>
+            <span class="tb-label">Hoàn tác</span>
           </button>
           <button class="tb-btn" id="redo-btn" onclick="redo()" title="Redo (Shift+Z)" disabled>
             <span class="ms-icon">redo</span>
+            <span class="tb-label">Làm lại</span>
           </button>
         </div>
         <div class="toolbar-sep"></div>
@@ -221,7 +223,9 @@
         <div class="toolbar-group">
           <div class="tb-dropdown">
             <button class="tb-btn" id="tb-ground-btn" title="Nền & Gạch">
-              <span class="ms-icon">border_all</span> <span class="tb-dd-arrow">▾</span>
+              <span class="ms-icon">border_all</span>
+              <span class="tb-dd-arrow">▾</span>
+              <span class="tb-label">Nền</span>
             </button>
             <div class="tb-dropdown-panel" id="tb-ground-panel">
               <div class="tb-dd-grid" id="tb-ground-grid"><!-- filled by JS --></div>
@@ -229,7 +233,9 @@
           </div>
           <div class="tb-dropdown">
             <button class="tb-btn" id="tb-props-btn" title="Đồ vật">
-              <span class="ms-icon">chair</span> <span class="tb-dd-arrow">▾</span>
+              <span class="ms-icon">chair</span>
+              <span class="tb-dd-arrow">▾</span>
+              <span class="tb-label">Đồ vật</span>
             </button>
             <div class="tb-dropdown-panel" id="tb-props-panel">
               <div class="tb-dd-grid" id="tb-props-grid"><!-- filled by JS --></div>
@@ -237,22 +243,27 @@
           </div>
           <button class="tb-btn" id="erase-btn" onclick="toggleErase()" title="Xóa vật thể về nền gạch (X)">
             <span class="ms-icon">ink_eraser</span>
+            <span class="tb-label">Xóa</span>
           </button>
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
           <button class="tb-btn tb-preview" id="preview-btn" onclick="togglePreview()" title="Xem trước (P)">
             <span class="ms-icon">play_arrow</span>
+            <span class="tb-label">Xem trước</span>
           </button>
         </div>
         <div class="toolbar-sep"></div>
         <div class="toolbar-group">
           <button class="tb-btn tb-save" id="save-play-btn" onclick="saveAndPlay()" title="Lưu & Chơi" style="background:linear-gradient(135deg,#0ea572,#059669);color:#fff;border:none;">
             <span class="ms-icon">sports_esports</span>
+            <span class="tb-label">Chơi</span>
           </button>
           <div class="tb-dropdown">
             <button class="tb-btn" id="tb-more-btn" title="Thêm">
-              <span class="ms-icon">more_horiz</span> <span class="tb-dd-arrow">▾</span>
+              <span class="ms-icon">more_horiz</span>
+              <span class="tb-dd-arrow">▾</span>
+              <span class="tb-label">Thêm</span>
             </button>
             <div class="tb-dropdown-panel tb-dropdown-right" id="tb-more-panel">
               <div style="display:flex;flex-direction:column;gap:2px;min-width:140px;">

@@ -975,17 +975,31 @@
         closeAll();
         if (!wasOpen) {
           const rect = btn.getBoundingClientRect();
+          const isMobile = window.innerWidth <= 768;
           const isRight = panel.classList.contains('tb-dropdown-right');
           // Move to <body> — escapes backdrop-filter stacking context
           document.body.appendChild(panel);
           panel.style.position = 'fixed';
-          panel.style.top = (rect.bottom + 6) + 'px';
-          if (isRight) {
-            panel.style.left = 'auto';
-            panel.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
+          if (isMobile) {
+            // iOS bottom sheet: slides up from bottom tab bar
+            panel.style.top = 'auto';
+            panel.style.left = '0';
+            panel.style.right = '0';
+            panel.style.bottom = '';  // CSS media query controls exact bottom offset
+            // Re-trigger animation
+            panel.style.animation = 'none';
+            panel.offsetHeight;
+            panel.style.animation = '';
           } else {
-            panel.style.left = Math.max(4, rect.left) + 'px';
-            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+            panel.style.top = (rect.bottom + 6) + 'px';
+            if (isRight) {
+              panel.style.left = 'auto';
+              panel.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
+            } else {
+              panel.style.left = Math.max(4, rect.left) + 'px';
+              panel.style.right = 'auto';
+            }
           }
           panel.style.display = 'block';
           dd.classList.add('open');

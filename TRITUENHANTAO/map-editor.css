@@ -1224,6 +1224,8 @@ kbd {
 .tb-dd-item .ms-icon { font-size: 20px; }
 .tb-dd-item span:last-child { font-size: 8px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42px; }
 .tb-dd-arrow { font-size: 9px; opacity: 0.5; }
+/* Tab label — hidden on desktop, shown on mobile */
+.tb-label { display: none; font-size: 9px; line-height: 1; font-weight: 500; letter-spacing: 0.1px; }
 
 /* ── Brush hint buttons (status bar) ── */
 .brush-hint-btn {
@@ -1370,168 +1372,306 @@ kbd {
 .mobile-room-toggle { display: none; }
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE RESPONSIVE (≤ 768px)
+   IOS MOBILE STYLE (≤ 768px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* ── Layout: vertical stack ── */
+
+  /* ── Full-screen base ── */
+  html, body { overflow: hidden; height: 100%; }
+
+  /* ── iOS Navigation Bar ── */
+  .editor-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 300;
+    height: calc(50px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 16px 0;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.09);
+    background: rgba(13,17,32,0.97);
+    backdrop-filter: blur(28px) saturate(2);
+    -webkit-backdrop-filter: blur(28px) saturate(2);
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
+  .header-title { gap: 8px; }
+  .header-title .icon { display: none; }
+  .header-title h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-subtitle { display: none; }
+
+  /* Back button — iOS chevron style */
+  .btn-back {
+    padding: 6px 10px;
+    font-size: 15px;
+    font-weight: 500;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    color: #06b6d4;
+  }
+  .btn-back .ms-icon { font-size: 20px; }
+
+  /* ── Main: fills between nav bar and tab bar ── */
   .editor-main {
     flex-direction: column;
-    padding: 4px;
-    gap: 4px;
-    min-height: calc(100vh - 70px); /* fill below header */
-  }
-
-  /* ── Header compact ── */
-  .editor-header {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-  .header-title .title { font-size: 16px; }
-  .header-title .subtitle { display: none; }
-  .header-title .icon { width: 36px; height: 36px; }
-  .header-title .icon .ms-icon { font-size: 20px !important; }
-
-  /* ── Left panel: HIDDEN — toolbar dropdowns replace it ── */
-  .panel-left { display: none !important; }
-
-  /* ── Canvas: takes most space ── */
-  .canvas-wrapper { order: 1; width: 100%; flex: 1; min-height: 0; }
-  .canvas-container {
-    height: 55vh;
-    min-height: 200px;
-    padding: 4px;
-    border-radius: 10px;
-    width: 100%;
-  }
-  .canvas-hint { display: none !important; }
-
-  /* ── Right panel: collapsed by default on mobile ── */
-  .panel-right {
-    order: 2;
-    width: 100%;
+    padding: 0;
+    gap: 0;
+    margin-top: calc(50px + env(safe-area-inset-top));
+    height: calc(100vh - 50px - env(safe-area-inset-top));
+    overflow: hidden;
+    align-items: stretch;
+    justify-content: flex-start;
     max-width: 100%;
-    min-width: unset;
+    width: 100%;
+    animation: none;
+  }
+
+  /* ── Hide side panels & floating toggle ── */
+  .panel-left,
+  .panel-right,
+  .mobile-room-toggle { display: none !important; }
+
+  /* ── Canvas wrapper: fills space, leaves room for tab bar ── */
+  .canvas-wrapper {
+    order: 1;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+    gap: 0;
+    display: flex;
     flex-direction: column;
-    gap: 4px;
-    display: none !important;
-  }
-  .panel-right.mobile-open {
-    display: flex !important;
-  }
-  .panel-right .panel-card {
-    padding: 8px 10px;
-  }
-  .panel-right .panel-card h3 {
-    font-size: 10px;
-    margin-bottom: 4px;
+    padding-bottom: calc(62px + env(safe-area-inset-bottom));
   }
 
-  /* ── Mobile room toggle button ── */
-  .mobile-room-toggle {
-    display: flex !important;
-    position: fixed;
-    bottom: 16px;
-    right: 16px;
-    z-index: 500;
-    padding: 10px 16px;
-    border-radius: 24px;
-    border: 1px solid rgba(6,182,212,0.35);
-    background: rgba(13,18,36,0.92);
-    backdrop-filter: blur(10px);
-    color: var(--teal);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-  }
-  .mobile-room-toggle:hover,
-  .mobile-room-toggle.active {
-    background: rgba(6,182,212,0.15);
-    border-color: var(--teal);
-  }
-  .mobile-room-toggle .ms-icon { font-size: 18px; }
-  .mobile-room-toggle .room-count-badge {
-    background: var(--teal);
-    color: #fff;
-    font-size: 10px;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-weight: 700;
-  }
-  /* Thao tác: compact 2-col grid */
-  .panel-right .action-grid {
-    grid-template-columns: 1fr 1fr;
-    display: grid !important;
-    gap: 3px;
-  }
-  .act-btn { padding: 5px 6px; font-size: 10px; }
-  .act-btn .ms-icon { font-size: 13px; }
-  .act-btn.act-primary { padding: 7px 8px; font-size: 11px; }
-
-  /* ── Floating Toolbar: compact single row ── */
-  .floating-toolbar {
-    padding: 4px 6px;
-    gap: 2px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-  .tb-btn { padding: 5px 6px; min-width: 32px; }
-  .tb-btn .ms-icon { font-size: 16px; }
-  .toolbar-sep { margin: 0 2px; height: 18px; }
-  .zoom-label-btn span { font-size: 10px; }
-
-  /* ── Floor tabs: scrollable ── */
+  /* ── Floor tabs: thin iOS-style strip ── */
   .floor-tab-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding: 4px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px 10px;
+    gap: 6px;
+    background: rgba(13,17,30,0.96);
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    width: 100%;
+    flex-shrink: 0;
   }
-  .floor-tab { padding: 5px 10px; font-size: 11px; white-space: nowrap; }
+  .floor-tab-bar::-webkit-scrollbar { display: none; }
 
-  /* ── Room items compact ── */
-  .room-item { padding: 5px 8px; }
-  .room-item .room-name { font-size: 11px; }
-  .room-item .room-meta { font-size: 9px; }
+  .floor-tab-btn, .floor-tab {
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    white-space: nowrap;
+    min-height: 32px;
+    flex-shrink: 0;
+  }
+  .floor-add-btn {
+    padding: 5px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    min-height: 32px;
+  }
 
-  /* ── Wizard modals ── */
-  .wiz-overlay { padding: 10px; }
-  .wiz-modal { max-width: 95vw !important; max-height: 90vh !important; padding: 14px !important; }
+  /* ── Canvas container: fills all remaining height ── */
+  .canvas-container {
+    flex: 1;
+    min-height: 0;
+    height: 100% !important;
+    max-height: none !important;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    background: #0a0e1a;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #editor-canvas { border-radius: 0; }
+  .canvas-hint { display: none !important; }
 
-  /* ── Draw room popup ── */
-  .wiz-room-popup { max-width: 90vw !important; }
+  /* ── Floating Toolbar → iOS Bottom Tab Bar ── */
+  .floating-toolbar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    z-index: 200 !important;
+    /* iOS tab bar look */
+    border-radius: 0 !important;
+    border: none !important;
+    border-top: 0.5px solid rgba(255,255,255,0.12) !important;
+    background: rgba(13,17,30,0.98) !important;
+    backdrop-filter: blur(32px) saturate(2.5) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(2.5) !important;
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom)) !important;
+    gap: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    justify-content: space-around !important;
+    align-items: flex-start !important;
+    box-shadow: 0 -0.5px 0 rgba(0,0,0,0.4) !important;
+  }
+
+  /* Hide separators & zoom controls */
+  .toolbar-sep { display: none !important; }
+  .zoom-label-btn { display: none !important; }
+
+  /* iOS tab bar: hide zoom in/out if desired — keep via toolbar-group */
+  /* Show all toolbar-groups as flex items, no separators */
+  .toolbar-group {
+    gap: 0 !important;
+    flex-shrink: 0;
+  }
+
+  /* iOS Tab buttons: icon above label */
+  .tb-btn {
+    flex-direction: column !important;
+    min-height: 50px !important;
+    min-width: 46px !important;
+    border-radius: 10px !important;
+    padding: 6px 6px !important;
+    gap: 2px !important;
+    border: none !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.45) !important;
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.1px !important;
+  }
+  .tb-btn .ms-icon {
+    font-size: 22px !important;
+    line-height: 1 !important;
+  }
+  .tb-btn:hover { background: rgba(255,255,255,0.05) !important; transform: none !important; }
+  .tb-btn:active { transform: scale(0.92) !important; background: rgba(255,255,255,0.08) !important; }
+
+  /* Active state: teal tint */
+  .tb-btn.active {
+    color: #06b6d4 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  #erase-btn.active {
+    color: #f87171 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Preview & save buttons */
+  .tb-btn.tb-preview {
+    color: #10b981 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .tb-btn.tb-save {
+    background: transparent !important;
+    border: none !important;
+    color: #10b981 !important;
+  }
+
+  /* Hide dropdown arrows, show tab labels */
+  .tb-dd-arrow { display: none !important; }
+  .tb-label { display: block !important; }
+
+  /* ── Dropdown panels → iOS bottom sheets ── */
+  .tb-dropdown-panel {
+    position: fixed !important;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+    top: auto !important;
+    padding: 28px 12px 16px !important;
+    max-height: 58vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-shadow: 0 -4px 40px rgba(0,0,0,0.6) !important;
+    /* Slide-up animation */
+    animation: iosSheetIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+
+  /* Handle bar */
+  .tb-dropdown-panel::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.18);
+  }
+
+  /* Grid in sheet: 3 columns, icon+label */
+  .tb-dd-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .tb-dd-item {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 5px !important;
+    padding: 12px 6px !important;
+    border-radius: 12px !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+  }
+  .tb-dd-item .ms-icon { font-size: 26px !important; }
+  .tb-dd-item img { width: 30px !important; height: 30px !important; }
+
+  /* More menu panel: single column list */
+  #tb-more-panel .tb-dd-item {
+    flex-direction: row !important;
+    text-align: left !important;
+    font-size: 14px !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    border-radius: 10px !important;
+  }
+  #tb-more-panel .tb-dd-item .ms-icon { font-size: 20px !important; }
+
+  /* ── Wizard / popup modals ── */
+  .wiz-overlay { padding: 0; align-items: flex-end; }
+  .wiz-modal {
+    max-width: 100vw !important;
+    width: 100% !important;
+    max-height: 85vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 24px 16px 32px !important;
+    margin: 0 !important;
+  }
+  .wiz-room-popup { max-width: 92vw !important; }
+}
+
+@keyframes iosSheetIn {
+  from { transform: translateY(100%); opacity: 0.6; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SMALL MOBILE (≤ 480px)
+   SMALL PHONE (≤ 390px) — tighten further
    ═══════════════════════════════════════════════════════════ */
-@media (max-width: 480px) {
-  .editor-main { padding: 2px; gap: 2px; }
-  .editor-header { padding: 6px 8px; }
-  .header-title h1 { font-size: 14px; }
-
-  /* Left panel always hidden on phone */
-  .panel-left { display: none !important; }
-
-  /* Canvas takes max space */
-  .canvas-container { max-height: 50vh; padding: 2px; border-radius: 8px; }
-
-  /* Right panel: full width below canvas, compact */
-  .panel-right {
-    flex-direction: column;
-    gap: 3px;
+@media (max-width: 390px) {
+  .tb-btn {
+    min-width: 40px !important;
+    font-size: 8px !important;
   }
-  .panel-right .panel-card { min-width: unset; padding: 6px 8px; }
-  .act-btn { padding: 4px 5px; font-size: 9px; }
-
-  /* Toolbar extra compact */
-  .floating-toolbar { gap: 1px; padding: 3px 4px; }
-  .tb-btn { padding: 4px 5px; }
-  .floor-tab-bar { padding: 3px; gap: 3px; }
-  .floor-tab { padding: 4px 8px; font-size: 9px; }
-
-  /* Hide mobile toggle buttons — not needed anymore */
-  .mobile-panel-toggles { display: none !important; }
+  .tb-btn .ms-icon { font-size: 20px !important; }
+  .tb-dd-grid { grid-template-columns: repeat(3, 1fr) !important; }
 }

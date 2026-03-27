@@ -506,7 +506,7 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
   align-items: center;
   gap: 10px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .canvas-container {

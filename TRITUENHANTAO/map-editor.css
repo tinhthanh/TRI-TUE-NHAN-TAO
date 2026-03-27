@@ -1363,14 +1363,12 @@ kbd {
    MOBILE RESPONSIVE (≤ 768px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* ── Layout: canvas + right panel side by side ── */
+  /* ── Layout: vertical stack ── */
   .editor-main {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    padding: 8px;
-    gap: 8px;
+    flex-direction: column;
+    padding: 4px;
+    gap: 4px;
   }
-  .canvas-wrapper { flex: 1; min-width: 0; overflow: visible; }
 
   /* ── Header compact ── */
   .editor-header {
@@ -1382,63 +1380,56 @@ kbd {
   .header-title .icon { width: 36px; height: 36px; }
   .header-title .icon .ms-icon { font-size: 20px !important; }
 
-  /* ── Left panel: hidden on tablet — toolbar dropdowns replace it ── */
-  .panel-left {
-    display: none !important;
-  }
-  .panel-left .panel-card {
-    min-width: 160px;
-    flex-shrink: 0;
-    padding: 10px;
-  }
-  /* ── Canvas: full width ── */
+  /* ── Left panel: HIDDEN — toolbar dropdowns replace it ── */
+  .panel-left { display: none !important; }
+
+  /* ── Canvas: takes most space ── */
+  .canvas-wrapper { order: 1; width: 100%; }
   .canvas-container {
-    order: 1;
-    max-height: 50vh;
-    padding: 6px;
-    border-radius: 12px;
+    max-height: 60vh;
+    padding: 4px;
+    border-radius: 10px;
     width: 100%;
   }
+  .canvas-hint { display: none !important; }
 
-  .canvas-hint {
-    order: 3;
-    font-size: 9px;
-    padding: 3px 8px;
-    gap: 3px;
-    display: none; /* hide on mobile — too much text */
-  }
-
-  /* ── Right panel: horizontal strip ── */
-  /* ── Right panel: sidebar, narrower ── */
+  /* ── Right panel: below canvas, horizontal cards ── */
   .panel-right {
-    min-width: 180px;
-    max-width: 200px;
     order: 2;
-    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: unset;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
   }
   .panel-right .panel-card {
+    flex: 1;
+    min-width: 140px;
     padding: 8px 10px;
   }
   .panel-right .panel-card h3 {
     font-size: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
+  /* Thao tác: compact 2-col grid */
   .panel-right .action-grid {
     grid-template-columns: 1fr 1fr;
     display: grid !important;
+    gap: 3px;
   }
+  .act-btn { padding: 5px 6px; font-size: 10px; }
+  .act-btn .ms-icon { font-size: 13px; }
+  .act-btn.act-primary { padding: 7px 8px; font-size: 11px; }
 
-  /* ── Floating Toolbar: compact ── */
+  /* ── Floating Toolbar: compact single row ── */
   .floating-toolbar {
     padding: 4px 6px;
     gap: 2px;
     flex-wrap: nowrap;
     overflow-x: auto;
   }
-  .tb-btn {
-    padding: 5px 6px;
-    min-width: 32px;
-  }
+  .tb-btn { padding: 5px 6px; min-width: 32px; }
   .tb-btn .ms-icon { font-size: 16px; }
   .toolbar-sep { margin: 0 2px; height: 18px; }
   .zoom-label-btn span { font-size: 10px; }
@@ -1447,116 +1438,51 @@ kbd {
   .floor-tab-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding: 6px;
+    padding: 4px 6px;
   }
-  .floor-tab { padding: 6px 12px; font-size: 11px; white-space: nowrap; }
+  .floor-tab { padding: 5px 10px; font-size: 11px; white-space: nowrap; }
 
-  /* ── Tile buttons: smaller grid ── */
-  .tile-palette {
-    max-height: 120px;
-    overflow-y: auto;
-  }
-  .tile-btn {
-    padding: 6px 8px;
-    font-size: 11px;
-    min-height: 36px;
-  }
-  .tile-icon .ms-icon { font-size: 16px; }
-  .tile-name { font-size: 10px; }
-
-  /* ── Action buttons: compact ── */
-  .action-btn {
-    padding: 8px 10px;
-    font-size: 11px;
-  }
-
-  /* ── Brush buttons ── */
-  .brush-btn { padding: 6px; font-size: 11px; }
-
-  /* ── Room name bar: compact ── */
-  .room-name-bar {
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-
-  /* ── Layer panel: horizontal ── */
-  .layer-list { flex-direction: row; flex-wrap: wrap; gap: 2px; }
-  .layer-item { padding: 3px 6px; }
-  .layer-name { font-size: 10px; }
-
-  /* ── Size sliders: compact ── */
-  .size-control { gap: 4px; }
-  .size-label { font-size: 11px; }
-
-  /* ── Recent tiles ── */
-  .recent-tiles { gap: 3px; }
-  .recent-tile-btn { width: 32px; height: 32px; }
+  /* ── Room items compact ── */
+  .room-item { padding: 5px 8px; }
+  .room-item .room-name { font-size: 11px; }
+  .room-item .room-meta { font-size: 9px; }
 
   /* ── Wizard modals ── */
   .wiz-overlay { padding: 10px; }
   .wiz-modal { max-width: 95vw !important; max-height: 90vh !important; padding: 14px !important; }
-  .wiz-header { font-size: 14px; }
+
+  /* ── Draw room popup ── */
+  .wiz-room-popup { max-width: 90vw !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════
    SMALL MOBILE (≤ 480px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .editor-main { padding: 4px; gap: 4px; }
+  .editor-main { padding: 2px; gap: 2px; }
+  .editor-header { padding: 6px 8px; }
+  .header-title h1 { font-size: 14px; }
 
-  /* Hide panels by default, show via toggle */
+  /* Left panel always hidden on phone */
   .panel-left { display: none !important; }
-  .panel-left.mobile-show { display: flex !important; flex-direction: column; width: 100%; max-width: 100%; }
-  .panel-right { display: none !important; }
-  .panel-right.mobile-show { display: flex !important; flex-direction: column; width: 100%; max-width: 100%; }
 
-  /* Canvas full screen */
-  .canvas-container {
-    max-height: 55vh;
-    border-radius: 8px;
-    padding: 4px;
-    order: 1;
-  }
+  /* Canvas takes max space */
+  .canvas-container { max-height: 50vh; padding: 2px; border-radius: 8px; }
 
-  /* Mobile toggle buttons */
-  .mobile-panel-toggles {
-    display: flex;
-    gap: 4px;
-    order: 5;
-    width: 100%;
+  /* Right panel: full width below canvas, compact */
+  .panel-right {
+    flex-direction: column;
+    gap: 3px;
   }
-  .mobile-panel-toggle {
-    flex: 1;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid var(--glass-border);
-    background: var(--bg-card);
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    transition: all 0.15s;
-  }
-  .mobile-panel-toggle.active {
-    border-color: var(--teal);
-    color: var(--teal);
-    background: rgba(6,182,212,0.08);
-  }
-  .mobile-panel-toggle .ms-icon { font-size: 16px; }
+  .panel-right .panel-card { min-width: unset; padding: 6px 8px; }
+  .act-btn { padding: 4px 5px; font-size: 9px; }
 
-  .floor-tab-bar { padding: 4px; gap: 4px; order: 0; }
-  .floor-tab { padding: 5px 10px; font-size: 10px; }
-  .floating-toolbar { gap: 1px; padding: 3px 4px; order: 0; }
+  /* Toolbar extra compact */
+  .floating-toolbar { gap: 1px; padding: 3px 4px; }
   .tb-btn { padding: 4px 5px; }
+  .floor-tab-bar { padding: 3px; gap: 3px; }
+  .floor-tab { padding: 4px 8px; font-size: 9px; }
 
-  /* Ensure canvas-wrapper order */
-  .canvas-container + .canvas-hint { display: none !important; }
-  .panel-left.mobile-show { order: 3; }
-  .panel-right.mobile-show { order: 3; }
+  /* Hide mobile toggle buttons — not needed anymore */
+  .mobile-panel-toggles { display: none !important; }
 }

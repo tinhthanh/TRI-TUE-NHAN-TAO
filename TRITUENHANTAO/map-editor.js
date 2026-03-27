@@ -1722,18 +1722,42 @@
 
 
   function onTouchStart(e) {
-    e.preventDefault(); isPainting = true; paintValue = currentTileId;
-    saveHistory();
+    e.preventDefault();
     const t = e.touches[0];
-    const { col, row } = cellAt({ clientX: t.clientX, clientY: t.clientY });
+    const fakeE = { clientX: t.clientX, clientY: t.clientY, button: 0, target: canvas };
+    const { col, row } = cellAt(fakeE);
+
+    // Draw room mode: first tap = set start point
+    if (drawRoomMode && !wizardRoomPopup) {
+      if (!drawRoomStart) {
+        drawRoomStart = { col, row };
+        drawRoomEnd = { col, row };
+      } else {
+        // Second tap = finish
+        drawRoomEnd = { col, row };
+        finishDrawRoom();
+      }
+      return;
+    }
+
+    isPainting = true; paintValue = currentTileId;
+    saveHistory();
     paintAt(col, row, paintValue);
   }
 
   function onTouchMove(e) {
     e.preventDefault();
-    if (!isPainting) return;
     const t = e.touches[0];
     const { col, row } = cellAt({ clientX: t.clientX, clientY: t.clientY });
+
+    // Draw room mode: update preview
+    if (drawRoomMode && drawRoomStart) {
+      drawRoomEnd = { col, row };
+      markOverlayDirty();
+      return;
+    }
+
+    if (!isPainting) return;
     paintAt(col, row, paintValue);
   }
 
